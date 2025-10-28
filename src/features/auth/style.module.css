@@ -1,0 +1,86 @@
+/* AuthScreen styles */
+.authScreenContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f6fa;
+    z-index: 1000;
+}
+
+.authBox {
+    background: white;
+    padding: 2rem 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 32px rgba(0, 0, 0, 0.12);
+    min-width: 320px;
+    max-width: 90vw;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.authButton {
+    background: #4285f4;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-top: 1rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.authButton:hover {
+    background: #357ae8;
+}
+
+.authButton:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.authInput {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+}
+
+.inputGood {
+    border: 1px solid #ddd;
+}
+
+.inputError {
+    border: 2px solid #e74c3c !important;
+    background-color: #f5bcb8 !important;
+}
+
+.authLinks {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+}
+
+.linkButton {
+    background: none;
+    border: none;
+    color: #4285f4;
+    cursor: pointer;
+    font-size: 0.95rem;
+    text-decoration: underline;
+    padding: 0;
+}
+
+.divider {
+    text-align: center;
+    margin: 1rem 0;
+    color: #aaa;
+    font-size: 0.95rem;
+}

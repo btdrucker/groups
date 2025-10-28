@@ -1,0 +1,49 @@
+.group {
+
+}
+
+.group .title {
+
+}
+
+.group .word {
+
+}
+
+.group0 {
+    background-color: gold;
+}
+
+.group1 {
+    background-color: olivedrab;
+}
+
+.group2 {
+    background-color: cornflowerblue;
+}
+
+.group3 {
+    background-color: mediumorchid;
+}
+
+.gameLink {
+    background-color: gray;
+}
+
+.hidden {
+    display: none;
+}
+
+.grid {
+    background-color: aquamarine;
+}
+
+.grid .row {
+    background-color: antiquewhite;
+    min-height: 30pt;
+}
+
+.grid .cell {
+    background-color: darksalmon;
+    min-height: 30pt;
+}
