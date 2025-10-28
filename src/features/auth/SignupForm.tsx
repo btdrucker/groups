@@ -2,44 +2,46 @@ import React, {useState} from "react";
 import styles from "./style.module.css";
 import {classes} from "../../common/classUtils";
 import {isValidEmail} from "../../common/utils";
+import type { AuthMode } from "./AuthScreen";
 
 interface Props {
-    onModeChange: (mode: 'login') => void;
+    onModeChange: (mode: AuthMode) => void;
 }
 
 const SignupForm = ({onModeChange}: Props) => {
-    const [signupEmail, setSignupEmail] = useState("");
-    const [signupPassword, setSignupPassword] = useState("");
-    const [signupConfirm, setSignupConfirm] = useState("");
-    const isFormValid = isValidEmail(signupEmail) && !!signupPassword && signupPassword === signupConfirm;
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [confirm, setConfirm] = useState("");
+    const isFormValid = isValidEmail(email) && !!password && password === confirm;
 
     function handleSignup() {
-        // Debug confirmation
-        console.log("Sign up confirmed:", {signupEmail, signupPassword});
+        console.log("Sign up confirmed:", {signupEmail: email, signupPassword: password});
+        //TODO: Implement actual signup logic
     }
 
     return (
         <>
+            <h1>Sign Up</h1>
             <input
-                className={classes(styles.authInput, (!signupEmail || isValidEmail(signupEmail)) ? '' : styles.inputError)}
+                className={classes(styles.authInput, (!email || isValidEmail(email)) ? '' : styles.inputError)}
                 type="email"
                 placeholder="Email"
-                value={signupEmail}
-                onChange={e => setSignupEmail(e.target.value.trim())}
+                value={email}
+                onChange={e => setEmail(e.target.value.trim())}
             />
             <input
-                className={classes(styles.authInput, (!signupPassword && !!signupConfirm) ? styles.inputError : '')}
+                className={classes(styles.authInput, (!password && !!confirm) ? styles.inputError : '')}
                 type="password"
                 placeholder="Password"
-                value={signupPassword}
-                onChange={e => setSignupPassword(e.target.value.trim())}
+                value={password}
+                onChange={e => setPassword(e.target.value.trim())}
             />
             <input
-                className={classes(styles.authInput, (signupPassword === signupConfirm) ? '' : styles.inputError)}
+                className={classes(styles.authInput, (password === confirm) ? '' : styles.inputError)}
                 type="password"
                 placeholder="Confirm Password"
-                value={signupConfirm}
-                onChange={e => setSignupConfirm(e.target.value)}
+                value={confirm}
+                onChange={e => setConfirm(e.target.value)}
             />
             <button
                 className={styles.authButton}
