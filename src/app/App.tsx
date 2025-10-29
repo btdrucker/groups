@@ -1,16 +1,17 @@
 import React from "react";
 import Composer from "../features/composer/Composer";
-import {persistor} from "./store";
-import {useDispatch} from "react-redux";
-import {useAppDispatch} from "./hooks";
 import AuthScreen from "../features/auth/AuthScreen";
 import WelcomeUser from "../features/auth/WelcomeUser";
-import { onAuthStateChange } from "../firebase/auth";
-import { User } from "firebase/auth";
+import PuzzleList from "../features/puzzles/PuzzleList";
+import {onAuthStateChange} from "../firebase/auth";
+import {User} from "firebase/auth";
+
+type View = 'list' | 'composer';
 
 const App = () => {
     const [user, setUser] = React.useState<User | null>(null);
     const [loading, setLoading] = React.useState(true);
+    const [currentView, setCurrentView] = React.useState<View>('list');
 
     React.useEffect(() => {
         // Subscribe to auth state changes
@@ -30,10 +31,29 @@ const App = () => {
         return <div>Loading...</div>;
     }
 
+    const handleCreateNew = () => {
+        setCurrentView('composer');
+    };
+
+    const handleBackToList = () => {
+        setCurrentView('list');
+    };
+
     return (
         <>
-            {user && <WelcomeUser user={user} />}
-            {user ? <Composer/> : <AuthScreen/>}
+            {user && <WelcomeUser user={user}/>}
+            {user ? (
+                currentView === 'list' ? (
+                    <PuzzleList
+                        user={user}
+                        onCreateNew={handleCreateNew}
+                    />
+                ) : (
+                    <Composer onBack={handleBackToList}/>
+                )
+            ) : (
+                <AuthScreen/>
+            )}
         </>
     )
 }

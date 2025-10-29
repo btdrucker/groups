@@ -2,6 +2,22 @@
     padding-top: 4rem;
 }
 
+.backButton {
+    margin-bottom: 1.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    color: #333;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.backButton:hover {
+    background-color: #e0e0e0;
+}
+
 .group {
 
 }

@@ -9,6 +9,17 @@ interface Props {
     onModeChange: (mode: AuthMode) => void;
 }
 
+// Firebase authError values:
+// auth/invalid-email - The email address is badly formatted
+// auth/user-disabled - The user account has been disabled by an administrator
+// auth/user-not-found - There is no user record corresponding to the email
+// auth/wrong-password - The password is invalid for the given email
+// auth/invalid-credential - The credential is malformed or has expired (newer error that can replace user-not-found/wrong-password)
+// auth/too-many-requests - Access temporarily blocked due to too many failed login attempts
+// auth/network-request-failed - A network error occurred (timeout, interrupted connection, unreachable host)
+// auth/operation-not-allowed - Email/password accounts are not enabled in the Firebase Console
+// auth/requires-recent-login - The user's credential is too old and requires re-authentication
+
 const LoginForm = ({onModeChange}: Props) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");

@@ -6,11 +6,20 @@ import Grid from "./Grid";
 import GameLink from "./GameLink";
 import styles from "./style.module.css";
 
-const Composer = () => {
+interface ComposerProps {
+    onBack?: () => void;
+}
+
+const Composer: React.FC<ComposerProps> = ({ onBack }) => {
     const groups = useAppSelector(selectGroups)
 
     return (
         <div className={styles.composerContainer}>
+            {onBack && (
+                <button className={styles.backButton} onClick={onBack}>
+                    ← Back to My Puzzles
+                </button>
+            )}
             {groups.map((group, index) => {
                 return (
                     <Group
