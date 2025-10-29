@@ -5,6 +5,7 @@ import WelcomeUser from "../features/auth/WelcomeUser";
 import PuzzleList from "../features/puzzles/PuzzleList";
 import {onAuthStateChange} from "../firebase/auth";
 import {User} from "firebase/auth";
+import styles from "./style.module.css";
 
 type View = 'list' | 'composer';
 
@@ -40,21 +41,23 @@ const App = () => {
     };
 
     return (
-        <>
+        <div className={styles.appContainer}>
             {user && <WelcomeUser user={user}/>}
-            {user ? (
-                currentView === 'list' ? (
-                    <PuzzleList
-                        user={user}
-                        onCreateNew={handleCreateNew}
-                    />
+            <div className={styles.mainContent}>
+                {user ? (
+                    currentView === 'list' ? (
+                        <PuzzleList
+                            user={user}
+                            onCreateNew={handleCreateNew}
+                        />
+                    ) : (
+                        <Composer onBack={handleBackToList}/>
+                    )
                 ) : (
-                    <Composer onBack={handleBackToList}/>
-                )
-            ) : (
-                <AuthScreen/>
-            )}
-        </>
+                    <AuthScreen/>
+                )}
+            </div>
+        </div>
     )
 }
 
