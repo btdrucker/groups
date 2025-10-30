@@ -31,10 +31,11 @@ export interface GameState {
 }
 
 // Create a new puzzle
-export const createPuzzle = async (puzzle: Omit<Puzzle, 'id' | 'createdAt'>) => {
+export const createPuzzle = async (puzzle: Omit<Puzzle, 'id' | 'creatorId' | 'createdAt'>, userId: string) => {
     try {
         const puzzleData = {
             ...puzzle,
+            creatorId: userId,
             createdAt: serverTimestamp(),
         };
 
@@ -46,18 +47,10 @@ export const createPuzzle = async (puzzle: Omit<Puzzle, 'id' | 'createdAt'>) => 
     }
 };
 
-// Save a FirestorePuzzle, filling in creatorId and createdAt
-export const handleSavePuzzle = async (puzzle: Omit<Puzzle, 'id' | 'creatorId' | 'createdAt'>, userId: string) => {
-    const puzzleToSave = {
-        ...puzzle,
-        creatorId: userId,
-    };
-    return await createPuzzle(puzzleToSave);
-};
-
 // Update an existing puzzle by id
-export const updatePuzzle = async (id: string, puzzle: Puzzle) => {
+export const updatePuzzle = async (puzzle: Puzzle) => {
     try {
+        const id = puzzle.id!;
         const puzzleRef = doc(db, 'puzzles', id);
         // Remove id from the update object
         const { id: _, ...updateData } = puzzle;

@@ -6,7 +6,7 @@ import PuzzleList from "../features/puzzles/PuzzleList";
 import {onAuthStateChange} from "../firebase/auth";
 import {User} from "firebase/auth";
 import styles from "./style.module.css";
-import { handleSavePuzzle as savePuzzleToFirestore, updatePuzzle, Puzzle } from "../firebase/firestore";
+import { createPuzzle, updatePuzzle, Puzzle } from "../firebase/firestore";
 
 type View = 'list' | 'composer';
 
@@ -38,13 +38,10 @@ const App = () => {
 
     async function handleSavePuzzle(puzzle: Puzzle) {
         if (!user) return;
-        if (!puzzle.id) {
-            // New puzzle: remove id, creatorId, createdAt
-            const { id, creatorId, createdAt, ...puzzleData } = puzzle;
-            await savePuzzleToFirestore(puzzleData, user.uid);
+        if (puzzle.id) {
+            await updatePuzzle(puzzle);
         } else {
-            // Existing puzzle: update by id
-            await updatePuzzle(puzzle.id, puzzle);
+            await createPuzzle(puzzle, user.uid);
         }
         setReloadKey((k) => k + 1);
         setCurrentView('list');
