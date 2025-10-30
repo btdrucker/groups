@@ -1,5 +1,16 @@
 .composerContainer {
     padding-top: 4rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-left: auto;
+    margin-right: auto;
+    width: fit-content;
+}
+
+.composerLeftColumn {
+    width: fit-content;
+    margin-left: 2rem;
 }
 
 .backButton {
@@ -70,8 +81,9 @@
 
 .gridContainer {
     margin: 1rem 0;
-    display: flex;
-    justify-content: center;
+    width: fit-content;
+    margin-left: 2rem;
+    display: block;
 }
 .gridTable {
     border-collapse: collapse;
@@ -103,6 +115,7 @@
     border-radius: 4px;
     cursor: pointer;
     transition: background 0.2s;
+    display: block;
 }
 .saveButton:disabled {
     background: #aaa;

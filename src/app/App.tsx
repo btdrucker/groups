@@ -1,12 +1,12 @@
 import React from "react";
-import Composer from "../features/composer/Composer";
+import Composer2 from "../features/composer/Composer2";
 import AuthScreen from "../features/auth/AuthScreen";
 import WelcomeUser from "../features/auth/WelcomeUser";
 import PuzzleList from "../features/puzzles/PuzzleList";
 import {onAuthStateChange} from "../firebase/auth";
 import {User} from "firebase/auth";
 import styles from "./style.module.css";
-import Composer2, {Puzzle} from "../features/composer/Composer2";
+import { handleSavePuzzle as savePuzzleToFirestore, updatePuzzle, Puzzle } from "../firebase/firestore";
 
 type View = 'list' | 'composer';
 
@@ -15,8 +15,6 @@ const App = () => {
     const [loading, setLoading] = React.useState(true);
     const [currentView, setCurrentView] = React.useState<View>('list');
     const [reloadKey, setReloadKey] = React.useState(0);
-    const [hasLoadedList, setHasLoadedList] = React.useState(false);
-    const [pendingReload, setPendingReload] = React.useState(false);
     const [selectedPuzzle, setSelectedPuzzle] = React.useState<Puzzle | undefined>(undefined);
 
     React.useEffect(() => {
@@ -29,52 +27,39 @@ const App = () => {
         return () => unsubscribe();
     }, []);
 
-    // Track when the list is loaded
-    React.useEffect(() => {
-        if (currentView === 'list' && !hasLoadedList) {
-            setReloadKey((k) => k + 1);
-            setHasLoadedList(true);
-        }
-        if (currentView === 'list' && pendingReload) {
-            setReloadKey((k) => k + 1);
-            setPendingReload(false);
-        }
-    }, [currentView, hasLoadedList, pendingReload]);
-
     if (loading) {
         return <div>Loading...</div>;
     }
 
     const handleCreateNew = () => {
+        setSelectedPuzzle(undefined); // Clear previous puzzle
         setCurrentView('composer');
-        setPendingReload(true);
     };
+
+    async function handleSavePuzzle(puzzle: Puzzle) {
+        if (!user) return;
+        if (!puzzle.id) {
+            // New puzzle: remove id, creatorId, createdAt
+            const { id, creatorId, createdAt, ...puzzleData } = puzzle;
+            await savePuzzleToFirestore(puzzleData, user.uid);
+        } else {
+            // Existing puzzle: update by id
+            await updatePuzzle(puzzle.id, puzzle);
+        }
+        setReloadKey((k) => k + 1);
+        setCurrentView('list');
+    }
 
     const handleBackToList = () => {
         setCurrentView('list');
     };
 
-    function handleSavePuzzle(puzzle: Puzzle) {
-        // After saving, trigger reload on next list view
-        setPendingReload(true);
-        setCurrentView('list');
-        console.log(puzzle);
-    }
-
     function handleRefresh() {
         setReloadKey((k) => k + 1);
-        setHasLoadedList(true);
     }
 
-    const handleSelectPuzzle = (puzzle: import("../firebase/firestore").Puzzle) => {
-        // Convert to Composer2 format
-        const composerPuzzle: import("../features/composer/Composer2").Puzzle = {
-            categories: puzzle.categories.map((name, i) => ({
-                name,
-                words: puzzle.words.slice(i * 4, i * 4 + 4)
-            }))
-        };
-        setSelectedPuzzle(composerPuzzle);
+    const handleSelectPuzzle = (puzzle: Puzzle) => {
+        setSelectedPuzzle(puzzle);
         setCurrentView('composer');
     };
 

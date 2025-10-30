@@ -8,7 +8,7 @@ import {
     where,
     serverTimestamp,
     Timestamp,
-    orderBy
+    updateDoc,
 } from 'firebase/firestore';
 import {db} from './config';
 
@@ -16,7 +16,7 @@ import {db} from './config';
 export interface Puzzle {
     id?: string;
     categories: string[];      // Array of 4 category names
-    createdAt: Timestamp;
+    createdAt?: Timestamp;
     creatorId: string;
     words: string[];           // 4 arrays of 4 words each as a flat 16 element array
 }
@@ -46,6 +46,29 @@ export const createPuzzle = async (puzzle: Omit<Puzzle, 'id' | 'createdAt'>) => 
     }
 };
 
+// Save a FirestorePuzzle, filling in creatorId and createdAt
+export const handleSavePuzzle = async (puzzle: Omit<Puzzle, 'id' | 'creatorId' | 'createdAt'>, userId: string) => {
+    const puzzleToSave = {
+        ...puzzle,
+        creatorId: userId,
+    };
+    return await createPuzzle(puzzleToSave);
+};
+
+// Update an existing puzzle by id
+export const updatePuzzle = async (id: string, puzzle: Puzzle) => {
+    try {
+        const puzzleRef = doc(db, 'puzzles', id);
+        // Remove id from the update object
+        const { id: _, ...updateData } = puzzle;
+        await updateDoc(puzzleRef, updateData);
+        return { id, error: null };
+    } catch (error: any) {
+        console.error('Error updating puzzle:', error);
+        return { id: null, error: error.message };
+    }
+};
+
 // Get puzzles created by a user
 export const getUserPuzzles = async (userId: string) => {
     try {
@@ -60,7 +83,7 @@ export const getUserPuzzles = async (userId: string) => {
         querySnapshot.forEach((doc) => {
             puzzles.push({id: doc.id, ...doc.data()} as Puzzle);
         });
-        puzzles.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+        puzzles.sort((a, b) => (b?.createdAt?.toMillis() || 0) - (a?.createdAt?.toMillis() || 0));
 
         return {puzzles, error: null};
     } catch (error: any) {
@@ -123,4 +146,3 @@ export const getGameState = async (userId: string, puzzleId: string) => {
         return {gameState: null, error: error.message};
     }
 };
-

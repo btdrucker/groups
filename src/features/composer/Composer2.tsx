@@ -1,14 +1,6 @@
 import React, { useState, useMemo } from "react";
 import styles from "./style.module.css";
-
-interface PuzzleCategory {
-    name: string;
-    words: string[]; // length 4
-}
-
-export interface Puzzle {
-    categories: PuzzleCategory[]; // length 4
-}
+import { Puzzle } from '../../firebase/firestore';
 
 interface Props {
     initialPuzzle?: Puzzle;
@@ -16,44 +8,55 @@ interface Props {
     onBack?: () => void;
 }
 
+// Default puzzle for creation
 const emptyPuzzle: Puzzle = {
-    categories: Array(4).fill(null).map(() => ({
-        name: "",
-        words: Array(4).fill("")
-    }))
+    categories: Array(4).fill("") as string[],
+    words: Array(16).fill("") as string[],
+    creatorId: '',
+    createdAt: undefined,
+    id: undefined
 };
 
 function isPuzzleComplete(puzzle: Puzzle) {
-    return puzzle.categories.every(
-        cat => cat.name.trim() !== "" && cat.words.every(word => word.trim() !== "")
-    );
+    return puzzle.categories.every(cat => cat.trim() !== "") &&
+        puzzle.words.every(word => word.trim() !== "");
+}
+
+function isPuzzleStarted(puzzle: Puzzle) {
+    return puzzle.categories.some(cat => cat.trim() !== "") &&
+        puzzle.words.some(word => word.trim() !== "");
 }
 
 function isPuzzleChanged(puzzle: Puzzle, initial?: Puzzle) {
     if (!initial) return true;
     for (let i = 0; i < 4; i++) {
-        if (puzzle.categories[i].name !== initial.categories[i].name) return true;
+        if (puzzle.categories[i] !== initial.categories[i]) return true;
         for (let j = 0; j < 4; j++) {
-            if (puzzle.categories[i].words[j] !== initial.categories[i].words[j]) return true;
+            if (puzzle.words[i * 4 + j] !== initial.words[i * 4 + j]) return true;
         }
     }
     return false;
 }
 
 const Composer2 = ({ initialPuzzle, onSave, onBack }: Props) => {
-    const [puzzle, setPuzzle] = useState<Puzzle>(initialPuzzle || emptyPuzzle);
+    const initialState = initialPuzzle || emptyPuzzle;
+    const [puzzle, setPuzzle] = useState<Puzzle>(initialState);
+
+    // Update puzzle state when initialPuzzle changes
+    React.useEffect(() => {
+        setPuzzle(initialPuzzle || emptyPuzzle);
+    }, [initialPuzzle]);
 
     // Memoize to avoid unnecessary recalculation
     const canSave = useMemo(() => {
-        if (!isPuzzleComplete(puzzle)) return false;
+        if (!isPuzzleStarted(puzzle)) return false;
         return !(initialPuzzle && !isPuzzleChanged(puzzle, initialPuzzle));
-
     }, [puzzle, initialPuzzle]);
 
     const handleCategoryNameChange = (catIdx: number, value: string) => {
         setPuzzle(prev => {
             const categories = prev.categories.map((cat, i) =>
-                i === catIdx ? { ...cat, name: value } : cat
+                i === catIdx ? value : cat
             );
             return { ...prev, categories };
         });
@@ -61,12 +64,11 @@ const Composer2 = ({ initialPuzzle, onSave, onBack }: Props) => {
 
     const handleWordChange = (catIdx: number, wordIdx: number, value: string) => {
         setPuzzle(prev => {
-            const categories = prev.categories.map((cat, i) => {
-                if (i !== catIdx) return cat;
-                const words = cat.words.map((w, j) => (j === wordIdx ? value : w));
-                return { ...cat, words };
+            const words = prev.words.map((w, idx) => {
+                const targetIdx = catIdx * 4 + wordIdx;
+                return idx === targetIdx ? value : w;
             });
-            return { ...prev, categories };
+            return { ...prev, words };
         });
     };
 
@@ -76,12 +78,14 @@ const Composer2 = ({ initialPuzzle, onSave, onBack }: Props) => {
 
     return (
         <div className={styles.composerContainer}>
-            {onBack && (
-                <button className={styles.backButton} onClick={onBack}>
-                    ← Back
-                </button>
-            )}
-            <h2>{initialPuzzle ? "Edit Puzzle" : "Create New Puzzle"}</h2>
+            <div className={styles.composerLeftColumn}>
+                {onBack && (
+                    <button className={styles.backButton} onClick={onBack}>
+                        ← Back
+                    </button>
+                )}
+                <h2>{initialPuzzle ? "Edit Puzzle" : "Create New Puzzle"}</h2>
+            </div>
             <div className={styles.gridContainer}>
                 <table className={styles.gridTable}>
                     <thead>
@@ -99,17 +103,17 @@ const Composer2 = ({ initialPuzzle, onSave, onBack }: Props) => {
                                 <td>
                                     <input
                                         type="text"
-                                        value={cat.name}
+                                        value={cat}
                                         placeholder={`Category ${catIdx + 1}`}
                                         onChange={e => handleCategoryNameChange(catIdx, e.target.value)}
                                         className={styles.categoryInput}
                                     />
                                 </td>
-                                {cat.words.map((word, wordIdx) => (
+                                {[0, 1, 2, 3].map(wordIdx => (
                                     <td key={wordIdx}>
                                         <input
                                             type="text"
-                                            value={word}
+                                            value={puzzle.words[catIdx * 4 + wordIdx]}
                                             placeholder={`Word ${wordIdx + 1}`}
                                             onChange={e => handleWordChange(catIdx, wordIdx, e.target.value)}
                                             className={styles.wordInput}
@@ -121,13 +125,15 @@ const Composer2 = ({ initialPuzzle, onSave, onBack }: Props) => {
                     </tbody>
                 </table>
             </div>
-            <button
-                className={styles.saveButton}
-                onClick={handleSave}
-                disabled={!canSave}
-            >
-                Save
-            </button>
+            <div className={styles.composerLeftColumn}>
+                <button
+                    className={styles.saveButton}
+                    onClick={handleSave}
+                    disabled={!canSave}
+                >
+                    Save
+                </button>
+            </div>
         </div>
     );
 };
