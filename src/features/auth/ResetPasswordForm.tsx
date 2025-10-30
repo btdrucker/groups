@@ -2,31 +2,29 @@ import React, { useState } from "react";
 import styles from "./style.module.css";
 import { classes } from "../../common/classUtils";
 import { isValidEmail } from "../../common/utils";
-import type { AuthMode } from "./AuthScreen";
-import { resetPassword } from "../../firebase/auth";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import {
+    resetPasswordThunk,
+    setAuthMode,
+    selectAuthLoading,
+    selectAuthError
+} from "./slice";
 
-interface ResetPasswordFormProps {
-    onModeChange: (mode: AuthMode) => void;
-}
+const ResetPasswordForm: React.FC = () => {
+    const dispatch = useAppDispatch();
+    const loading = useAppSelector(selectAuthLoading);
+    const error = useAppSelector(selectAuthError);
 
-const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ onModeChange }) => {
     const [email, setEmail] = useState("");
-    const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
-    const [loading, setLoading] = useState(false);
 
     const handleResetPassword = async () => {
         if (isValidEmail(email)) {
-            setLoading(true);
-            setError("");
             setSuccess(false);
-            const { success: resetSuccess, error: authError } = await resetPassword(email);
-            if (authError) {
-                setError(authError);
-            } else if (resetSuccess) {
+            const result = await dispatch(resetPasswordThunk(email));
+            if (resetPasswordThunk.fulfilled.match(result)) {
                 setSuccess(true);
             }
-            setLoading(false);
         }
     };
 
@@ -53,7 +51,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ onModeChange }) =
             <div className={styles.authLinks}>
                 <button
                     className={styles.linkButton}
-                    onClick={() => onModeChange('login')}
+                    onClick={() => dispatch(setAuthMode('login'))}
                     disabled={loading}
                 >
                     Back to sign in

@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import styles from "./style.module.css";
-import type { AuthMode } from "./AuthScreen";
 import { classes } from "../../common/classUtils";
 import { isValidEmail } from "../../common/utils";
-import { signInWithGoogle, signInWithEmail } from "../../firebase/auth";
-
-interface Props {
-    onModeChange: (mode: AuthMode) => void;
-}
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import {
+    signInWithGoogleThunk,
+    signInWithEmailThunk,
+    setAuthMode,
+    selectAuthLoading,
+    selectAuthError
+} from "./slice";
 
 // Firebase authError values:
 // auth/invalid-email - The email address is badly formatted
@@ -20,35 +22,21 @@ interface Props {
 // auth/operation-not-allowed - Email/password accounts are not enabled in the Firebase Console
 // auth/requires-recent-login - The user's credential is too old and requires re-authentication
 
-const LoginForm = ({onModeChange}: Props) => {
+const LoginForm = () => {
+    const dispatch = useAppDispatch();
+    const loading = useAppSelector(selectAuthLoading);
+    const error = useAppSelector(selectAuthError);
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
     const isFormValid = isValidEmail(email) && !!password;
 
     const handleGoogleLogin = async () => {
-        setLoading(true);
-        setError("");
-        const { user, error: authError } = await signInWithGoogle();
-        if (authError) {
-            setError(authError);
-        } else if (user) {
-            console.log("Google login successful:", user.email);
-        }
-        setLoading(false);
+        dispatch(signInWithGoogleThunk());
     };
 
     const handleEmailLogin = async () => {
-        setLoading(true);
-        setError("");
-        const { user, error: authError } = await signInWithEmail(email, password);
-        if (authError) {
-            setError(authError);
-        } else if (user) {
-            console.log("Email login successful:", user.email);
-        }
-        setLoading(false);
+        dispatch(signInWithEmailThunk({ email, password }));
     };
 
     return (
@@ -89,14 +77,14 @@ const LoginForm = ({onModeChange}: Props) => {
             <div className={styles.authLinks}>
                 <button
                     className={styles.linkButton}
-                    onClick={() => onModeChange('signup')}
+                    onClick={() => dispatch(setAuthMode('signup'))}
                     disabled={loading}
                 >
                     Create account
                 </button>
                 <button
                     className={styles.linkButton}
-                    onClick={() => onModeChange('reset')}
+                    onClick={() => dispatch(setAuthMode('reset'))}
                     disabled={loading}
                 >
                     Forgot password?

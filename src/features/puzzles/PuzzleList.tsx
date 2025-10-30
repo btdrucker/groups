@@ -1,39 +1,48 @@
-import React, {useEffect, useState} from 'react';
-import {User} from 'firebase/auth';
-import {getUserPuzzles, Puzzle} from '../../firebase/firestore';
+import React, {useEffect} from 'react';
 import styles from './style.module.css';
 import PuzzleListItem from './PuzzleListItem';
+import { useAppDispatch, useAppSelector } from '../../app/hooks';
+import {
+    fetchUserPuzzles,
+    selectPuzzles,
+    selectPuzzlesLoading,
+    selectPuzzlesError,
+    selectPuzzle,
+    clearSelectedPuzzle
+} from './slice';
+import { selectUser } from '../auth/slice';
+import { navigateToComposer } from '../app/slice';
+import { Puzzle } from '../../firebase/firestore';
 
-interface Props {
-    user: User;
-    onCreateNew: () => void;
-    onSelectPuzzle?: (puzzle: Puzzle) => void;
-    reloadKey?: number;
-    onRefresh?: () => void;
-}
-
-const PuzzleList = ({user, onCreateNew, onSelectPuzzle, reloadKey, onRefresh}: Props) => {
-    const [puzzles, setPuzzles] = useState<Puzzle[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+const PuzzleList = () => {
+    const dispatch = useAppDispatch();
+    const user = useAppSelector(selectUser);
+    const puzzles = useAppSelector(selectPuzzles);
+    const loading = useAppSelector(selectPuzzlesLoading);
+    const error = useAppSelector(selectPuzzlesError);
     const showList = !loading && !error;
 
     useEffect(() => {
-        const fetchPuzzles = async () => {
-            setLoading(true);
-            const {puzzles, error} = await getUserPuzzles(user.uid);
+        if (user?.uid) {
+            dispatch(fetchUserPuzzles(user.uid));
+        }
+    }, [user?.uid, dispatch]);
 
-            if (error) {
-                setError(error);
-            } else {
-                setPuzzles(puzzles);
-            }
+    const handleCreateNew = () => {
+        dispatch(clearSelectedPuzzle());
+        dispatch(navigateToComposer());
+    };
 
-            setLoading(false);
-        };
+    const handleRefresh = () => {
+        if (user?.uid) {
+            dispatch(fetchUserPuzzles(user.uid));
+        }
+    };
 
-        fetchPuzzles();
-    }, [user.uid, reloadKey]);
+    const handleSelectPuzzle = (puzzle: Puzzle) => {
+        dispatch(selectPuzzle(puzzle));
+        dispatch(navigateToComposer());
+    };
 
     return (
         <div className={styles.puzzleListContainer}>
@@ -41,10 +50,10 @@ const PuzzleList = ({user, onCreateNew, onSelectPuzzle, reloadKey, onRefresh}: P
                 <h2>My Puzzles</h2>
                 {!loading && (
                     <div style={{marginTop: 12}}>
-                        <button className={styles.createButton} onClick={onCreateNew}>
+                        <button className={styles.createButton} onClick={handleCreateNew}>
                             Create New Puzzle
                         </button>
-                        <button className={styles.createButton} onClick={onRefresh} style={{marginLeft: 8}}>
+                        <button className={styles.createButton} onClick={handleRefresh} style={{marginLeft: 8}}>
                             Refresh
                         </button>
                     </div>
@@ -64,7 +73,7 @@ const PuzzleList = ({user, onCreateNew, onSelectPuzzle, reloadKey, onRefresh}: P
                             <PuzzleListItem
                                 key={puzzle.id}
                                 puzzle={puzzle}
-                                onSelectPuzzle={() => onSelectPuzzle && onSelectPuzzle(puzzle)}
+                                onSelectPuzzle={() => handleSelectPuzzle(puzzle)}
                             />
                         ))}
                     </div>

@@ -1,12 +1,10 @@
 import React, { useState, useMemo } from "react";
 import styles from "./style.module.css";
 import { Puzzle } from '../../firebase/firestore';
-
-interface Props {
-    initialPuzzle?: Puzzle;
-    onSave: (puzzle: Puzzle) => void;
-    onBack?: () => void;
-}
+import { useAppDispatch, useAppSelector } from '../../app/hooks';
+import { selectUser } from '../auth/slice';
+import { createPuzzleThunk, updatePuzzleThunk, selectSelectedPuzzle } from '../puzzles/slice';
+import { navigateToList } from '../app/slice';
 
 // Default puzzle for creation
 const emptyPuzzle: Puzzle = {
@@ -23,7 +21,7 @@ function isPuzzleComplete(puzzle: Puzzle) {
 }
 
 function isPuzzleStarted(puzzle: Puzzle) {
-    return puzzle.categories.some(cat => cat.trim() !== "") &&
+    return puzzle.categories.some(cat => cat.trim() !== "") ||
         puzzle.words.some(word => word.trim() !== "");
 }
 
@@ -38,7 +36,11 @@ function isPuzzleChanged(puzzle: Puzzle, initial?: Puzzle) {
     return false;
 }
 
-const Composer = ({ initialPuzzle, onSave, onBack }: Props) => {
+const Composer = () => {
+    const dispatch = useAppDispatch();
+    const user = useAppSelector(selectUser);
+    const initialPuzzle = useAppSelector(selectSelectedPuzzle);
+
     const initialState = initialPuzzle || emptyPuzzle;
     const [puzzle, setPuzzle] = useState<Puzzle>(initialState);
 
@@ -72,18 +74,28 @@ const Composer = ({ initialPuzzle, onSave, onBack }: Props) => {
         });
     };
 
-    const handleSave = () => {
-        if (canSave) onSave(puzzle);
+    const handleSave = async () => {
+        if (!canSave || !user) return;
+
+        if (puzzle.id) {
+            await dispatch(updatePuzzleThunk(puzzle));
+        } else {
+            await dispatch(createPuzzleThunk({ puzzle, userId: user.uid }));
+        }
+
+        dispatch(navigateToList());
+    };
+
+    const handleBack = () => {
+        dispatch(navigateToList());
     };
 
     return (
         <div className={styles.composerContainer}>
             <div className={styles.composerLeftColumn}>
-                {onBack && (
-                    <button className={styles.backButton} onClick={onBack}>
-                        ← Back
-                    </button>
-                )}
+                <button className={styles.backButton} onClick={handleBack}>
+                    ← Back
+                </button>
                 <h2>{initialPuzzle ? "Edit Puzzle" : "Create New Puzzle"}</h2>
             </div>
             <div className={styles.gridContainer}>

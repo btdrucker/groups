@@ -2,31 +2,26 @@ import React, {useState} from "react";
 import styles from "./style.module.css";
 import {classes} from "../../common/classUtils";
 import {isValidEmail} from "../../common/utils";
-import type { AuthMode } from "./AuthScreen";
-import { signUpWithEmail } from "../../firebase/auth";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import {
+    signUpWithEmailThunk,
+    setAuthMode,
+    selectAuthLoading,
+    selectAuthError
+} from "./slice";
 
-interface Props {
-    onModeChange: (mode: AuthMode) => void;
-}
+const SignupForm = () => {
+    const dispatch = useAppDispatch();
+    const loading = useAppSelector(selectAuthLoading);
+    const error = useAppSelector(selectAuthError);
 
-const SignupForm = ({onModeChange}: Props) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirm, setConfirm] = useState("");
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
     const isFormValid = isValidEmail(email) && !!password && password === confirm;
 
     async function handleSignup() {
-        setLoading(true);
-        setError("");
-        const { user, error: authError } = await signUpWithEmail(email, password);
-        if (authError) {
-            setError(authError);
-        } else if (user) {
-            console.log("Sign up successful:", user.email);
-        }
-        setLoading(false);
+        dispatch(signUpWithEmailThunk({ email, password }));
     }
 
     return (
@@ -67,7 +62,7 @@ const SignupForm = ({onModeChange}: Props) => {
             <div className={styles.authLinks}>
                 <button
                     className={styles.linkButton}
-                    onClick={() => onModeChange('login')}
+                    onClick={() => dispatch(setAuthMode('login'))}
                     disabled={loading}
                 >
                     Back to sign in

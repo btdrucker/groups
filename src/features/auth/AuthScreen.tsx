@@ -1,25 +1,25 @@
-import React, { useState } from "react";
+import React from "react";
 import styles from "./style.module.css";
 import LoginForm from "./LoginForm";
 import SignupForm from "./SignupForm";
 import ResetPasswordForm from "./ResetPasswordForm";
-
-export type AuthMode = 'login' | 'signup' | 'reset';
+import { useAppSelector } from "../../app/hooks";
+import { selectAuthMode } from "./slice";
 
 const AuthScreen = () => {
-    const [mode, setMode] = useState<AuthMode>('login');
+    const mode = useAppSelector(selectAuthMode);
 
     return (
         <div className={styles.authScreenContainer}>
             <div className={styles.authBox}>
                 {mode === 'login' && (
-                    <LoginForm onModeChange={setMode} />
+                    <LoginForm />
                 )}
                 {mode === 'signup' && (
-                    <SignupForm onModeChange={setMode} />
+                    <SignupForm />
                 )}
                 {mode === 'reset' && (
-                    <ResetPasswordForm onModeChange={setMode} />
+                    <ResetPasswordForm />
                 )}
             </div>
         </div>

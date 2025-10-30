@@ -1,24 +1,20 @@
 import React from "react";
 import { User } from "firebase/auth";
-import { signOut } from "../../firebase/auth";
 import styles from "./style.module.css";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { signOutThunk, selectAuthLoading, selectAuthError } from "./slice";
 
 interface Props {
     user: User;
 }
 
 const WelcomeUser = ({ user }: Props) => {
-    const [loading, setLoading] = React.useState(false);
-    const [error, setError] = React.useState("");
+    const dispatch = useAppDispatch();
+    const loading = useAppSelector(selectAuthLoading);
+    const error = useAppSelector(selectAuthError);
 
     const handleSignOut = async () => {
-        setLoading(true);
-        setError("");
-        const { error: authError } = await signOut();
-        if (authError) {
-            setError(authError);
-        }
-        setLoading(false);
+        dispatch(signOutThunk());
     };
 
     const displayName = user.displayName || user.email || "User";
