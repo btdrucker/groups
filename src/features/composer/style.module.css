@@ -67,3 +67,44 @@
     background-color: darksalmon;
     min-height: 30pt;
 }
+
+.gridContainer {
+    margin: 1rem 0;
+    display: flex;
+    justify-content: center;
+}
+.gridTable {
+    border-collapse: collapse;
+    width: auto;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.gridTable th, .gridTable td {
+    border: 1px solid #ddd;
+    padding: 0.5rem;
+    text-align: center;
+}
+.categoryInput {
+    width: 120px;
+    padding: 0.3rem;
+    font-weight: bold;
+}
+.wordInput {
+    width: 100px;
+    padding: 0.3rem;
+}
+.saveButton {
+    margin-top: 1.5rem;
+    padding: 0.7rem 2rem;
+    font-size: 1.1rem;
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.saveButton:disabled {
+    background: #aaa;
+    cursor: not-allowed;
+}
