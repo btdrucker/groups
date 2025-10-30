@@ -1,5 +1,5 @@
 import React from "react";
-import Composer2 from "../features/composer/Composer2";
+import Composer from "../features/composer/Composer";
 import AuthScreen from "../features/auth/AuthScreen";
 import WelcomeUser from "../features/auth/WelcomeUser";
 import PuzzleList from "../features/puzzles/PuzzleList";
@@ -77,7 +77,7 @@ const App = () => {
                             onSelectPuzzle={handleSelectPuzzle}
                         />
                     ) : (
-                        <Composer2
+                        <Composer
                             initialPuzzle={selectedPuzzle}
                             onSave={handleSavePuzzle}
                             onBack={handleBackToList}
