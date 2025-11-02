@@ -2,6 +2,7 @@
     padding: 2rem;
     max-width: 1200px;
     margin: 0 auto;
+    font-family: sans-serif;
 }
 
 .puzzleListHeader {
@@ -135,6 +136,7 @@
     padding: 2rem;
     max-width: 800px;
     margin: 0 auto;
+    font-family: sans-serif;
 }
 
 .puzzlePlayerHeader {
@@ -394,6 +396,20 @@
 
 .mistakeDotActive {
     background-color: #333;
+}
+
+/* Duplicate Guess Message */
+.duplicateGuessMessage {
+    text-align: center;
+    padding: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #FF9800;
+    background-color: #FFF3E0;
+    border: 2px solid #FFB74D;
+    border-radius: 8px;
+    margin: 1rem 0;
+    animation: fadeIn 0.3s ease-in-out;
 }
 
 @keyframes fadeIn {

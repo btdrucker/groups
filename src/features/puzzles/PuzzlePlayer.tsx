@@ -23,6 +23,8 @@ const PuzzlePlayer = () => {
     const [isRevealing, setIsRevealing] = useState(false);
     const [revealIndex, setRevealIndex] = useState(0);
     const [shakingWords, setShakingWords] = useState<Set<string>>(new Set());
+    const [guessHistory, setGuessHistory] = useState<Set<string>>(new Set());
+    const [duplicateGuessMessage, setDuplicateGuessMessage] = useState(false);
 
     useEffect(() => {
         // Shuffle the words when the component mounts or puzzle changes
@@ -34,6 +36,8 @@ const PuzzlePlayer = () => {
             setMistakesRemaining(4);
             setIsRevealing(false);
             setRevealIndex(0);
+            setGuessHistory(new Set());
+            setDuplicateGuessMessage(false);
         }
     }, [selectedPuzzle]);
 
@@ -117,6 +121,28 @@ const PuzzlePlayer = () => {
         if (!selectedPuzzle || selectedWords.size !== 4) return;
 
         const selectedWordsArray = Array.from(selectedWords);
+
+        // Create a normalized guess key (sorted words joined with a delimiter)
+        // This ensures that the same 4 words in any order produce the same key
+        const guessKey = [...selectedWordsArray].sort().join('|');
+
+        // Check if this guess has been made before
+        if (guessHistory.has(guessKey)) {
+            // Duplicate guess! Show message and don't deduct mistake
+            setDuplicateGuessMessage(true);
+            setSelectedWords(new Set()); // Deselect the words
+            setTimeout(() => {
+                setDuplicateGuessMessage(false);
+            }, 2000);
+            return;
+        }
+
+        // Add this guess to history
+        setGuessHistory(prev => {
+            const newHistory = new Set(prev);
+            newHistory.add(guessKey);
+            return newHistory;
+        });
 
         // Check each category to see if it matches the selected words
         // Each category has 4 words, and the words array is structured as:
@@ -233,6 +259,12 @@ const PuzzlePlayer = () => {
                             />
                         ))}
                     </div>
+                </div>
+            )}
+
+            {duplicateGuessMessage && (
+                <div className={styles.duplicateGuessMessage}>
+                    Already guessed!
                 </div>
             )}
 
