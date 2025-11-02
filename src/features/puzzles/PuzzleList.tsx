@@ -11,7 +11,7 @@ import {
     clearSelectedPuzzle
 } from './slice';
 import { selectUser } from '../auth/slice';
-import { navigateToComposer } from '../app/slice';
+import { navigateToComposer, navigateToPlayer } from '../app/slice';
 import { Puzzle } from '../../firebase/firestore';
 
 const PuzzleList = () => {
@@ -44,6 +44,11 @@ const PuzzleList = () => {
         dispatch(navigateToComposer());
     };
 
+    const handlePlayPuzzle = (puzzle: Puzzle) => {
+        dispatch(selectPuzzle(puzzle));
+        dispatch(navigateToPlayer());
+    };
+
     return (
         <div className={styles.puzzleListContainer}>
             <div className={styles.puzzleListHeader}>
@@ -74,6 +79,7 @@ const PuzzleList = () => {
                                 key={puzzle.id}
                                 puzzle={puzzle}
                                 onSelectPuzzle={() => handleSelectPuzzle(puzzle)}
+                                onPlayPuzzle={() => handlePlayPuzzle(puzzle)}
                             />
                         ))}
                     </div>
