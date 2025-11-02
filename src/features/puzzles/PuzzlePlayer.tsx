@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { selectSelectedPuzzle } from './slice';
 import { navigateToList } from '../app/slice';
 import { selectUser } from '../auth/slice';
+import { getGameState, saveGameState } from '../../firebase/firestore';
 
 interface SolvedCategory {
     name: string;
@@ -11,6 +12,37 @@ interface SolvedCategory {
     categoryIndex: number;
     isFaded?: boolean;
 }
+
+// Helper function to convert a guess (set of 4 words) to a 16-bit number
+// The bit position is determined by the word's position in the puzzle.words array
+const guessToNumber = (selectedWords: string[], allWords: string[]): number => {
+    let result = 0;
+    selectedWords.forEach(word => {
+        const index = allWords.indexOf(word);
+        if (index !== -1) {
+            result |= (1 << index);
+        }
+    });
+    return result;
+};
+
+// Helper function to convert a 16-bit number back to a set of word indices
+const numberToWordIndices = (guessNumber: number): number[] => {
+    const indices: number[] = [];
+    for (let i = 0; i < 16; i++) {
+        if (guessNumber & (1 << i)) {
+            indices.push(i);
+        }
+    }
+    return indices;
+};
+
+// Helper function to check if a guess matches a category
+const isGuessCorrect = (guessNumber: number, categoryIndex: number): boolean => {
+    const categoryMask = 0b1111 << (categoryIndex * 4);
+    const guessMasked = guessNumber & categoryMask;
+    return guessMasked === categoryMask && (guessNumber & ~categoryMask) === 0;
+};
 
 const PuzzlePlayer = () => {
     const dispatch = useAppDispatch();
@@ -25,21 +57,96 @@ const PuzzlePlayer = () => {
     const [shakingWords, setShakingWords] = useState<Set<string>>(new Set());
     const [guessHistory, setGuessHistory] = useState<Set<string>>(new Set());
     const [duplicateGuessMessage, setDuplicateGuessMessage] = useState(false);
+    const [guessNumbers, setGuessNumbers] = useState<number[]>([]); // Track guesses as 16-bit numbers
+    const [isLoadingGameState, setIsLoadingGameState] = useState(false);
 
+    // Load game state from Firestore when component mounts or puzzle changes
     useEffect(() => {
-        // Shuffle the words when the component mounts or puzzle changes
-        if (selectedPuzzle && selectedPuzzle.words) {
-            const shuffled = [...selectedPuzzle.words].sort(() => Math.random() - 0.5);
-            setShuffledWords(shuffled);
-            setSelectedWords(new Set());
-            setSolvedCategories([]);
-            setMistakesRemaining(4);
+        const loadGameState = async () => {
+            if (!selectedPuzzle?.id || !currentUser?.uid) return;
+
+            setIsLoadingGameState(true);
+            const { gameState, error } = await getGameState(currentUser.uid, selectedPuzzle.id);
+
+            if (error) {
+                console.error('Error loading game state:', error);
+                setIsLoadingGameState(false);
+                return;
+            }
+
+            if (gameState && gameState.guesses.length > 0) {
+                // Restore game state from saved guesses
+                const savedGuesses = gameState.guesses;
+                setGuessNumbers(savedGuesses);
+
+                // Reconstruct the game state from the saved guesses
+                const solved: SolvedCategory[] = [];
+                const incorrectGuesses: number[] = [];
+                const allGuessKeys = new Set<string>();
+
+                savedGuesses.forEach(guessNumber => {
+                    // Check if this guess was correct
+                    let wasCorrect = false;
+                    for (let categoryIndex = 0; categoryIndex < selectedPuzzle.categories.length; categoryIndex++) {
+                        if (isGuessCorrect(guessNumber, categoryIndex)) {
+                            const categoryWords = selectedPuzzle.words.slice(categoryIndex * 4, (categoryIndex + 1) * 4);
+                            const sortedWords = [...categoryWords].sort();
+                            solved.push({
+                                name: selectedPuzzle.categories[categoryIndex],
+                                words: sortedWords,
+                                categoryIndex
+                            });
+                            wasCorrect = true;
+                            break;
+                        }
+                    }
+
+                    if (!wasCorrect) {
+                        incorrectGuesses.push(guessNumber);
+                    }
+
+                    // Add to guess history
+                    const wordIndices = numberToWordIndices(guessNumber);
+                    const words = wordIndices.map(i => selectedPuzzle.words[i]);
+                    const guessKey = [...words].sort().join('|');
+                    allGuessKeys.add(guessKey);
+                });
+
+                // Set the solved categories
+                setSolvedCategories(solved);
+
+                // Set mistakes remaining based on incorrect guesses
+                const mistakes = Math.max(0, 4 - incorrectGuesses.length);
+                setMistakesRemaining(mistakes);
+
+                // Set guess history
+                setGuessHistory(allGuessKeys);
+
+                // Set shuffled words (excluding solved category words)
+                const solvedWords = new Set(solved.flatMap(cat => cat.words));
+                const remainingWords = selectedPuzzle.words.filter(word => !solvedWords.has(word));
+                const shuffled = [...remainingWords].sort(() => Math.random() - 0.5);
+                setShuffledWords(shuffled);
+            } else {
+                // No saved game state, start fresh
+                const shuffled = [...selectedPuzzle.words].sort(() => Math.random() - 0.5);
+                setShuffledWords(shuffled);
+                setSelectedWords(new Set());
+                setSolvedCategories([]);
+                setMistakesRemaining(4);
+                setGuessNumbers([]);
+                setGuessHistory(new Set());
+            }
+
             setIsRevealing(false);
             setRevealIndex(0);
-            setGuessHistory(new Set());
             setDuplicateGuessMessage(false);
-        }
-    }, [selectedPuzzle]);
+            setSelectedWords(new Set());
+            setIsLoadingGameState(false);
+        };
+
+        loadGameState();
+    }, [selectedPuzzle, currentUser]);
 
     // Trigger reveal animation when game is lost
     useEffect(() => {
@@ -117,8 +224,8 @@ const PuzzlePlayer = () => {
         setSelectedWords(new Set());
     };
 
-    const handleSubmit = () => {
-        if (!selectedPuzzle || selectedWords.size !== 4) return;
+    const handleSubmit = async () => {
+        if (!selectedPuzzle || selectedWords.size !== 4 || !currentUser?.uid || !selectedPuzzle.id) return;
 
         const selectedWordsArray = Array.from(selectedWords);
 
@@ -136,6 +243,13 @@ const PuzzlePlayer = () => {
             }, 2000);
             return;
         }
+
+        // Convert the guess to a 16-bit number
+        const guessNumber = guessToNumber(selectedWordsArray, selectedPuzzle.words);
+
+        // Add to guess numbers for saving
+        const updatedGuessNumbers = [...guessNumbers, guessNumber];
+        setGuessNumbers(updatedGuessNumbers);
 
         // Add this guess to history
         setGuessHistory(prev => {
@@ -168,6 +282,14 @@ const PuzzlePlayer = () => {
 
                 // Clear selection
                 setSelectedWords(new Set());
+
+                // Save game state to Firestore
+                await saveGameState({
+                    userId: currentUser.uid,
+                    puzzleId: selectedPuzzle.id,
+                    guesses: updatedGuessNumbers
+                });
+
                 return;
             }
         }
@@ -177,10 +299,17 @@ const PuzzlePlayer = () => {
         setShakingWords(new Set(selectedWords));
 
         // After shake animation completes (500ms), deselect and remove mistake
-        setTimeout(() => {
+        setTimeout(async () => {
             setShakingWords(new Set());
             setSelectedWords(new Set());
             setMistakesRemaining(prev => prev - 1);
+
+            // Save game state to Firestore
+            await saveGameState({
+                userId: currentUser.uid,
+                puzzleId: selectedPuzzle.id!,
+                guesses: updatedGuessNumbers
+            });
         }, 500);
     };
 
@@ -193,6 +322,14 @@ const PuzzlePlayer = () => {
             <div className={styles.puzzlePlayerContainer}>
                 <p>No puzzle selected</p>
                 <button onClick={handleBack}>Back to List</button>
+            </div>
+        );
+    }
+
+    if (isLoadingGameState) {
+        return (
+            <div className={styles.puzzlePlayerContainer}>
+                <p>Loading game state...</p>
             </div>
         );
     }

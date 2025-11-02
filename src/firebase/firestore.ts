@@ -26,7 +26,6 @@ export interface GameState {
     id?: string;
     guesses: number[];           // Array of guesses represented by 16-bit numbers (one bit for each word)
     puzzleId: string;
-    solvedCategories: number[];  // Indices of solved categories
     userId: string;
 }
 
@@ -105,12 +104,34 @@ export const getPuzzle = async (puzzleId: string) => {
 // Create or update game state
 export const saveGameState = async (gameState: Omit<GameState, 'id'>) => {
     try {
-        const gameStateData = {
-            ...gameState,
-        };
+        // First, check if a game state already exists for this user/puzzle combination
+        const q = query(
+            collection(db, 'gameStates'),
+            where('userId', '==', gameState.userId),
+            where('puzzleId', '==', gameState.puzzleId)
+        );
 
-        const docRef = await addDoc(collection(db, 'gameStates'), gameStateData);
-        return {id: docRef.id, error: null};
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+            // Update existing game state
+            const existingDocId = querySnapshot.docs[0].id;
+            const docRef = doc(db, 'gameStates', existingDocId);
+
+            await updateDoc(docRef, {
+                guesses: gameState.guesses,
+            });
+
+            return {id: existingDocId, error: null};
+        } else {
+            // Create new game state
+            const gameStateData = {
+                ...gameState,
+            };
+
+            const docRef = await addDoc(collection(db, 'gameStates'), gameStateData);
+            return {id: docRef.id, error: null};
+        }
     } catch (error: any) {
         console.error('Error saving game state:', error);
         return {id: null, error: error.message};
