@@ -177,7 +177,7 @@
 
 .wordGrid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, 160px);
     gap: 0.75rem;
     margin-bottom: 2rem;
 }
@@ -191,8 +191,9 @@
     border: 2px solid #e0e0e0;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
-    min-height: 80px;
+    transition: all 0.6s ease;
+    width: 160px;
+    height: 80px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -204,6 +205,19 @@
     border-color: #2196F3;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.wordButton:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    width: 160px;
+    height: 80px;
+}
+
+.wordButton:disabled:hover {
+    border-color: #e0e0e0;
+    transform: none;
+    box-shadow: none;
 }
 
 .selectedWord {
@@ -249,14 +263,175 @@
 
 .actionButton:disabled {
     background-color: #cccccc;
-    color: #666666;
     cursor: not-allowed;
-    opacity: 0.6;
+    transform: none;
 }
 
 .actionButton:disabled:hover {
     background-color: #cccccc;
     transform: none;
     box-shadow: none;
+}
+
+/* Solved Category Row Styles */
+.solvedCategoryRow {
+    grid-column: 1 / -1;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.25rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    height: 80px;
+}
+
+/* Category 0: Yellow */
+.solvedCategoryRow[data-category-index="0"] {
+    background-color: #E6C200;
+    color: #1a1a1a;
+}
+
+/* Category 1: Green */
+.solvedCategoryRow[data-category-index="1"] {
+    background-color: #388E3C;
+    color: #1a1a1a;
+}
+
+/* Category 2: Cornflower Blue */
+.solvedCategoryRow[data-category-index="2"] {
+    background-color: #5282D9;
+    color: #1a1a1a;
+}
+
+/* Category 3: Purple */
+.solvedCategoryRow[data-category-index="3"] {
+    background-color: #9370DB;
+    color: #1a1a1a;
+}
+
+/* Faded category for missed/revealed categories */
+.fadedCategory {
+    box-shadow: none !important;
+    color: #888888 !important;
+}
+
+.fadedCategory[data-category-index="0"] {
+    background-color: #FFF9CC !important;
+}
+
+.fadedCategory[data-category-index="1"] {
+    background-color: #C8E6C9 !important;
+}
+
+.fadedCategory[data-category-index="2"] {
+    background-color: #D4E3F7 !important;
+}
+
+.fadedCategory[data-category-index="3"] {
+    background-color: #E8DEF8 !important;
+}
+
+.categoryName {
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.categoryWords {
+    font-size: 0.9rem;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+/* Congratulations Message */
+.congratulations {
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    animation: celebration 0.6s ease-in-out;
+}
+
+/* Game Over Message */
+.gameOver {
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    animation: fadeIn 0.6s ease-in-out;
+}
+
+/* Mistakes Remaining */
+.mistakesContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1rem 0;
+}
+
+.mistakesLabel {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.mistakesDots {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.mistakeDot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background-color: #e0e0e0;
+    transition: background-color 0.3s ease;
+}
+
+.mistakeDotActive {
+    background-color: #333;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes celebration {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-4px);
+    }
+    20%, 40%, 60%, 80% {
+        transform: translateX(4px);
+    }
+}
+
+.shakeWord {
+    animation: shake 0.75s ease-in-out;
 }
 
