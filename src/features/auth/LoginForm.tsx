@@ -44,7 +44,7 @@ const LoginForm = () => {
             <h1>Sign In</h1>
             {error && <div className={styles.errorMessage}>{error}</div>}
             <button
-                className={styles.authButton}
+                className={styles.actionButton}
                 onClick={handleGoogleLogin}
                 disabled={loading}
             >
@@ -68,7 +68,7 @@ const LoginForm = () => {
                 disabled={loading}
             />
             <button
-                className={styles.authButton}
+                className={styles.actionButton}
                 disabled={!isFormValid || loading}
                 onClick={handleEmailLogin}
             >

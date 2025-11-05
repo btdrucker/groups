@@ -38,21 +38,6 @@
     font-weight: 500;
 }
 
-.logoutButton {
-    background: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 0.5rem 1.25rem;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.logoutButton:hover {
-    background: #c82333;
-}
-
 .actionButton.logout {
     background-color: #dc3545;
 }

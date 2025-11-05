@@ -2,8 +2,8 @@ import React from "react";
 import Composer from "../composer/Composer";
 import AuthScreen from "../auth/AuthScreen";
 import WelcomeUser from "./WelcomeUser";
-import PuzzleList from "../puzzles/PuzzleList";
-import PuzzlePlayer from "../puzzles/PuzzlePlayer";
+import PuzzleList from "../puzzle-list/PuzzleList";
+import Player from "../player/Player";
 import {onAuthStateChange} from "../../firebase/auth";
 import styles from "./style.module.css";
 import { useAppDispatch, useAppSelector } from "../../common/hooks";
@@ -34,12 +34,12 @@ const App = () => {
             {user && <WelcomeUser user={user}/>}
             <div className={styles.mainContent}>
                 {user ? (
-                    currentView === 'list' ? (
+                    currentView === 'compose-list' ? (
                         <PuzzleList />
                     ) : currentView === 'composer' ? (
                         <Composer />
                     ) : (
-                        <PuzzlePlayer />
+                        <Player />
                     )
                 ) : (
                     <AuthScreen/>

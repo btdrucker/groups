@@ -42,7 +42,7 @@ const ResetPasswordForm: React.FC = () => {
                 disabled={loading}
             />
             <button
-                className={styles.authButton}
+                className={styles.actionButton}
                 disabled={!isValidEmail(email) || loading}
                 onClick={handleResetPassword}
             >

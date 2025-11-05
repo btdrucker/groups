@@ -18,7 +18,7 @@ const initialState: PuzzlesState = {
 
 // Async thunks
 export const fetchUserPuzzles = createAsyncThunk(
-    'puzzles/fetchUserPuzzles',
+    'puzzle-list/fetchUserPuzzles',
     async (userId: string, {rejectWithValue}) => {
         const {puzzles, error} = await getUserPuzzles(userId);
         if (error) {
@@ -43,7 +43,7 @@ const puzzlesSlice = createSlice({
         },
     },
     extraReducers: (builder) => {
-        // Fetch user puzzles
+        // Fetch user puzzle-list
         builder.addCase(fetchUserPuzzles.pending, (state) => {
             state.loading = true;
             state.error = null;

@@ -21,7 +21,7 @@ const initialState: PuzzlesState = {
 };
 
 export const createPuzzleThunk = createAsyncThunk(
-    'puzzles/createPuzzle',
+    'puzzle-list/createPuzzle',
     async ({ puzzle, userId }: { puzzle: Puzzle; userId: string }, { rejectWithValue }) => {
         const { id, error } = await createPuzzleFirestore(puzzle, userId);
         if (error || !id) {
@@ -32,7 +32,7 @@ export const createPuzzleThunk = createAsyncThunk(
 );
 
 export const updatePuzzleThunk = createAsyncThunk(
-    'puzzles/updatePuzzle',
+    'puzzle-list/updatePuzzle',
     async (puzzle: Puzzle, { rejectWithValue }) => {
         const { error } = await updatePuzzleFirestore(puzzle);
         if (error) {

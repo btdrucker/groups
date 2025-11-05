@@ -53,7 +53,7 @@ const SignupForm = () => {
                 disabled={loading}
             />
             <button
-                className={styles.authButton}
+                className={styles.actionButton}
                 disabled={!isFormValid || loading}
                 onClick={handleSignup}
             >

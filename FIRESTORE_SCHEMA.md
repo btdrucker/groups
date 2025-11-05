@@ -35,7 +35,7 @@ You need to set up Firestore security rules in the Firebase Console. Go to Fires
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow users to read and write their own puzzles
+    // Allow users to read and write their own puzzle-list
     match /puzzles/{puzzleId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.auth.uid == request.resource.data.creatorId;

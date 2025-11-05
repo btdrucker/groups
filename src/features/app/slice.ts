@@ -1,13 +1,13 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-export type View = 'list' | 'composer' | 'player';
+export type View = 'compose-list' | 'composer' | 'player';
 
 interface AppState {
     currentView: View;
 }
 
 const initialState: AppState = {
-    currentView: 'list',
+    currentView: 'compose-list',
 };
 
 const appSlice = createSlice({
@@ -18,7 +18,7 @@ const appSlice = createSlice({
             state.currentView = action.payload;
         },
         navigateToList: (state) => {
-            state.currentView = 'list';
+            state.currentView = 'compose-list';
         },
         navigateToComposer: (state) => {
             state.currentView = 'composer';

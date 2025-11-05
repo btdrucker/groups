@@ -61,7 +61,7 @@ export const updatePuzzle = async (puzzle: Puzzle) => {
     }
 };
 
-// Get puzzles created by a user
+// Get puzzle-list created by a user
 export const getUserPuzzles = async (userId: string) => {
     try {
         const q = query(
@@ -79,7 +79,7 @@ export const getUserPuzzles = async (userId: string) => {
 
         return {puzzles, error: null};
     } catch (error: any) {
-        console.error('Error getting user puzzles:', error);
+        console.error('Error getting user puzzle-list:', error);
         return {puzzles: [], error: error.message};
     }
 };

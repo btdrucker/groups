@@ -4,7 +4,7 @@ import storage from 'redux-persist/lib/storage'
 import logger from 'redux-logger'
 import composerReducer from '../features/composer/slice'
 import authReducer from '../features/auth/slice'
-import puzzlesReducer from '../features/puzzles/slice'
+import puzzlesReducer from '../features/puzzle-list/slice'
 import appReducer from '../features/app/slice'
 
 const persistConfig = {
