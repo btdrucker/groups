@@ -1,7 +1,7 @@
 import React, {useEffect} from 'react';
 import styles from './style.module.css';
 import PuzzleListItem from './PuzzleListItem';
-import { useAppDispatch, useAppSelector } from '../../app/hooks';
+import { useAppDispatch, useAppSelector } from '../../common/hooks';
 import {
     fetchUserPuzzles,
     selectPuzzles,
@@ -52,13 +52,13 @@ const PuzzleList = () => {
     return (
         <div className={styles.puzzleListContainer}>
             <div className={styles.puzzleListHeader}>
-                <h2>My Puzzles</h2>
+                <h2>Puzzles I've made</h2>
                 {!loading && (
                     <div style={{marginTop: 12}}>
-                        <button className={styles.createButton} onClick={handleCreateNew}>
+                        <button className={styles.actionButton} onClick={handleCreateNew}>
                             Create New Puzzle
                         </button>
-                        <button className={styles.createButton} onClick={handleRefresh} style={{marginLeft: 8}}>
+                        <button className={styles.actionButton} onClick={handleRefresh} style={{marginLeft: 8}}>
                             Refresh
                         </button>
                     </div>

@@ -1,3 +1,5 @@
+@import '../../common/style.module.css';
+
 .composerContainer {
     padding-top: 4rem;
     display: flex;
@@ -12,22 +14,6 @@
 .composerLeftColumn {
     width: fit-content;
     margin-left: 2rem;
-}
-
-.backButton {
-    margin-bottom: 1.5rem;
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
-    color: #333;
-    background-color: #f0f0f0;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-.backButton:hover {
-    background-color: #e0e0e0;
 }
 
 .group {
@@ -86,39 +72,27 @@
     margin-left: 2rem;
     display: block;
 }
+
 .gridTable {
     border-collapse: collapse;
     width: auto;
     background: #fff;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
+
 .gridTable th, .gridTable td {
     border: 1px solid #ddd;
     padding: 0.5rem;
     text-align: center;
 }
+
 .categoryInput {
     width: 120px;
     padding: 0.3rem;
     font-weight: bold;
 }
+
 .wordInput {
     width: 100px;
     padding: 0.3rem;
-}
-.saveButton {
-    margin-top: 1.5rem;
-    padding: 0.7rem 2rem;
-    font-size: 1.1rem;
-    background: #1976d2;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.2s;
-    display: block;
-}
-.saveButton:disabled {
-    background: #aaa;
-    cursor: not-allowed;
 }

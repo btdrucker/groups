@@ -3,7 +3,7 @@ import styles from "./style.module.css";
 import LoginForm from "./LoginForm";
 import SignupForm from "./SignupForm";
 import ResetPasswordForm from "./ResetPasswordForm";
-import { useAppSelector } from "../../app/hooks";
+import { useAppSelector } from "../../common/hooks";
 import { selectAuthMode } from "./slice";
 
 const AuthScreen = () => {

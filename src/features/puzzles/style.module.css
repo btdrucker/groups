@@ -1,3 +1,5 @@
+@import '../../common/style.module.css';
+
 .puzzleListContainer {
     padding: 2rem;
     max-width: 1200px;
@@ -16,26 +18,6 @@
     margin: 0;
     font-size: 2rem;
     color: #333;
-}
-
-.createButton {
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    font-weight: 600;
-    color: white;
-    background-color: #4CAF50;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.createButton:hover {
-    background-color: #45a049;
-}
-
-.createButton:active {
-    transform: scale(0.98);
 }
 
 .emptyState {
@@ -66,9 +48,9 @@
 }
 
 .puzzleCard:hover {
-    transform: translateY(-4px);
+    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    border-color: #4CAF50;
+    border-color: #888888;
 }
 
 .puzzleCard h3 {
@@ -109,29 +91,6 @@
     margin: 1rem 0;
 }
 
-.playButton {
-    margin-top: 1rem;
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: white;
-    background-color: #2196F3;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    width: 100%;
-}
-
-.playButton:hover {
-    background-color: #1976D2;
-}
-
-.playButton:active {
-    transform: scale(0.98);
-}
-
-/* Puzzle Player Styles */
 .puzzlePlayerContainer {
     padding: 2rem;
     max-width: 800px;
@@ -157,24 +116,6 @@
     font-size: 1rem;
     color: #666;
     font-weight: normal;
-}
-
-.backButton {
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #666;
-    background-color: #f5f5f5;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    align-self: flex-start;
-}
-
-.backButton:hover {
-    background-color: #e0e0e0;
-    border-color: #999;
 }
 
 .wordGrid {
@@ -204,7 +145,7 @@
 }
 
 .wordButton:hover {
-    border-color: #2196F3;
+    border-color: #888888;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
@@ -223,59 +164,23 @@
 }
 
 .selectedWord {
-    background-color: #2196F3;
+    background-color: #333333;
     color: white;
-    border-color: #1976D2;
+    border-color: #111111;
 }
 
 .selectedWord:hover {
-    background-color: #1976D2;
-    border-color: #1565C0;
+    background-color: #222222;
+    border-color: #111111;
 }
 
-.actionButtons {
+.buttonRow {
     display: flex;
     gap: 1rem;
     justify-content: center;
     padding: 1rem 0;
 }
 
-.actionButton {
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    font-weight: 600;
-    color: white;
-    background-color: #4CAF50;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    min-width: 120px;
-}
-
-.actionButton:hover {
-    background-color: #45a049;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.actionButton:active {
-    transform: translateY(0);
-}
-
-.actionButton:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.actionButton:disabled:hover {
-    background-color: #cccccc;
-    transform: none;
-    box-shadow: none;
-}
-
-/* Solved Category Row Styles */
 .solvedCategoryRow {
     grid-column: 1 / -1;
     border-radius: 8px;
@@ -289,49 +194,44 @@
     height: 80px;
 }
 
-/* Category 0: Yellow */
 .solvedCategoryRow[data-category-index="0"] {
     background-color: #E6C200;
     color: #1a1a1a;
 }
 
-/* Category 1: Green */
 .solvedCategoryRow[data-category-index="1"] {
     background-color: #388E3C;
     color: #1a1a1a;
 }
 
-/* Category 2: Cornflower Blue */
 .solvedCategoryRow[data-category-index="2"] {
     background-color: #5282D9;
     color: #1a1a1a;
 }
 
-/* Category 3: Purple */
 .solvedCategoryRow[data-category-index="3"] {
     background-color: #9370DB;
     color: #1a1a1a;
 }
 
-/* Faded category for missed/revealed categories */
-.fadedCategory {
+.missedCategory {
     box-shadow: none !important;
     color: #888888 !important;
 }
 
-.fadedCategory[data-category-index="0"] {
+.missedCategory[data-category-index="0"] {
     background-color: #FFF9CC !important;
 }
 
-.fadedCategory[data-category-index="1"] {
+.missedCategory[data-category-index="1"] {
     background-color: #C8E6C9 !important;
 }
 
-.fadedCategory[data-category-index="2"] {
+.missedCategory[data-category-index="2"] {
     background-color: #D4E3F7 !important;
 }
 
-.fadedCategory[data-category-index="3"] {
+.missedCategory[data-category-index="3"] {
     background-color: #E8DEF8 !important;
 }
 
@@ -348,7 +248,6 @@
     opacity: 0.9;
 }
 
-/* Congratulations Message */
 .congratulations {
     text-align: center;
     padding: 2rem;
@@ -357,7 +256,6 @@
     animation: celebration 0.6s ease-in-out;
 }
 
-/* Game Over Message */
 .gameOver {
     text-align: center;
     padding: 2rem;
@@ -398,7 +296,6 @@
     background-color: #333;
 }
 
-/* Duplicate Guess Message */
 .duplicateGuessMessage {
     text-align: center;
     padding: 1rem;

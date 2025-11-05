@@ -48,7 +48,7 @@ const PuzzleListItem = ({puzzle, onSelectPuzzle, onPlayPuzzle}: Props) => {
             )}
             {isComplete && onPlayPuzzle && (
                 <button
-                    className={styles.playButton}
+                    className={styles.actionButton}
                     onClick={handlePlayClick}
                 >
                     Play

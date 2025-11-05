@@ -1,14 +1,14 @@
 import React from "react";
-import Composer from "../features/composer/Composer";
-import AuthScreen from "../features/auth/AuthScreen";
-import WelcomeUser from "../features/auth/WelcomeUser";
-import PuzzleList from "../features/puzzles/PuzzleList";
-import PuzzlePlayer from "../features/puzzles/PuzzlePlayer";
-import {onAuthStateChange} from "../firebase/auth";
+import Composer from "../composer/Composer";
+import AuthScreen from "../auth/AuthScreen";
+import WelcomeUser from "./WelcomeUser";
+import PuzzleList from "../puzzles/PuzzleList";
+import PuzzlePlayer from "../puzzles/PuzzlePlayer";
+import {onAuthStateChange} from "../../firebase/auth";
 import styles from "./style.module.css";
-import { useAppDispatch, useAppSelector } from "./hooks";
-import { setUser, selectUser, selectAuthInitialized } from "../features/auth/slice";
-import { selectCurrentView } from "../features/app/slice";
+import { useAppDispatch, useAppSelector } from "../../common/hooks";
+import { setUser, selectUser, selectAuthInitialized } from "../auth/slice";
+import { selectCurrentView } from "./slice";
 
 const App = () => {
     const dispatch = useAppDispatch();

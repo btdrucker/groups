@@ -1,4 +1,5 @@
-/* AuthScreen styles */
+@import '../../common/style.module.css';
+
 .authScreenContainer {
     position: fixed;
     top: 0;
@@ -8,6 +9,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    font-family: sans-serif;
     background: #f5f6fa;
     z-index: 1000;
 }
@@ -103,47 +105,4 @@
     margin-top: 1rem;
     font-size: 0.9rem;
     border: 1px solid #cfc;
-}
-
-/* WelcomeUser styles */
-.welcomeContainer {
-    background: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    z-index: 100;
-    padding: 1rem 2rem;
-}
-
-.welcomeContent {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    max-width: 1200px;
-    margin: 0 auto;
-    gap: 1rem;
-}
-
-.welcomeText {
-    font-size: 1.1rem;
-    color: #333;
-    font-weight: 500;
-}
-
-.logoutButton {
-    background: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 0.5rem 1.25rem;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.logoutButton:hover {
-    background: #c82333;
-}
-
-.logoutButton:disabled {
-    background: #ccc;
-    cursor: not-allowed;
 }

@@ -1,0 +1,62 @@
+@import '../../common/style.module.css';
+
+.appContainer {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: #f5f6fa;
+}
+
+.mainContent {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+}
+
+.welcomeContainer {
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    font-family: sans-serif;
+    padding: 1rem 2rem;
+}
+
+.welcomeContent {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    gap: 1rem;
+}
+
+.welcomeText {
+    font-size: 1.1rem;
+    color: #333;
+    font-weight: 500;
+}
+
+.logoutButton {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.logoutButton:hover {
+    background: #c82333;
+}
+
+.actionButton.logout {
+    background-color: #dc3545;
+}
+
+.actionButton.logout:hover {
+    background-color: #c82333;
+}

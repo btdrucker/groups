@@ -8,7 +8,7 @@ import {
     resetPassword as firebaseResetPassword,
     onAuthStateChange
 } from '../../firebase/auth';
-import { RootState } from '../../app/store';
+import { RootState } from '../../common/store';
 
 export type AuthMode = 'login' | 'signup' | 'reset';
 

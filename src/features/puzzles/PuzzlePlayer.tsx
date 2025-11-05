@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styles from './style.module.css';
-import { useAppDispatch, useAppSelector } from '../../app/hooks';
+import { useAppDispatch, useAppSelector } from '../../common/hooks';
 import { selectSelectedPuzzle } from './slice';
 import { navigateToList } from '../app/slice';
 import { selectUser } from '../auth/slice';
@@ -350,7 +350,7 @@ const PuzzlePlayer = () => {
     return (
         <div className={styles.puzzlePlayerContainer}>
             <div className={styles.puzzlePlayerHeader}>
-                <button className={styles.backButton} onClick={handleBack}>
+                <button className={styles.actionButton} onClick={handleBack}>
                     ← Back to List
                 </button>
                 <h2>{creatorName}</h2>
@@ -362,7 +362,7 @@ const PuzzlePlayer = () => {
                 {solvedCategories.map((category, index) => (
                     <div
                         key={index}
-                        className={`${styles.solvedCategoryRow} ${category.isFaded ? styles.fadedCategory : ''}`}
+                        className={`${styles.solvedCategoryRow} ${category.isFaded ? styles.missedCategory : ''}`}
                         data-category-index={category.categoryIndex}
                     >
                         <div className={styles.categoryName}>{category.name}</div>
@@ -385,19 +385,17 @@ const PuzzlePlayer = () => {
                 ))}
             </div>
 
-            {!isComplete && !isGameLost && (
-                <div className={styles.mistakesContainer}>
-                    <span className={styles.mistakesLabel}>Mistakes remaining:</span>
-                    <div className={styles.mistakesDots}>
-                        {Array.from({ length: 4 }).map((_, index) => (
-                            <span
-                                key={index}
-                                className={`${styles.mistakeDot} ${index < mistakesRemaining ? styles.mistakeDotActive : ''}`}
-                            />
-                        ))}
-                    </div>
+            <div className={styles.mistakesContainer}>
+                <span className={styles.mistakesLabel}>Mistakes remaining:</span>
+                <div className={styles.mistakesDots}>
+                    {Array.from({ length: 4 }).map((_, index) => (
+                        <span
+                            key={index}
+                            className={`${styles.mistakeDot} ${index < mistakesRemaining ? styles.mistakeDotActive : ''}`}
+                        />
+                    ))}
                 </div>
-            )}
+            </div>
 
             {duplicateGuessMessage && (
                 <div className={styles.duplicateGuessMessage}>
@@ -414,7 +412,7 @@ const PuzzlePlayer = () => {
                     Better luck next time!
                 </div>
             ) : (
-                <div className={styles.actionButtons}>
+                <div className={styles.buttonRow}>
                     <button className={styles.actionButton} onClick={handleShuffle}>
                         Shuffle
                     </button>

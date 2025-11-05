@@ -1,5 +1,5 @@
 import {createSelector, createSlice, PayloadAction} from "@reduxjs/toolkit"
-import {RootState} from "../../app/store"
+import {RootState} from "../../common/store"
 
 export const NUM_WORDS_IN_GROUP = 4
 export const NUM_GROUPS = 4

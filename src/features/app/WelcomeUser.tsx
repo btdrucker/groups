@@ -1,8 +1,9 @@
 import React from "react";
 import { User } from "firebase/auth";
 import styles from "./style.module.css";
-import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { signOutThunk, selectAuthLoading, selectAuthError } from "./slice";
+import { useAppDispatch } from "../../common/hooks";
+import { signOutThunk } from "../auth/slice";
+import {classes} from "../../common/classUtils";
 
 interface Props {
     user: User;
@@ -10,8 +11,6 @@ interface Props {
 
 const WelcomeUser = ({ user }: Props) => {
     const dispatch = useAppDispatch();
-    const loading = useAppSelector(selectAuthLoading);
-    const error = useAppSelector(selectAuthError);
 
     const handleSignOut = async () => {
         dispatch(signOutThunk());
@@ -25,13 +24,11 @@ const WelcomeUser = ({ user }: Props) => {
                 <span className={styles.welcomeText}>
                     Welcome, {displayName}!
                 </span>
-                {error && <div className={styles.errorMessage}>{error}</div>}
                 <button
-                    className={styles.logoutButton}
+                    className={classes(styles.actionButton, styles.logout)}
                     onClick={handleSignOut}
-                    disabled={loading}
                 >
-                    {loading ? "Signing out..." : "Logout"}
+                    Log out
                 </button>
             </div>
         </div>
@@ -39,4 +36,3 @@ const WelcomeUser = ({ user }: Props) => {
 };
 
 export default WelcomeUser;
-

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import styles from "./style.module.css";
 import { Puzzle } from '../../firebase/firestore';
-import { useAppDispatch, useAppSelector } from '../../app/hooks';
+import { useAppDispatch, useAppSelector } from '../../common/hooks';
 import { selectUser } from '../auth/slice';
 import { createPuzzleThunk, updatePuzzleThunk, selectSelectedPuzzle } from '../puzzles/slice';
 import { navigateToList } from '../app/slice';
@@ -14,11 +14,6 @@ const emptyPuzzle: Puzzle = {
     createdAt: undefined,
     id: undefined
 };
-
-function isPuzzleComplete(puzzle: Puzzle) {
-    return puzzle.categories.every(cat => cat.trim() !== "") &&
-        puzzle.words.every(word => word.trim() !== "");
-}
 
 function isPuzzleStarted(puzzle: Puzzle) {
     return puzzle.categories.some(cat => cat.trim() !== "") ||
@@ -74,26 +69,34 @@ const Composer = () => {
         });
     };
 
-    const handleSave = async () => {
-        if (!canSave || !user) return;
-
-        if (puzzle.id) {
-            await dispatch(updatePuzzleThunk(puzzle));
-        } else {
-            await dispatch(createPuzzleThunk({ puzzle, userId: user.uid }));
+    const saveOrCreate = async () => {
+        if (user) {
+            if (puzzle.id) {
+                await dispatch(updatePuzzleThunk(puzzle));
+            } else {
+                await dispatch(createPuzzleThunk({puzzle, userId: user.uid}));
+            }
         }
+    }
 
-        dispatch(navigateToList());
+    const handleSave = async () => {
+        if (canSave) {
+            await saveOrCreate();
+            dispatch(navigateToList());
+        }
     };
 
-    const handleBack = () => {
+    const handleBack = async () => {
+        if (canSave) {
+            await saveOrCreate();
+        }
         dispatch(navigateToList());
     };
 
     return (
         <div className={styles.composerContainer}>
             <div className={styles.composerLeftColumn}>
-                <button className={styles.backButton} onClick={handleBack}>
+                <button className={styles.actionButton} onClick={handleBack}>
                     ← Back
                 </button>
                 <h2>{initialPuzzle ? "Edit Puzzle" : "Create New Puzzle"}</h2>
@@ -139,7 +142,7 @@ const Composer = () => {
             </div>
             <div className={styles.composerLeftColumn}>
                 <button
-                    className={styles.saveButton}
+                    className={styles.actionButton}
                     onClick={handleSave}
                     disabled={!canSave}
                 >

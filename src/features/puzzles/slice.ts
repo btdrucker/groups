@@ -5,7 +5,7 @@ import {
     createPuzzle as createPuzzleFirestore,
     updatePuzzle as updatePuzzleFirestore
 } from '../../firebase/firestore';
-import { RootState } from '../../app/store';
+import { RootState } from '../../common/store';
 
 interface PuzzlesState {
     puzzles: Puzzle[];

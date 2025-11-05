@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import styles from "./style.module.css";
 import { classes } from "../../common/classUtils";
 import { isValidEmail } from "../../common/utils";
-import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { useAppDispatch, useAppSelector } from "../../common/hooks";
 import {
     signInWithGoogleThunk,
     signInWithEmailThunk,
