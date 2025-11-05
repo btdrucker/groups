@@ -1,10 +1,10 @@
-import React, { useState, useMemo } from "react";
+import React, {useState, useMemo} from "react";
 import styles from "./style.module.css";
-import { Puzzle } from '../../firebase/firestore';
-import { useAppDispatch, useAppSelector } from '../../common/hooks';
-import { selectUser } from '../auth/slice';
-import { createPuzzleThunk, updatePuzzleThunk, selectSelectedPuzzle } from '../puzzles/slice';
-import { navigateToList } from '../app/slice';
+import {Puzzle} from '../../firebase/firestore';
+import {useAppDispatch, useAppSelector} from '../../common/hooks';
+import {selectUser} from '../auth/slice';
+import {createPuzzleThunk, updatePuzzleThunk, selectSelectedPuzzle} from './slice';
+import {navigateToList} from '../app/slice';
 
 // Default puzzle for creation
 const emptyPuzzle: Puzzle = {
@@ -55,7 +55,7 @@ const Composer = () => {
             const categories = prev.categories.map((cat, i) =>
                 i === catIdx ? value : cat
             );
-            return { ...prev, categories };
+            return {...prev, categories};
         });
     };
 
@@ -65,7 +65,7 @@ const Composer = () => {
                 const targetIdx = catIdx * 4 + wordIdx;
                 return idx === targetIdx ? value : w;
             });
-            return { ...prev, words };
+            return {...prev, words};
         });
     };
 
@@ -104,39 +104,39 @@ const Composer = () => {
             <div className={styles.gridContainer}>
                 <table className={styles.gridTable}>
                     <thead>
-                        <tr>
-                            <th>Category</th>
-                            <th>Word 1</th>
-                            <th>Word 2</th>
-                            <th>Word 3</th>
-                            <th>Word 4</th>
-                        </tr>
+                    <tr>
+                        <th>Category</th>
+                        <th>Word 1</th>
+                        <th>Word 2</th>
+                        <th>Word 3</th>
+                        <th>Word 4</th>
+                    </tr>
                     </thead>
                     <tbody>
-                        {puzzle.categories.map((cat, catIdx) => (
-                            <tr key={catIdx}>
-                                <td>
+                    {puzzle.categories.map((cat, catIdx) => (
+                        <tr key={catIdx}>
+                            <td>
+                                <input
+                                    type="text"
+                                    value={cat}
+                                    placeholder={`Category ${catIdx + 1}`}
+                                    onChange={e => handleCategoryNameChange(catIdx, e.target.value)}
+                                    className={styles.categoryInput}
+                                />
+                            </td>
+                            {[0, 1, 2, 3].map(wordIdx => (
+                                <td key={wordIdx}>
                                     <input
                                         type="text"
-                                        value={cat}
-                                        placeholder={`Category ${catIdx + 1}`}
-                                        onChange={e => handleCategoryNameChange(catIdx, e.target.value)}
-                                        className={styles.categoryInput}
+                                        value={puzzle.words[catIdx * 4 + wordIdx]}
+                                        placeholder={`Word ${wordIdx + 1}`}
+                                        onChange={e => handleWordChange(catIdx, wordIdx, e.target.value)}
+                                        className={styles.wordInput}
                                     />
                                 </td>
-                                {[0, 1, 2, 3].map(wordIdx => (
-                                    <td key={wordIdx}>
-                                        <input
-                                            type="text"
-                                            value={puzzle.words[catIdx * 4 + wordIdx]}
-                                            placeholder={`Word ${wordIdx + 1}`}
-                                            onChange={e => handleWordChange(catIdx, wordIdx, e.target.value)}
-                                            className={styles.wordInput}
-                                        />
-                                    </td>
-                                ))}
-                            </tr>
-                        ))}
+                            ))}
+                        </tr>
+                    ))}
                     </tbody>
                 </table>
             </div>

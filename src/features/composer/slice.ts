@@ -1,105 +1,96 @@
-import {createSelector, createSlice, PayloadAction} from "@reduxjs/toolkit"
-import {RootState} from "../../common/store"
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import {
+    Puzzle,
+    createPuzzle as createPuzzleFirestore,
+    updatePuzzle as updatePuzzleFirestore
+} from '../../firebase/firestore';
+import { RootState } from '../../common/store';
 
-export const NUM_WORDS_IN_GROUP = 4
-export const NUM_GROUPS = 4
-
-export interface GroupModel {
-    title?: string
-    words: (string | undefined)[]
+interface PuzzlesState {
+    puzzles: Puzzle[];
+    loading: boolean;
+    error: string | null;
+    selectedPuzzle: Puzzle | undefined;
 }
 
-function emptyGroupModel(): GroupModel {
-    return {
-        title: undefined,
-        words: new Array(NUM_WORDS_IN_GROUP).fill(undefined)
+const initialState: PuzzlesState = {
+    puzzles: [],
+    loading: false,
+    error: null,
+    selectedPuzzle: undefined,
+};
+
+export const createPuzzleThunk = createAsyncThunk(
+    'puzzles/createPuzzle',
+    async ({ puzzle, userId }: { puzzle: Puzzle; userId: string }, { rejectWithValue }) => {
+        const { id, error } = await createPuzzleFirestore(puzzle, userId);
+        if (error || !id) {
+            return rejectWithValue(error || 'Failed to create puzzle');
+        }
+        return { ...puzzle, id, creatorId: userId };
     }
-}
+);
 
-export interface GroupIdOwner {
-    groupId: number
-}
+export const updatePuzzleThunk = createAsyncThunk(
+    'puzzles/updatePuzzle',
+    async (puzzle: Puzzle, { rejectWithValue }) => {
+        const { error } = await updatePuzzleFirestore(puzzle);
+        if (error) {
+            return rejectWithValue(error);
+        }
+        return puzzle;
+    }
+);
 
-export interface WordIdOwner {
-    wordId: number
-}
-
-function emptyStringOwner(): StringOwner {
-    return {value: undefined}
-}
-
-export interface StringOwner {
-    value?: string
-}
-
-function isGroupDefined(group: GroupModel): boolean {
-    return !!group.title && !!group.words[0] && !!group.words[1] && !!group.words[2] && !!group.words[3]
-}
-
-function areGroupsDefined(groups: GroupModel[]) {
-    return isGroupDefined(groups[0]) && isGroupDefined(groups[1]) &&isGroupDefined(groups[2]) &&isGroupDefined(groups[3])
-}
-
-const slice = createSlice({
-    name: 'composer',
-    initialState: {
-        groups: new Array<GroupModel>(NUM_GROUPS).fill(emptyGroupModel()),
-        grid: new Array<StringOwner>(NUM_GROUPS * NUM_WORDS_IN_GROUP).fill(emptyStringOwner()),
-        isGameLinkEnabled: false,
-        gameLink: "https://google.com" as (string | undefined)
-    },
+const puzzlesSlice = createSlice({
+    name: 'puzzles',
+    initialState,
     reducers: {
-        updateGroupWord: (
-            state,
-            action: PayloadAction<GroupIdOwner & WordIdOwner & StringOwner>
-        ) => {
-            const {groupId, wordId, value} = action.payload
-            const group = state.groups[groupId]
-            group.words[wordId] = value
-            state.groups[groupId] = group
-            state.isGameLinkEnabled = areGroupsDefined(state.groups)
-            state.gameLink = undefined
+        selectPuzzle: (state, action: PayloadAction<Puzzle | undefined>) => {
+            state.selectedPuzzle = action.payload;
         },
-        updateGroupTitle: (
-            state,
-            action: PayloadAction<GroupIdOwner & StringOwner>
-        ) => {
-            const {groupId, value} = action.payload
-            const group = state.groups[groupId]
-            group.title = value
-            state.groups[groupId] = group
-            state.isGameLinkEnabled = areGroupsDefined(state.groups)
-            state.gameLink = undefined
+        clearSelectedPuzzle: (state) => {
+            state.selectedPuzzle = undefined;
         },
-        makeGameLink: (state) => {
-            if (state.isGameLinkEnabled) {
-                state.gameLink = "https://btdrucker.github.io/groups/123"
+        clearError: (state) => {
+            state.error = null;
+        },
+    },
+    extraReducers: (builder) => {
+        // Create puzzle
+        builder.addCase(createPuzzleThunk.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(createPuzzleThunk.fulfilled, (state, action) => {
+            state.loading = false;
+            state.puzzles.push(action.payload);
+        });
+        builder.addCase(createPuzzleThunk.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.payload as string;
+        });
+
+        // Update puzzle
+        builder.addCase(updatePuzzleThunk.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(updatePuzzleThunk.fulfilled, (state, action) => {
+            state.loading = false;
+            const index = state.puzzles.findIndex(p => p.id === action.payload.id);
+            if (index !== -1) {
+                state.puzzles[index] = action.payload;
             }
-        },
-    }
-})
+        });
+        builder.addCase(updatePuzzleThunk.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.payload as string;
+        });
+    },
+});
 
-export const selectGroups = (state: RootState) => state.composer.groups
-export const selectIsGameLinkEnabled = (state: RootState) => state.composer.isGameLinkEnabled
-export const selectGameLink = (state: RootState) => state.composer.gameLink
+export const selectSelectedPuzzle = (state: RootState) => state.puzzles.selectedPuzzle;
 
-const selectGridInput = (state: RootState) => state.composer.grid
-const selectGridCellInput = (_: RootState, index: number) => index
+export default puzzlesSlice.reducer;
 
-export const selectGridCell = createSelector(
-    [selectGridInput, selectGridCellInput],
-    (grid, index) => grid[index]
-)
-
-export const selectGridLength = createSelector(
-    [selectGridInput],
-    (grid) => grid.length
-)
-
-export const {
-    updateGroupWord,
-    updateGroupTitle,
-    makeGameLink,
-} = slice.actions
-
-export default slice.reducer
