@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styles from './style.module.css';
 import { useAppDispatch, useAppSelector } from '../../common/hooks';
 import { selectSelectedPuzzle } from './slice';
-import { navigateToList } from '../app/slice';
+import { navigateToPlayList } from '../app/slice';
 import { selectUser } from '../auth/slice';
 import { getGameState, saveGameState } from '../../firebase/firestore';
 
@@ -314,14 +314,13 @@ const Player = () => {
     };
 
     const handleBack = () => {
-        dispatch(navigateToList());
+        dispatch(navigateToPlayList());
     };
 
     if (!selectedPuzzle) {
         return (
             <div className={styles.puzzlePlayerContainer}>
                 <p>No puzzle selected</p>
-                <button onClick={handleBack}>Back to List</button>
             </div>
         );
     }
@@ -350,9 +349,6 @@ const Player = () => {
     return (
         <div className={styles.puzzlePlayerContainer}>
             <div className={styles.puzzlePlayerHeader}>
-                <button className={styles.actionButton} onClick={handleBack}>
-                    ← Back to List
-                </button>
                 <h2>{creatorName}</h2>
                 <p className={styles.createdDate}>{createdDate}</p>
             </div>

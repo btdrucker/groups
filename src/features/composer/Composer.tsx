@@ -86,21 +86,8 @@ const Composer = () => {
         }
     };
 
-    const handleBack = async () => {
-        if (canSave) {
-            await saveOrCreate();
-        }
-        dispatch(navigateToList());
-    };
-
     return (
         <div className={styles.composerContainer}>
-            <div className={styles.composerLeftColumn}>
-                <button className={styles.actionButton} onClick={handleBack}>
-                    ← Back
-                </button>
-                <h2>{initialPuzzle ? "Edit Puzzle" : "Create New Puzzle"}</h2>
-            </div>
             <div className={styles.gridContainer}>
                 <table className={styles.gridTable}>
                     <thead>

@@ -4,6 +4,7 @@ import AuthScreen from "../auth/AuthScreen";
 import WelcomeUser from "./WelcomeUser";
 import PuzzleList from "../puzzle-list/PuzzleList";
 import Player from "../player/Player";
+import PlayList from "../play-list/PlayList";
 import {onAuthStateChange} from "../../firebase/auth";
 import styles from "./style.module.css";
 import { useAppDispatch, useAppSelector } from "../../common/hooks";
@@ -38,8 +39,10 @@ const App = () => {
                         <PuzzleList />
                     ) : currentView === 'composer' ? (
                         <Composer />
-                    ) : (
+                    ) : currentView === 'player' ? (
                         <Player />
+                    ) : (
+                        <PlayList />
                     )
                 ) : (
                     <AuthScreen/>

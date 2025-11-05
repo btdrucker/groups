@@ -6,6 +6,7 @@ import composerReducer from '../features/composer/slice'
 import authReducer from '../features/auth/slice'
 import puzzlesReducer from '../features/puzzle-list/slice'
 import appReducer from '../features/app/slice'
+import playListReducer from '../features/play-list/slice'
 
 const persistConfig = {
     key: 'root',
@@ -18,6 +19,7 @@ const rootReducer = combineReducers({
     auth: authReducer,
     puzzles: puzzlesReducer,
     app: appReducer,
+    playList: playListReducer,
 })
 
 const persistedReducer = persistReducer(persistConfig, rootReducer)
