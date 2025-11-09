@@ -7,7 +7,6 @@ import {
     query,
     where,
     serverTimestamp,
-    Timestamp,
     updateDoc,
 } from 'firebase/firestore';
 import {db} from './config';
@@ -18,6 +17,8 @@ export interface Puzzle {
     categories: string[];      // Array of 4 category names
     createdAt?: number;        // Timestamp milliseconds
     creatorId: string;
+    creatorDisplayName?: string;
+    creatorEmail?: string;
     words: string[];           // 4 arrays of 4 words each as a flat 16 element array
 }
 
@@ -173,5 +174,31 @@ export const getGameState = async (userId: string, puzzleId: string) => {
     } catch (error: any) {
         console.error('Error getting game state:', error);
         return {gameState: null, error: error.message};
+    }
+};
+
+// Get all game states for a user
+export const getUserGameStates = async (userId: string) => {
+    try {
+        const q = query(
+            collection(db, 'gameStates'),
+            where('userId', '==', userId)
+        );
+
+        const querySnapshot = await getDocs(q);
+        const gameStates: GameState[] = [];
+
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            gameStates.push({
+                id: doc.id,
+                ...data,
+            } as GameState);
+        });
+
+        return {gameStates, error: null};
+    } catch (error: any) {
+        console.error('Error getting user game states:', error);
+        return {gameStates: [], error: error.message};
     }
 };
