@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import {
     Puzzle,
     createPuzzle as createPuzzleFirestore,
@@ -6,32 +6,28 @@ import {
 } from '../../firebase/firestore';
 
 interface PuzzlesState {
-    puzzles: Puzzle[];
     loading: boolean;
     error: string | null;
-    selectedPuzzle: Puzzle | undefined;
 }
 
 const initialState: PuzzlesState = {
-    puzzles: [],
     loading: false,
     error: null,
-    selectedPuzzle: undefined,
 };
 
 export const createPuzzleThunk = createAsyncThunk(
-    'compose-list/createPuzzle',
-    async ({ puzzle, userId }: { puzzle: Puzzle; userId: string }, { rejectWithValue }) => {
-        const { id, error } = await createPuzzleFirestore(puzzle, userId);
+    'compose/createPuzzle',
+    async (puzzle: Puzzle, { rejectWithValue }) => {
+        const { id, error } = await createPuzzleFirestore(puzzle);
         if (error || !id) {
             return rejectWithValue(error || 'Failed to create puzzle');
         }
-        return { ...puzzle, id, creatorId: userId };
+        return { ...puzzle, id };
     }
 );
 
 export const updatePuzzleThunk = createAsyncThunk(
-    'compose-list/updatePuzzle',
+    'compose/updatePuzzle',
     async (puzzle: Puzzle, { rejectWithValue }) => {
         const { error } = await updatePuzzleFirestore(puzzle);
         if (error) {
@@ -45,12 +41,6 @@ const composeSlice = createSlice({
     name: 'compose',
     initialState,
     reducers: {
-        selectPuzzle: (state, action: PayloadAction<Puzzle | undefined>) => {
-            state.selectedPuzzle = action.payload;
-        },
-        clearSelectedPuzzle: (state) => {
-            state.selectedPuzzle = undefined;
-        },
         clearError: (state) => {
             state.error = null;
         },
@@ -63,7 +53,6 @@ const composeSlice = createSlice({
         });
         builder.addCase(createPuzzleThunk.fulfilled, (state, action) => {
             state.loading = false;
-            state.puzzles.push(action.payload);
         });
         builder.addCase(createPuzzleThunk.rejected, (state, action) => {
             state.loading = false;
@@ -77,10 +66,6 @@ const composeSlice = createSlice({
         });
         builder.addCase(updatePuzzleThunk.fulfilled, (state, action) => {
             state.loading = false;
-            const index = state.puzzles.findIndex(p => p.id === action.payload.id);
-            if (index !== -1) {
-                state.puzzles[index] = action.payload;
-            }
         });
         builder.addCase(updatePuzzleThunk.rejected, (state, action) => {
             state.loading = false;
@@ -90,4 +75,3 @@ const composeSlice = createSlice({
 });
 
 export default composeSlice.reducer;
-

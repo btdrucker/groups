@@ -16,7 +16,7 @@ import {db} from './config';
 export interface Puzzle {
     id?: string;
     categories: string[];      // Array of 4 category names
-    createdAt?: Timestamp;
+    createdAt?: number;        // Timestamp milliseconds
     creatorId: string;
     words: string[];           // 4 arrays of 4 words each as a flat 16 element array
 }
@@ -30,15 +30,15 @@ export interface GameState {
 }
 
 // Create a new puzzle
-export const createPuzzle = async (puzzle: Omit<Puzzle, 'id' | 'creatorId' | 'createdAt'>, userId: string) => {
+export const createPuzzle = async (puzzle: Puzzle) => {
     try {
-        const puzzleData = {
-            ...puzzle,
-            creatorId: userId,
-            createdAt: serverTimestamp(),
-        };
+        const {id: _, ...puzzleWithoutId} = puzzle;
+        const puzzleDoc = {
+            ...puzzleWithoutId,
+            createdAt: serverTimestamp()
+        }
 
-        const docRef = await addDoc(collection(db, 'puzzles'), puzzleData);
+        const docRef = await addDoc(collection(db, 'puzzles'), puzzleDoc);
         return {id: docRef.id, error: null};
     } catch (error: any) {
         console.error('Error creating puzzle:', error);
@@ -51,9 +51,14 @@ export const updatePuzzle = async (puzzle: Puzzle) => {
     try {
         const id = puzzle.id!;
         const puzzleRef = doc(db, 'puzzles', id);
-        // Remove id from the update object
-        const { id: _, ...updateData } = puzzle;
-        await updateDoc(puzzleRef, updateData);
+
+        const {id: _, ...puzzleWithoutId} = puzzle;
+        const puzzleDoc = {
+            ...puzzleWithoutId,
+            createdAt: serverTimestamp()
+        }
+
+        await updateDoc(puzzleRef, puzzleDoc);
         return { id, error: null };
     } catch (error: any) {
         console.error('Error updating puzzle:', error);
@@ -73,9 +78,14 @@ export const getUserPuzzles = async (userId: string) => {
         const puzzles: Puzzle[] = [];
 
         querySnapshot.forEach((doc) => {
-            puzzles.push({id: doc.id, ...doc.data()} as Puzzle);
+            const data = doc.data();
+            puzzles.push({
+                id: doc.id,
+                ...data,
+                createdAt: data.createdAt?.toMillis()
+            } as Puzzle);
         });
-        puzzles.sort((a, b) => (b?.createdAt?.toMillis() || 0) - (a?.createdAt?.toMillis() || 0));
+        puzzles.sort((a, b) => (b?.createdAt || 0) - (a?.createdAt || 0));
 
         return {puzzles, error: null};
     } catch (error: any) {
@@ -91,7 +101,12 @@ export const getPuzzle = async (puzzleId: string) => {
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-            return {puzzle: {id: docSnap.id, ...docSnap.data()} as Puzzle, error: null};
+            const data = docSnap.data();
+            return {puzzle: {
+                id: docSnap.id,
+                ...data,
+                createdAt: data.createdAt?.toMillis()
+            } as Puzzle, error: null};
         } else {
             return {puzzle: null, error: 'Puzzle not found'};
         }

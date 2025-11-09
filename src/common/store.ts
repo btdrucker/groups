@@ -11,14 +11,14 @@ import playListReducer from '../features/play-list/slice'
 const persistConfig = {
     key: 'root',
     storage,
-    whitelist: ['composer'], // Only persist compose state
+    whitelist: ['compose'], // Only persist compose state
 }
 
 const rootReducer = combineReducers({
-    composer: composeReducer,
-    auth: authReducer,
-    puzzles: composeListReducer,
     app: appReducer,
+    auth: authReducer,
+    composeList: composeListReducer,
+    compose: composeReducer,
     playList: playListReducer,
 })
 

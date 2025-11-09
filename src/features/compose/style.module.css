@@ -19,8 +19,25 @@
     gap: 1rem;
 }
 
+.saveSuccessMessage,
+.saveErrorMessage {
+    display: block;
+    max-width: 100%;
+    min-width: 0;
+    width: fit-content;
+    word-break: break-word;
+    box-sizing: border-box;
+}
+
 .saveSuccessMessage {
     color: #28a745;
+    font-weight: 500;
+    font-size: 0.9rem;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.saveErrorMessage {
+    color: #dc3545;
     font-weight: 500;
     font-size: 0.9rem;
     animation: fadeIn 0.3s ease-in;

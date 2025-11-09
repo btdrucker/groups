@@ -328,7 +328,7 @@ const Play = () => {
     // Format creator name and date
     const creatorName = currentUser?.displayName || currentUser?.email || 'Unknown';
     const createdDate = currentPuzzle.createdAt
-        ? new Date(currentPuzzle.createdAt.toDate()).toLocaleDateString('en-US', {
+        ? new Date(currentPuzzle.createdAt).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
             day: 'numeric'

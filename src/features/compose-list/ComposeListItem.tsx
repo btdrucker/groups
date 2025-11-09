@@ -44,7 +44,7 @@ const ComposeListItem = ({puzzle}: Props) => {
             </div>
             {puzzle.createdAt && (
                 <p className={styles.createdDate}>
-                    {new Date(puzzle.createdAt.toDate()).toLocaleDateString()}
+                    {new Date(puzzle.createdAt).toLocaleDateString()}
                 </p>
             )}
             {isComplete && (

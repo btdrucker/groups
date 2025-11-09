@@ -2,13 +2,13 @@ import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
 import {Puzzle, getUserPuzzles} from '../../firebase/firestore';
 import {RootState} from '../../common/store';
 
-interface PuzzlesState {
+interface ComposeListState {
     puzzles: Puzzle[];
     loading: boolean;
     error: string | null;
 }
 
-const initialState: PuzzlesState = {
+const initialState: ComposeListState = {
     puzzles: [],
     loading: false,
     error: null,
@@ -47,9 +47,9 @@ const composeListSlice = createSlice({
     },
 });
 
-export const selectPuzzles = (state: RootState) => state.puzzles.puzzles;
-export const selectPuzzlesLoading = (state: RootState) => state.puzzles.loading;
-export const selectPuzzlesError = (state: RootState) => state.puzzles.error;
+export const selectPuzzles = (state: RootState) => state.composeList.puzzles;
+export const selectPuzzlesLoading = (state: RootState) => state.composeList.loading;
+export const selectPuzzlesError = (state: RootState) => state.composeList.error;
 
 export default composeListSlice.reducer;
 

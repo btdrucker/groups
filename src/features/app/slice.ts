@@ -48,7 +48,9 @@ const appSlice = createSlice({
 export const { navigateToComposeList, composePuzzle, composeNewPuzzle, playPuzzle, navigateToPlayList } = appSlice.actions;
 
 export const selectAppMode = (state: any): AppMode => state.app.appMode;
-export const selectCurrentPuzzle = (state: any): Puzzle => state.app.currentPuzzle;
+export const selectCurrentPuzzle = (state: any): Puzzle | undefined => {
+    return state.app.currentPuzzle;
+};
 
 export default appSlice.reducer;
 

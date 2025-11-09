@@ -6,15 +6,6 @@ import {selectCurrentPuzzle} from '../app/slice';
 import {selectUser} from '../auth/slice';
 import {createPuzzleThunk, updatePuzzleThunk} from './slice';
 
-// Default puzzle for creation
-const emptyPuzzle: Puzzle = {
-    categories: Array(4).fill("") as string[],
-    words: Array(16).fill("") as string[],
-    creatorId: '',
-    createdAt: undefined,
-    id: undefined
-};
-
 function isPuzzleStarted(puzzle: Puzzle) {
     return puzzle.categories.some(cat => cat.trim() !== "") ||
         puzzle.words.some(word => word.trim() !== "");
@@ -35,10 +26,21 @@ const Compose = () => {
     const dispatch = useAppDispatch();
     const user = useAppSelector(selectUser);
     const initialPuzzle = useAppSelector(selectCurrentPuzzle);
+    const composeError = useAppSelector(state => state.compose.error);
+
+    // Default puzzle for creation
+    const emptyPuzzle: Puzzle = {
+        categories: Array(4).fill("") as string[],
+        words: Array(16).fill("") as string[],
+        creatorId: user?.uid || '<none>',  // Should not show this component without a user
+        createdAt: undefined,
+        id: undefined
+    }
 
     const initialState = initialPuzzle || emptyPuzzle;
     const [puzzle, setPuzzle] = useState<Puzzle>(initialState);
     const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+    const [showSaveError, setShowSaveError] = useState(false);
     const [savedPuzzle, setSavedPuzzle] = useState<Puzzle | undefined>(initialPuzzle);
 
     // Update puzzle state when initialPuzzle changes
@@ -77,22 +79,30 @@ const Compose = () => {
             if (puzzle.id) {
                 await dispatch(updatePuzzleThunk(puzzle));
             } else {
-                await dispatch(createPuzzleThunk({puzzle, userId: user.uid}));
+                // Remove id before creating
+                const { id, ...puzzleWithoutId } = puzzle;
+                await dispatch(createPuzzleThunk(puzzleWithoutId));
             }
         }
     }
 
     const handleSave = async () => {
         if (canSave) {
+            setShowSaveSuccess(false);
+            setShowSaveError(false);
             await saveOrCreate();
-            // Update the saved puzzle to match the current state
-            setSavedPuzzle({...puzzle});
-            // Show success message
-            setShowSaveSuccess(true);
-            // Hide the message after 3 seconds
-            setTimeout(() => {
-                setShowSaveSuccess(false);
-            }, 3000);
+            if (!composeError) {
+                setSavedPuzzle({ ...puzzle });
+                setShowSaveSuccess(true);
+                setTimeout(() => {
+                    setShowSaveSuccess(false);
+                }, 3000);
+            } else {
+                setShowSaveError(true);
+                setTimeout(() => {
+                    setShowSaveError(false);
+                }, 3000);
+            }
         }
     };
 
@@ -145,7 +155,12 @@ const Compose = () => {
                 >
                     Save
                 </button>
-                {showSaveSuccess && (
+                {composeError && showSaveError && (
+                    <span className={styles.saveErrorMessage}>
+                        {composeError}
+                    </span>
+                )}
+                {showSaveSuccess && !composeError && (
                     <span className={styles.saveSuccessMessage}>
                         Saved successfully!
                     </span>
