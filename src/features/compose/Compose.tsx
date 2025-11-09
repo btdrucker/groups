@@ -31,7 +31,7 @@ function isPuzzleChanged(puzzle: Puzzle, initial?: Puzzle) {
     return false;
 }
 
-const Composer = () => {
+const Compose = () => {
     const dispatch = useAppDispatch();
     const user = useAppSelector(selectUser);
     const initialPuzzle = useAppSelector(selectCurrentPuzzle);
@@ -155,4 +155,4 @@ const Composer = () => {
     );
 };
 
-export default Composer;
+export default Compose;

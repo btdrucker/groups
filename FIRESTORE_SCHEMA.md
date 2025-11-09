@@ -22,7 +22,7 @@ Stores puzzles created by users.
 Tracks user progress when playing puzzles.
 
 **Fields:**
-- `userId` (string): Player's Firebase Auth UID
+- `userId` (string): Play's Firebase Auth UID
 - `puzzleId` (string): Reference to the puzzle document ID
 - `guesses` (array of numbers): Array of guesses represented by 16-bit numbers (one bit for each word)
 - `solvedCategories` (array of numbers): Indices of solved categories (0-3)
@@ -35,7 +35,7 @@ You need to set up Firestore security rules in the Firebase Console. Go to Fires
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow users to read and write their own puzzle-list
+    // Allow users to read and write their own compose-list
     match /puzzles/{puzzleId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.auth.uid == request.resource.data.creatorId;
@@ -109,10 +109,10 @@ const { puzzles, error } = await getUserPuzzles(user.uid);
 
 ## Navigation Flow
 
-1. **Login** → User sees `PuzzleList` component
-2. **PuzzleList** → Shows all puzzles created by the user
-3. **Click "Create New Puzzle"** → Navigate to `Composer` component
-4. **Composer** → Create puzzle with back button to return to list
+1. **Login** → User sees `ComposeList` component
+2. **ComposeList** → Shows all puzzles created by the user
+3. **Click "Create New Puzzle"** → Navigate to `Compose` component
+4. **Compose** → Create puzzle with back button to return to list
 5. **Save puzzle** → Store in Firestore and return to list
 
 // Save game state

@@ -43,7 +43,7 @@ const isGuessCorrect = (guessNumber: number, categoryIndex: number): boolean => 
     return guessMasked === categoryMask && (guessNumber & ~categoryMask) === 0;
 };
 
-const Player = () => {
+const Play = () => {
     const currentPuzzle = useAppSelector(selectCurrentPuzzle);
     const currentUser = useAppSelector(selectUser);
     const [selectedWords, setSelectedWords] = useState<Set<string>>(new Set());
@@ -424,5 +424,5 @@ const Player = () => {
     );
 };
 
-export default Player;
+export default Play;
 

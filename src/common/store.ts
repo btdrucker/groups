@@ -2,22 +2,22 @@ import {combineReducers, configureStore} from '@reduxjs/toolkit'
 import { persistReducer, persistStore } from 'redux-persist'
 import storage from 'redux-persist/lib/storage'
 import logger from 'redux-logger'
-import composerReducer from '../features/composer/slice'
+import composeReducer from '../features/compose/slice'
 import authReducer from '../features/auth/slice'
-import puzzlesReducer from '../features/puzzle-list/slice'
+import composeListReducer from '../features/compose-list/slice'
 import appReducer from '../features/app/slice'
 import playListReducer from '../features/play-list/slice'
 
 const persistConfig = {
     key: 'root',
     storage,
-    whitelist: ['composer'], // Only persist composer state
+    whitelist: ['composer'], // Only persist compose state
 }
 
 const rootReducer = combineReducers({
-    composer: composerReducer,
+    composer: composeReducer,
     auth: authReducer,
-    puzzles: puzzlesReducer,
+    puzzles: composeListReducer,
     app: appReducer,
     playList: playListReducer,
 })

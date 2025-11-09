@@ -1,6 +1,6 @@
 import React, {useEffect} from 'react';
 import styles from './style.module.css';
-import PuzzleListItem from './PuzzleListItem';
+import ComposeListItem from './ComposeListItem';
 import { useAppDispatch, useAppSelector } from '../../common/hooks';
 import {
     fetchUserPuzzles,
@@ -10,7 +10,7 @@ import {
 } from './slice';
 import { selectUser } from '../auth/slice';
 
-const PuzzleList = () => {
+const ComposeList = () => {
     const dispatch = useAppDispatch();
     const user = useAppSelector(selectUser);
     const puzzles = useAppSelector(selectPuzzles);
@@ -37,7 +37,7 @@ const PuzzleList = () => {
                 ) : (
                     <div className={styles.puzzleGrid}>
                         {puzzles.map((puzzle) => (
-                            <PuzzleListItem
+                            <ComposeListItem
                                 key={puzzle.id}
                                 puzzle={puzzle}
                             />
@@ -49,4 +49,4 @@ const PuzzleList = () => {
     );
 };
 
-export default PuzzleList;
+export default ComposeList;

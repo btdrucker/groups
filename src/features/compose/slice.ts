@@ -4,7 +4,6 @@ import {
     createPuzzle as createPuzzleFirestore,
     updatePuzzle as updatePuzzleFirestore
 } from '../../firebase/firestore';
-import { RootState } from '../../common/store';
 
 interface PuzzlesState {
     puzzles: Puzzle[];
@@ -21,7 +20,7 @@ const initialState: PuzzlesState = {
 };
 
 export const createPuzzleThunk = createAsyncThunk(
-    'puzzle-list/createPuzzle',
+    'compose-list/createPuzzle',
     async ({ puzzle, userId }: { puzzle: Puzzle; userId: string }, { rejectWithValue }) => {
         const { id, error } = await createPuzzleFirestore(puzzle, userId);
         if (error || !id) {
@@ -32,7 +31,7 @@ export const createPuzzleThunk = createAsyncThunk(
 );
 
 export const updatePuzzleThunk = createAsyncThunk(
-    'puzzle-list/updatePuzzle',
+    'compose-list/updatePuzzle',
     async (puzzle: Puzzle, { rejectWithValue }) => {
         const { error } = await updatePuzzleFirestore(puzzle);
         if (error) {
@@ -42,8 +41,8 @@ export const updatePuzzleThunk = createAsyncThunk(
     }
 );
 
-const puzzlesSlice = createSlice({
-    name: 'puzzles',
+const composeSlice = createSlice({
+    name: 'compose',
     initialState,
     reducers: {
         selectPuzzle: (state, action: PayloadAction<Puzzle | undefined>) => {
@@ -90,5 +89,5 @@ const puzzlesSlice = createSlice({
     },
 });
 
-export default puzzlesSlice.reducer;
+export default composeSlice.reducer;
 

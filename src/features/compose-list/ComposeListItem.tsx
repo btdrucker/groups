@@ -17,7 +17,7 @@ const isPuzzleComplete = (puzzle: Puzzle): boolean => {
     return hasAllCategories && hasAllWords;
 };
 
-const PuzzleListItem = ({puzzle}: Props) => {
+const ComposeListItem = ({puzzle}: Props) => {
     const dispatch = useAppDispatch();
     const isComplete = isPuzzleComplete(puzzle);
 
@@ -59,4 +59,4 @@ const PuzzleListItem = ({puzzle}: Props) => {
     );
 };
 
-export default PuzzleListItem;
+export default ComposeListItem;

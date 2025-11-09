@@ -1,8 +1,8 @@
 import React from "react";
-import Composer from "../composer/Composer";
+import Compose from "../compose/Compose";
 import WelcomeUser from "./WelcomeUser";
-import PuzzleList from "../puzzle-list/PuzzleList";
-import Player from "../player/Player";
+import ComposeList from "../compose-list/ComposeList";
+import Play from "../play/Play";
 import PlayList from "../play-list/PlayList";
 import {onAuthStateChange} from "../../firebase/auth";
 import styles from "./style.module.css";
@@ -36,11 +36,11 @@ const App = () => {
             <div className={styles.mainContent}>
                 {user ? (
                     appMode === AppMode.ComposeList ? (
-                        <PuzzleList />
+                        <ComposeList />
                     ) : appMode === AppMode.Compose ? (
-                        <Composer />
+                        <Compose />
                     ) : appMode === AppMode.Play ? (
-                        <Player />
+                        <Play />
                     ) : (
                         <PlayList />
                     )

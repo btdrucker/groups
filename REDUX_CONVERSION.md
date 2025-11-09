@@ -52,14 +52,14 @@ This document summarizes the complete conversion of the project to use Redux for
 - Subscribes to auth state changes and dispatches setUser action
 - Simplified component - no longer passes props down to children
 
-### 3. `/src/features/composer/Composer.tsx`
+### 3. `/src/features/composer/Compose.tsx`
 - Removed Props interface (no longer receives props)
 - Now gets user and selected puzzle from Redux
 - Dispatches createPuzzleThunk/updatePuzzleThunk for saving
 - Dispatches navigateToList for navigation
 - Still uses local state for form inputs (puzzle being edited)
 
-### 4. `/src/features/puzzles/PuzzleList.tsx`
+### 4. `/src/features/puzzles/ComposeList.tsx`
 - Removed Props interface (no longer receives props)
 - Now gets user and puzzles from Redux
 - Dispatches fetchUserPuzzles on mount

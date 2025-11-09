@@ -24,7 +24,7 @@ export interface Puzzle {
 // Game State Interface
 export interface GameState {
     id?: string;
-    guesses: number[];           // Array of guesses represented by 16-bit numbers (one bit for each word)
+    guesses: number[];         // Array of guesses represented by 16-bit numbers (one bit for each word)
     puzzleId: string;
     userId: string;
 }
@@ -61,7 +61,7 @@ export const updatePuzzle = async (puzzle: Puzzle) => {
     }
 };
 
-// Get puzzle-list created by a user
+// Get compose-list created by a user
 export const getUserPuzzles = async (userId: string) => {
     try {
         const q = query(
@@ -79,7 +79,7 @@ export const getUserPuzzles = async (userId: string) => {
 
         return {puzzles, error: null};
     } catch (error: any) {
-        console.error('Error getting user puzzle-list:', error);
+        console.error('Error getting user compose-list:', error);
         return {puzzles: [], error: error.message};
     }
 };

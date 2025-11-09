@@ -1,4 +1,4 @@
-import {createSlice, createAsyncThunk, PayloadAction} from '@reduxjs/toolkit';
+import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
 import {Puzzle, getUserPuzzles} from '../../firebase/firestore';
 import {RootState} from '../../common/store';
 
@@ -15,7 +15,7 @@ const initialState: PuzzlesState = {
 };
 
 export const fetchUserPuzzles = createAsyncThunk(
-    'puzzle-list/fetchUserPuzzles',
+    'compose-list/fetchUserPuzzles',
     async (userId: string, {rejectWithValue}) => {
         const {puzzles, error} = await getUserPuzzles(userId);
         if (error) {
@@ -25,13 +25,13 @@ export const fetchUserPuzzles = createAsyncThunk(
     }
 );
 
-const puzzlesSlice = createSlice({
-    name: 'puzzles',
+const composeListSlice = createSlice({
+    name: 'compose-list',
     initialState,
     reducers: {
     },
     extraReducers: (builder) => {
-        // Fetch user puzzle-list
+        // Fetch user compose-list
         builder.addCase(fetchUserPuzzles.pending, (state) => {
             state.loading = true;
             state.error = null;
@@ -51,5 +51,5 @@ export const selectPuzzles = (state: RootState) => state.puzzles.puzzles;
 export const selectPuzzlesLoading = (state: RootState) => state.puzzles.loading;
 export const selectPuzzlesError = (state: RootState) => state.puzzles.error;
 
-export default puzzlesSlice.reducer;
+export default composeListSlice.reducer;
 
