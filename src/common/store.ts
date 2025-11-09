@@ -7,6 +7,7 @@ import authReducer from '../features/auth/slice'
 import composeListReducer from '../features/compose-list/slice'
 import appReducer from '../features/app/slice'
 import playListReducer from '../features/play-list/slice'
+import playReducer from '../features/play/slice'
 
 const persistConfig = {
     key: 'root',
@@ -19,6 +20,7 @@ const rootReducer = combineReducers({
     auth: authReducer,
     composeList: composeListReducer,
     compose: composeReducer,
+    play: playReducer,
     playList: playListReducer,
 })
 

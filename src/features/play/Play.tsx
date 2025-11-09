@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './style.module.css';
 import { useAppSelector } from '../../common/hooks';
-import { selectCurrentPuzzle } from '../app/slice';
+import { selectPuzzle } from './slice';
 import { selectUser } from '../auth/slice';
 import { getGameState, saveGameState } from '../../firebase/firestore';
 
@@ -44,7 +44,7 @@ const isGuessCorrect = (guessNumber: number, categoryIndex: number): boolean => 
 };
 
 const Play = () => {
-    const currentPuzzle = useAppSelector(selectCurrentPuzzle);
+    const currentPuzzle = useAppSelector(selectPuzzle);
     const currentUser = useAppSelector(selectUser);
     const [selectedWords, setSelectedWords] = useState<Set<string>>(new Set());
     const [shuffledWords, setShuffledWords] = useState<string[]>([]);
@@ -60,7 +60,7 @@ const Play = () => {
     // Load game state from Firestore when component mounts or puzzle changes
     useEffect(() => {
         const loadGameState = async () => {
-            if (!currentPuzzle?.id || !currentUser?.uid) return;
+            if (!currentPuzzle.id || !currentUser?.uid) return;
 
             setIsLoadingGameState(true);
             const { gameState, error } = await getGameState(currentUser.uid, currentPuzzle.id);
@@ -146,7 +146,7 @@ const Play = () => {
 
     // Trigger reveal animation when game is lost
     useEffect(() => {
-        if (mistakesRemaining === 0 && !isRevealing && currentPuzzle) {
+        if (mistakesRemaining === 0 && !isRevealing) {
             setIsRevealing(true);
 
             // Start revealing unsolved categories one by one
@@ -221,7 +221,7 @@ const Play = () => {
     };
 
     const handleSubmit = async () => {
-        if (!currentPuzzle || selectedWords.size !== 4 || !currentUser?.uid || !currentPuzzle.id) return;
+        if (selectedWords.size !== 4 || !currentUser?.uid || !currentPuzzle.id) return;
 
         const selectedWordsArray = Array.from(selectedWords);
 
@@ -308,14 +308,6 @@ const Play = () => {
             });
         }, 500);
     };
-
-    if (!currentPuzzle) {
-        return (
-            <div className={styles.puzzlePlayerContainer}>
-                <p>No puzzle selected</p>
-            </div>
-        );
-    }
 
     if (isLoadingGameState) {
         return (

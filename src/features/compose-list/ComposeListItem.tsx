@@ -2,7 +2,8 @@ import React from 'react';
 import {Puzzle} from '../../firebase/firestore';
 import styles from './style.module.css';
 import {useAppDispatch} from "../../common/hooks";
-import {composePuzzle, playPuzzle} from "../app/slice";
+import {composePuzzle} from "../compose/slice";
+import {playPuzzle} from "../play/slice";
 
 interface Props {
     puzzle: Puzzle;

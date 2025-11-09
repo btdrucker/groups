@@ -2,9 +2,8 @@ import React, {useState, useMemo} from "react";
 import styles from "./style.module.css";
 import {Puzzle} from '../../firebase/firestore';
 import {useAppDispatch, useAppSelector} from '../../common/hooks';
-import {selectCurrentPuzzle} from '../app/slice';
 import {selectUser} from '../auth/slice';
-import {createPuzzleThunk, updatePuzzleThunk} from './slice';
+import {createPuzzleThunk, updatePuzzleThunk, selectPuzzle} from './slice';
 
 function isPuzzleStarted(puzzle: Puzzle) {
     return puzzle.categories.some(cat => cat.trim() !== "") ||
@@ -25,7 +24,7 @@ function isPuzzleChanged(puzzle: Puzzle, initial?: Puzzle) {
 const Compose = () => {
     const dispatch = useAppDispatch();
     const user = useAppSelector(selectUser);
-    const initialPuzzle = useAppSelector(selectCurrentPuzzle);
+    const initialPuzzle = useAppSelector(selectPuzzle);
     const composeError = useAppSelector(state => state.compose.error);
 
     // Default puzzle for creation

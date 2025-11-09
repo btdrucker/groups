@@ -4,7 +4,8 @@ import styles from "./style.module.css";
 import {useAppDispatch, useAppSelector} from "../../common/hooks";
 import {signOutThunk} from "../auth/slice";
 import {classes} from "../../common/classUtils";
-import {AppMode, composeNewPuzzle, navigateToComposeList, navigateToPlayList, selectAppMode} from "./slice";
+import {AppMode, navigateToComposeList, navigateToPlayList, selectAppMode} from "./slice";
+import {composeNewPuzzle} from "../compose/slice";
 
 interface Props {
     user: User;
