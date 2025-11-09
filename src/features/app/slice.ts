@@ -1,4 +1,4 @@
-import {createSlice} from '@reduxjs/toolkit';
+import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 
 export enum AppMode {
     ComposeList,
@@ -9,10 +9,12 @@ export enum AppMode {
 
 interface AppState {
     appMode: AppMode;
+    pendingPuzzleId?: string;
 }
 
 const initialState: AppState = {
     appMode: AppMode.ComposeList,
+    pendingPuzzleId: undefined,
 };
 
 const appSlice = createSlice({
@@ -31,12 +33,16 @@ const appSlice = createSlice({
         navigateToPlayList: (state) => {
             state.appMode = AppMode.PlayList;
         },
+        setPendingPuzzleId: (state, action: PayloadAction<string | undefined>) => {
+            state.pendingPuzzleId = action.payload;
+        },
     },
 });
 
-export const {navigateToCompose, navigateToComposeList, navigateToPlay, navigateToPlayList} = appSlice.actions;
+export const {navigateToCompose, navigateToComposeList, navigateToPlay, navigateToPlayList, setPendingPuzzleId} = appSlice.actions;
 
 export const selectAppMode = (state: any): AppMode => state.app.appMode;
+export const selectPendingPuzzleId = (state: any): string | undefined => state.app.pendingPuzzleId;
 
 export default appSlice.reducer;
 

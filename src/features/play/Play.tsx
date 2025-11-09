@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import styles from './style.module.css';
-import { useAppSelector } from '../../common/hooks';
-import { selectPuzzle } from './slice';
-import { selectUser } from '../auth/slice';
-import { getGameState, saveGameState } from '../../firebase/firestore';
+import {useAppSelector} from '../../common/hooks';
+import {selectPuzzle} from './slice';
+import {selectUser} from '../auth/slice';
+import {getGameState, saveGameState} from '../../firebase/firestore';
+import {useParams} from 'react-router-dom';
 
 interface SolvedCategory {
     name: string;
@@ -56,18 +57,21 @@ const Play = () => {
     const [duplicateGuessMessage, setDuplicateGuessMessage] = useState(false);
     const [guessNumbers, setGuessNumbers] = useState<number[]>([]); // Track guesses as 16-bit numbers
     const [isLoadingGameState, setIsLoadingGameState] = useState(false);
+    const {puzzleId} = useParams();
+    const [loadError, setLoadError] = useState(false);
 
     // Load game state from Firestore when component mounts or puzzle changes
     useEffect(() => {
         const loadGameState = async () => {
-            if (!currentPuzzle.id || !currentUser?.uid) return;
+            if (!currentPuzzle || !currentPuzzle.id || !currentUser?.uid) return;
 
             setIsLoadingGameState(true);
-            const { gameState, error } = await getGameState(currentUser.uid, currentPuzzle.id);
+            const {gameState, error} = await getGameState(currentUser.uid, currentPuzzle.id);
 
             if (error) {
                 console.error('Error loading game state:', error);
                 setIsLoadingGameState(false);
+                setLoadError(true);
                 return;
             }
 
@@ -146,12 +150,12 @@ const Play = () => {
 
     // Trigger reveal animation when game is lost
     useEffect(() => {
-        if (mistakesRemaining === 0 && !isRevealing) {
+        if (mistakesRemaining === 0 && !isRevealing && currentPuzzle) {
             setIsRevealing(true);
 
             // Start revealing unsolved categories one by one
             const revealNextCategory = (index: number) => {
-                if (index >= currentPuzzle.categories.length) {
+                if (!currentPuzzle || index >= currentPuzzle.categories.length) {
                     return;
                 }
 
@@ -176,6 +180,8 @@ const Play = () => {
 
                 // After animation completes, add to solved categories with fade
                 setTimeout(() => {
+                    if (!currentPuzzle) return;
+
                     setSolvedCategories(prevSolved => [...prevSolved, {
                         name: currentPuzzle.categories[index],
                         words: sortedWords,
@@ -221,7 +227,7 @@ const Play = () => {
     };
 
     const handleSubmit = async () => {
-        if (selectedWords.size !== 4 || !currentUser?.uid || !currentPuzzle.id) return;
+        if (selectedWords.size !== 4 || !currentUser?.uid || !currentPuzzle?.id) return;
 
         const selectedWordsArray = Array.from(selectedWords);
 
@@ -262,7 +268,7 @@ const Play = () => {
 
             // Check if all selected words are in this category
             const isMatch = categoryWords.every(word => selectedWords.has(word)) &&
-                           selectedWordsArray.every(word => categoryWords.includes(word));
+                selectedWordsArray.every(word => categoryWords.includes(word));
 
             if (isMatch) {
                 // Correct match! Add to solved categories
@@ -307,18 +313,34 @@ const Play = () => {
                 guesses: updatedGuessNumbers
             });
         }, 500);
-    };
-
+    };// Conditional rendering for loading, error, not found
     if (isLoadingGameState) {
         return (
             <div className={styles.puzzlePlayerContainer}>
-                <p>Loading game state...</p>
+                <p>Loading...</p>
+            </div>
+        );
+    }
+
+    if (loadError) {
+        return (
+            <div className={styles.puzzlePlayerContainer}>
+                <p>There was an error loading the puzzle.</p>
+            </div>
+        );
+    }
+
+    if (!isLoadingGameState && puzzleId && !currentPuzzle) {
+        return (
+            <div className={styles.puzzlePlayerContainer}>
+                <p>I can't find that puzzle!</p>
             </div>
         );
     }
 
     // Format creator name and date
-    const creatorName = currentUser?.displayName || currentUser?.email || 'Unknown';
+    if (!currentPuzzle) return null; // Defensive, should never hit due to above guards
+    // const creatorName = currentPuzzle.creatorDisplayName || currentPuzzle.creatorEmail || 'Unknown';
     const createdDate = currentPuzzle.createdAt
         ? new Date(currentPuzzle.createdAt).toLocaleDateString('en-US', {
             year: 'numeric',
@@ -333,7 +355,7 @@ const Play = () => {
     return (
         <div className={styles.puzzlePlayerContainer}>
             <div className={styles.puzzlePlayerHeader}>
-                <h2>{creatorName}</h2>
+                {/* <h2>{creatorName}</h2> */}
                 <p className={styles.createdDate}>{createdDate}</p>
             </div>
 
@@ -368,7 +390,7 @@ const Play = () => {
             <div className={styles.mistakesContainer}>
                 <span className={styles.mistakesLabel}>Mistakes remaining:</span>
                 <div className={styles.mistakesDots}>
-                    {Array.from({ length: 4 }).map((_, index) => (
+                    {Array.from({length: 4}).map((_, index) => (
                         <span
                             key={index}
                             className={`${styles.mistakeDot} ${index < mistakesRemaining ? styles.mistakeDotActive : ''}`}

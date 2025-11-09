@@ -1,31 +1,30 @@
 import React from 'react';
 import { GameStateWithPuzzle } from './slice';
 import styles from './style.module.css';
-import { useAppDispatch } from '../../common/hooks';
-import { playPuzzle } from '../play/slice';
+import { useNavigate } from 'react-router-dom';
 
 interface Props {
     gameStateWithPuzzle: GameStateWithPuzzle;
 }
 
 const PlayListItem = ({ gameStateWithPuzzle }: Props) => {
-    const dispatch = useAppDispatch();
-    const { gameState, puzzle, correctGuesses, mistakes } = gameStateWithPuzzle;
+    const navigate = useNavigate();
+    const { puzzle, correctGuesses, mistakes } = gameStateWithPuzzle;
 
     const handleCardClick = (e: React.MouseEvent) => {
         // Don't trigger card click if clicking a button
         if ((e.target as HTMLElement).tagName === 'BUTTON') {
             return;
         }
-        if (puzzle) {
-            dispatch(playPuzzle(puzzle));
+        if (puzzle?.id) {
+            navigate(`/play/${puzzle.id}`);
         }
     };
 
     const handlePlayClick = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (puzzle) {
-            dispatch(playPuzzle(puzzle));
+        if (puzzle?.id) {
+            navigate(`/play/${puzzle.id}`);
         }
     };
 

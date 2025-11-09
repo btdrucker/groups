@@ -1,11 +1,11 @@
 import React from "react";
 import {User} from "firebase/auth";
 import styles from "./style.module.css";
-import {useAppDispatch, useAppSelector} from "../../common/hooks";
+import {useAppDispatch} from "../../common/hooks";
 import {signOutThunk} from "../auth/slice";
 import {classes} from "../../common/classUtils";
-import {AppMode, navigateToComposeList, navigateToPlayList, selectAppMode} from "./slice";
 import {composeNewPuzzle} from "../compose/slice";
+import { useNavigate, useLocation } from "react-router-dom";
 
 interface Props {
     user: User;
@@ -13,49 +13,57 @@ interface Props {
 
 const WelcomeUser = ({ user }: Props) => {
     const dispatch = useAppDispatch();
-    const appMode = useAppSelector(selectAppMode);
+    const navigate = useNavigate();
+    const location = useLocation();
 
     const handleSignOut = async () => {
         dispatch(signOutThunk());
+        navigate('/');
     };
 
     const handleMakePuzzles = () => {
-        dispatch(navigateToComposeList());
+        navigate('/');
     };
 
     const handlePlayPuzzles = () => {
-        dispatch(navigateToPlayList());
+        navigate('/puzzles');
     };
 
     const handleBack = () => {
-        if (appMode === AppMode.Compose) {
-            dispatch(navigateToComposeList());
-        } else if (appMode === AppMode.Play) {
-            dispatch(navigateToPlayList());
+        if (location.pathname.startsWith('/compose')) {
+            navigate('/');
+        } else if (location.pathname.startsWith('/play')) {
+            navigate('/puzzles');
         }
     };
+
     const handleCreateNew = () => {
         dispatch(composeNewPuzzle());
+        navigate('/compose');
     };
-
 
     const displayName = user.displayName || user.email || "User";
 
-    // Determine which buttons to show based on current view
-    const showMakePuzzlesButton = appMode === AppMode.PlayList;
-    const showPlayPuzzlesButton = appMode === AppMode.ComposeList;
-    const showCreateNewButton = appMode === AppMode.ComposeList;
-    const showBackButton = appMode === AppMode.Compose || appMode === AppMode.Play;
+    // Determine which buttons to show based on current route
+    const isComposeList = location.pathname === '/';
+    const isCompose = location.pathname === '/compose';
+    const isPlayList = location.pathname === '/puzzles';
+    const isPlay = location.pathname.startsWith('/play/');
+
+    const showMakePuzzlesButton = isPlayList;
+    const showPlayPuzzlesButton = isComposeList;
+    const showCreateNewButton = isComposeList;
+    const showBackButton = isCompose || isPlay;
 
     // Determine screen title
     let screenTitle = '';
-    if (appMode === AppMode.ComposeList) {
+    if (isComposeList) {
         screenTitle = "Puzzles I've made";
-    } else if (appMode === AppMode.Compose) {
+    } else if (isCompose) {
         screenTitle = "Edit puzzle";
-    } else if (appMode === AppMode.PlayList) {
+    } else if (isPlayList) {
         screenTitle = "Play puzzles";
-    } else if (appMode === AppMode.Play) {
+    } else if (isPlay) {
         screenTitle = "Playing puzzle";
     }
 

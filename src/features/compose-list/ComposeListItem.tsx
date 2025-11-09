@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {Puzzle} from '../../firebase/firestore';
 import styles from './style.module.css';
 import {useAppDispatch} from "../../common/hooks";
 import {composePuzzle} from "../compose/slice";
-import {playPuzzle} from "../play/slice";
+import { useNavigate } from 'react-router-dom';
 
 interface Props {
     puzzle: Puzzle;
@@ -20,19 +20,33 @@ const isPuzzleComplete = (puzzle: Puzzle): boolean => {
 
 const ComposeListItem = ({puzzle}: Props) => {
     const dispatch = useAppDispatch();
+    const navigate = useNavigate();
     const isComplete = isPuzzleComplete(puzzle);
+    const [showCopyMessage, setShowCopyMessage] = useState(false);
 
     const handleCardClick = (e: React.MouseEvent) => {
         // Don't trigger card click if clicking a button
         if ((e.target as HTMLElement).tagName === 'BUTTON') {
             return;
         }
-        puzzle.id && dispatch(composePuzzle(puzzle));
+        if (puzzle.id) {
+            dispatch(composePuzzle(puzzle));
+            navigate('/compose');
+        }
     };
 
-    const handlePlayClick = (e: React.MouseEvent) => {
+    const handleShareClick = async (e: React.MouseEvent) => {
         e.stopPropagation();
-        puzzle.id && dispatch(playPuzzle(puzzle));
+        if (puzzle.id) {
+            const shareUrl = `${window.location.origin}/groups/play/${puzzle.id}`;
+            try {
+                await navigator.clipboard.writeText(shareUrl);
+                setShowCopyMessage(true);
+                setTimeout(() => setShowCopyMessage(false), 2000);
+            } catch (err) {
+                // Optionally handle error
+            }
+        }
     };
 
     return (
@@ -55,9 +69,9 @@ const ComposeListItem = ({puzzle}: Props) => {
             {isComplete && (
                 <button
                     className={styles.actionButton}
-                    onClick={handlePlayClick}
+                    onClick={handleShareClick}
                 >
-                    Play
+                    {showCopyMessage ? 'Link copied!' : 'Get share link'}
                 </button>
             )}
         </div>
