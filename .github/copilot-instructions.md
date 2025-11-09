@@ -43,6 +43,9 @@ This is a React + TypeScript project using:
 - Keep component logic readable and maintainable
 - Extract complex logic into custom hooks when appropriate
 
+## Code Commenting
+- Avoid obvious comments that simply restate what the code does or explain standard language or CSS properties.
+
 ## Before Making Changes
 
 1. Ask clarifying questions if the request is ambiguous
@@ -50,4 +53,3 @@ This is a React + TypeScript project using:
 3. Follow established conventions in the codebase
 4. Validate changes by checking for errors after editing
 5. Ensure the build succeeds after making changes
-

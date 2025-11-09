@@ -120,15 +120,40 @@
     border: 1px solid #ddd;
     padding: 0.5rem;
     text-align: center;
+    vertical-align: top;
 }
 
 .categoryInput {
-    width: 120px;
+    width: 240px;
+    min-height: 1em;
     padding: 0.3rem;
     font-weight: bold;
+    resize: vertical;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    box-sizing: border-box;
 }
 
 .wordInput {
-    width: 100px;
+    width: 150px;
+    min-height: 1em;
     padding: 0.3rem;
+    resize: vertical;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    box-sizing: border-box;
+}
+
+/* Shared style for all textareas to wrap text and prevent horizontal scrolling */
+.textareaWrap {
+    width: 100%;
+    min-height: 1em; /* start at single line */
+    resize: none;
+    overflow: hidden;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    box-sizing: border-box;
 }

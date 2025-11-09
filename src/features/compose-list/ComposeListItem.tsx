@@ -40,14 +40,18 @@ const ComposeListItem = ({puzzle}: Props) => {
             className={styles.puzzleCard}
             onClick={handleCardClick}
         >
-            <div className={styles.puzzleDetails}>
-                <p className={styles.categories}>{puzzle.categories.join(', ')}</p>
-            </div>
             {puzzle.createdAt && (
                 <p className={styles.createdDate}>
                     {new Date(puzzle.createdAt).toLocaleDateString()}
                 </p>
             )}
+            <div className={styles.puzzleDetails}>
+                <ul className={styles.categoriesList}>
+                    {puzzle.categories.map((cat, idx) => (
+                        <li key={idx} className={styles.categoryItem}>{cat}</li>
+                    ))}
+                </ul>
+            </div>
             {isComplete && (
                 <button
                     className={styles.actionButton}

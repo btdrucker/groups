@@ -84,3 +84,36 @@
     flex-direction: column;
     gap: 10px;
 }
+
+.puzzleMeta {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5em;
+}
+
+.categoriesList {
+    margin: 0.5em 0 0 0;
+    padding-left: 1.2em;
+    list-style-type: disc;
+}
+
+.categoryItem {
+    margin-bottom: 0.2em;
+    font-size: 1em;
+    color: #333;
+}
+
+.statusWin {
+    color: #28a745;
+    font-weight: 500;
+}
+
+.statusLose {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+.statusInProgress {
+    color: black;
+    font-weight: 500;
+}

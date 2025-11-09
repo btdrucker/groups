@@ -4,6 +4,7 @@ import {Puzzle} from '../../firebase/firestore';
 import {useAppDispatch, useAppSelector} from '../../common/hooks';
 import {selectUser} from '../auth/slice';
 import {createPuzzleThunk, updatePuzzleThunk, selectPuzzle} from './slice';
+import { useAutosizeTextarea } from "./useAutosizeTextarea";
 
 function isPuzzleStarted(puzzle: Puzzle) {
     return puzzle.categories.some(cat => cat.trim() !== "") ||
@@ -122,22 +123,26 @@ const Compose = () => {
                     {puzzle.categories.map((cat, catIdx) => (
                         <tr key={catIdx}>
                             <td>
-                                <input
-                                    type="text"
+                                <textarea
+                                    ref={useAutosizeTextarea(cat)}
                                     value={cat}
                                     placeholder={`Category ${catIdx + 1}`}
                                     onChange={e => handleCategoryNameChange(catIdx, e.target.value)}
-                                    className={styles.categoryInput}
+                                    className={`${styles.categoryInput} ${styles.textareaWrap}`}
+                                    rows={1}
+                                    style={{ resize: "none" }}
                                 />
                             </td>
                             {[0, 1, 2, 3].map(wordIdx => (
                                 <td key={wordIdx}>
-                                    <input
-                                        type="text"
+                                    <textarea
+                                        ref={useAutosizeTextarea(puzzle.words[catIdx * 4 + wordIdx])}
                                         value={puzzle.words[catIdx * 4 + wordIdx]}
                                         placeholder={`Word ${wordIdx + 1}`}
                                         onChange={e => handleWordChange(catIdx, wordIdx, e.target.value)}
-                                        className={styles.wordInput}
+                                        className={`${styles.wordInput} ${styles.textareaWrap}`}
+                                        rows={1}
+                                        style={{ resize: "none" }}
                                     />
                                 </td>
                             ))}

@@ -75,6 +75,8 @@
 
 .createdDate {
     margin: 0;
+    font-size: 0.9rem;
+    color: #666;
 }
 
 .puzzleCard .actionButton {
@@ -88,4 +90,16 @@
     background-color: #ffebee;
     border-radius: 8px;
     margin: 1rem 0;
+}
+
+.categoriesList {
+    margin: 0.5em 0 0 0;
+    padding-left: 1.2em;
+    list-style-type: disc;
+}
+
+.categoryItem {
+    margin-bottom: 0.2em;
+    font-size: 1em;
+    color: #333;
 }
