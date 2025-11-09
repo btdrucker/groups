@@ -1,20 +1,20 @@
 import React from "react";
 import Composer from "../composer/Composer";
-import AuthScreen from "../auth/AuthScreen";
 import WelcomeUser from "./WelcomeUser";
 import PuzzleList from "../puzzle-list/PuzzleList";
 import Player from "../player/Player";
 import PlayList from "../play-list/PlayList";
 import {onAuthStateChange} from "../../firebase/auth";
 import styles from "./style.module.css";
-import { useAppDispatch, useAppSelector } from "../../common/hooks";
-import { setUser, selectUser, selectAuthInitialized } from "../auth/slice";
-import { selectCurrentView } from "./slice";
+import {useAppDispatch, useAppSelector} from "../../common/hooks";
+import {selectAuthInitialized, selectUser, setUser} from "../auth/slice";
+import {AppMode, selectAppMode} from "./slice";
+import AuthScreen from "../auth/AuthScreen";
 
 const App = () => {
     const dispatch = useAppDispatch();
     const user = useAppSelector(selectUser);
-    const currentView = useAppSelector(selectCurrentView);
+    const appMode = useAppSelector(selectAppMode);
     const initialized = useAppSelector(selectAuthInitialized);
 
     React.useEffect(() => {
@@ -35,11 +35,11 @@ const App = () => {
             {user && <WelcomeUser user={user}/>}
             <div className={styles.mainContent}>
                 {user ? (
-                    currentView === 'compose-list' ? (
+                    appMode === AppMode.ComposeList ? (
                         <PuzzleList />
-                    ) : currentView === 'composer' ? (
+                    ) : appMode === AppMode.Compose ? (
                         <Composer />
-                    ) : currentView === 'player' ? (
+                    ) : appMode === AppMode.Play ? (
                         <Player />
                     ) : (
                         <PlayList />

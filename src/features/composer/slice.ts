@@ -90,7 +90,5 @@ const puzzlesSlice = createSlice({
     },
 });
 
-export const selectSelectedPuzzle = (state: RootState) => state.puzzles.selectedPuzzle;
-
 export default puzzlesSlice.reducer;
 

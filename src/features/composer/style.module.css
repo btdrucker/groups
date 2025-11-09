@@ -14,6 +14,25 @@
 .composerLeftColumn {
     width: fit-content;
     margin-left: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.saveSuccessMessage {
+    color: #28a745;
+    font-weight: 500;
+    font-size: 0.9rem;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 .group {

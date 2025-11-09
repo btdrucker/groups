@@ -1,41 +1,54 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import {Puzzle} from "../../firebase/firestore";
 
-export type View = 'compose-list' | 'composer' | 'player' | 'play-list';
+export enum AppMode {
+    ComposeList,
+    Compose,
+    Play,
+    PlayList,
+}
 
 interface AppState {
-    currentView: View;
+    appMode: AppMode;
+    currentPuzzle?: Puzzle;
 }
 
 const initialState: AppState = {
-    currentView: 'compose-list',
+    appMode: AppMode.ComposeList,
+    currentPuzzle: undefined,
 };
 
 const appSlice = createSlice({
     name: 'app',
     initialState,
     reducers: {
-        setCurrentView: (state, action: PayloadAction<View>) => {
-            state.currentView = action.payload;
+        navigateToComposeList: (state) => {
+            state.currentPuzzle = undefined;
+            state.appMode = AppMode.ComposeList;
         },
-        navigateToList: (state) => {
-            state.currentView = 'compose-list';
+        composePuzzle: (state, action: PayloadAction<Puzzle>) => {
+            state.currentPuzzle = action.payload;
+            state.appMode = AppMode.Compose;
         },
-        navigateToComposer: (state) => {
-            state.currentView = 'composer';
+        composeNewPuzzle: (state) => {
+            state.currentPuzzle = undefined;
+            state.appMode = AppMode.Compose;
         },
-        navigateToPlayer: (state) => {
-            state.currentView = 'player';
+        playPuzzle: (state, action: PayloadAction<Puzzle>) => {
+            state.currentPuzzle = action.payload;
+            state.appMode = AppMode.Play;
         },
         navigateToPlayList: (state) => {
-            state.currentView = 'play-list';
+            state.currentPuzzle = undefined;
+            state.appMode = AppMode.PlayList;
         },
     },
 });
 
-export const { setCurrentView, navigateToList, navigateToComposer, navigateToPlayer, navigateToPlayList } = appSlice.actions;
+export const { navigateToComposeList, composePuzzle, composeNewPuzzle, playPuzzle, navigateToPlayList } = appSlice.actions;
 
-// Selectors
-export const selectCurrentView = (state: any) => state.app.currentView;
+export const selectAppMode = (state: any): AppMode => state.app.appMode;
+export const selectCurrentPuzzle = (state: any): Puzzle => state.app.currentPuzzle;
 
 export default appSlice.reducer;
 

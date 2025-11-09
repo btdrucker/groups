@@ -7,11 +7,8 @@ import {
     selectPuzzles,
     selectPuzzlesLoading,
     selectPuzzlesError,
-    selectPuzzle
 } from './slice';
 import { selectUser } from '../auth/slice';
-import { navigateToComposer, navigateToPlayer } from '../app/slice';
-import { Puzzle } from '../../firebase/firestore';
 
 const PuzzleList = () => {
     const dispatch = useAppDispatch();
@@ -26,16 +23,6 @@ const PuzzleList = () => {
             dispatch(fetchUserPuzzles(user.uid));
         }
     }, [user?.uid, dispatch]);
-
-    const handleSelectPuzzle = (puzzle: Puzzle) => {
-        dispatch(selectPuzzle(puzzle));
-        dispatch(navigateToComposer());
-    };
-
-    const handlePlayPuzzle = (puzzle: Puzzle) => {
-        dispatch(selectPuzzle(puzzle));
-        dispatch(navigateToPlayer());
-    };
 
     return (
         <div className={styles.puzzleListContainer}>
@@ -53,8 +40,6 @@ const PuzzleList = () => {
                             <PuzzleListItem
                                 key={puzzle.id}
                                 puzzle={puzzle}
-                                onSelectPuzzle={() => handleSelectPuzzle(puzzle)}
-                                onPlayPuzzle={() => handlePlayPuzzle(puzzle)}
                             />
                         ))}
                     </div>

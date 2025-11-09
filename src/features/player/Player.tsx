@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './style.module.css';
-import { useAppDispatch, useAppSelector } from '../../common/hooks';
-import { selectSelectedPuzzle } from './slice';
-import { navigateToPlayList } from '../app/slice';
+import { useAppSelector } from '../../common/hooks';
+import { selectCurrentPuzzle } from '../app/slice';
 import { selectUser } from '../auth/slice';
 import { getGameState, saveGameState } from '../../firebase/firestore';
 
@@ -45,15 +44,13 @@ const isGuessCorrect = (guessNumber: number, categoryIndex: number): boolean => 
 };
 
 const Player = () => {
-    const dispatch = useAppDispatch();
-    const selectedPuzzle = useAppSelector(selectSelectedPuzzle);
+    const currentPuzzle = useAppSelector(selectCurrentPuzzle);
     const currentUser = useAppSelector(selectUser);
     const [selectedWords, setSelectedWords] = useState<Set<string>>(new Set());
     const [shuffledWords, setShuffledWords] = useState<string[]>([]);
     const [solvedCategories, setSolvedCategories] = useState<SolvedCategory[]>([]);
     const [mistakesRemaining, setMistakesRemaining] = useState(4);
     const [isRevealing, setIsRevealing] = useState(false);
-    const [revealIndex, setRevealIndex] = useState(0);
     const [shakingWords, setShakingWords] = useState<Set<string>>(new Set());
     const [guessHistory, setGuessHistory] = useState<Set<string>>(new Set());
     const [duplicateGuessMessage, setDuplicateGuessMessage] = useState(false);
@@ -63,10 +60,10 @@ const Player = () => {
     // Load game state from Firestore when component mounts or puzzle changes
     useEffect(() => {
         const loadGameState = async () => {
-            if (!selectedPuzzle?.id || !currentUser?.uid) return;
+            if (!currentPuzzle?.id || !currentUser?.uid) return;
 
             setIsLoadingGameState(true);
-            const { gameState, error } = await getGameState(currentUser.uid, selectedPuzzle.id);
+            const { gameState, error } = await getGameState(currentUser.uid, currentPuzzle.id);
 
             if (error) {
                 console.error('Error loading game state:', error);
@@ -87,12 +84,12 @@ const Player = () => {
                 savedGuesses.forEach(guessNumber => {
                     // Check if this guess was correct
                     let wasCorrect = false;
-                    for (let categoryIndex = 0; categoryIndex < selectedPuzzle.categories.length; categoryIndex++) {
+                    for (let categoryIndex = 0; categoryIndex < currentPuzzle.categories.length; categoryIndex++) {
                         if (isGuessCorrect(guessNumber, categoryIndex)) {
-                            const categoryWords = selectedPuzzle.words.slice(categoryIndex * 4, (categoryIndex + 1) * 4);
+                            const categoryWords = currentPuzzle.words.slice(categoryIndex * 4, (categoryIndex + 1) * 4);
                             const sortedWords = [...categoryWords].sort();
                             solved.push({
-                                name: selectedPuzzle.categories[categoryIndex],
+                                name: currentPuzzle.categories[categoryIndex],
                                 words: sortedWords,
                                 categoryIndex
                             });
@@ -107,7 +104,7 @@ const Player = () => {
 
                     // Add to guess history
                     const wordIndices = numberToWordIndices(guessNumber);
-                    const words = wordIndices.map(i => selectedPuzzle.words[i]);
+                    const words = wordIndices.map(i => currentPuzzle.words[i]);
                     const guessKey = [...words].sort().join('|');
                     allGuessKeys.add(guessKey);
                 });
@@ -124,12 +121,12 @@ const Player = () => {
 
                 // Set shuffled words (excluding solved category words)
                 const solvedWords = new Set(solved.flatMap(cat => cat.words));
-                const remainingWords = selectedPuzzle.words.filter(word => !solvedWords.has(word));
+                const remainingWords = currentPuzzle.words.filter(word => !solvedWords.has(word));
                 const shuffled = [...remainingWords].sort(() => Math.random() - 0.5);
                 setShuffledWords(shuffled);
             } else {
                 // No saved game state, start fresh
-                const shuffled = [...selectedPuzzle.words].sort(() => Math.random() - 0.5);
+                const shuffled = [...currentPuzzle.words].sort(() => Math.random() - 0.5);
                 setShuffledWords(shuffled);
                 setSelectedWords(new Set());
                 setSolvedCategories([]);
@@ -139,23 +136,22 @@ const Player = () => {
             }
 
             setIsRevealing(false);
-            setRevealIndex(0);
             setDuplicateGuessMessage(false);
             setSelectedWords(new Set());
             setIsLoadingGameState(false);
         };
 
         loadGameState();
-    }, [selectedPuzzle, currentUser]);
+    }, [currentPuzzle, currentUser]);
 
     // Trigger reveal animation when game is lost
     useEffect(() => {
-        if (mistakesRemaining === 0 && !isRevealing && selectedPuzzle) {
+        if (mistakesRemaining === 0 && !isRevealing && currentPuzzle) {
             setIsRevealing(true);
 
             // Start revealing unsolved categories one by one
             const revealNextCategory = (index: number) => {
-                if (index >= selectedPuzzle.categories.length) {
+                if (index >= currentPuzzle.categories.length) {
                     return;
                 }
 
@@ -168,7 +164,7 @@ const Player = () => {
                 }
 
                 // Get the category words
-                const categoryWords = selectedPuzzle.words.slice(index * 4, (index + 1) * 4);
+                const categoryWords = currentPuzzle.words.slice(index * 4, (index + 1) * 4);
                 const sortedWords = [...categoryWords].sort();
 
                 // Rearrange shuffledWords to put category words at the top
@@ -181,7 +177,7 @@ const Player = () => {
                 // After animation completes, add to solved categories with fade
                 setTimeout(() => {
                     setSolvedCategories(prevSolved => [...prevSolved, {
-                        name: selectedPuzzle.categories[index],
+                        name: currentPuzzle.categories[index],
                         words: sortedWords,
                         categoryIndex: index,
                         isFaded: true
@@ -191,7 +187,7 @@ const Player = () => {
                     setShuffledWords(prev => prev.filter(word => !categoryWords.includes(word)));
 
                     // Reveal next category
-                    if (index + 1 < selectedPuzzle.categories.length) {
+                    if (index + 1 < currentPuzzle.categories.length) {
                         setTimeout(() => revealNextCategory(index + 1), 800);
                     }
                 }, 800);
@@ -200,7 +196,7 @@ const Player = () => {
             // Start the reveal sequence after a short delay
             setTimeout(() => revealNextCategory(0), 500);
         }
-    }, [mistakesRemaining, selectedPuzzle, solvedCategories, isRevealing]);
+    }, [mistakesRemaining, currentPuzzle, solvedCategories, isRevealing]);
 
     const handleWordClick = (word: string) => {
         setSelectedWords(prev => {
@@ -225,7 +221,7 @@ const Player = () => {
     };
 
     const handleSubmit = async () => {
-        if (!selectedPuzzle || selectedWords.size !== 4 || !currentUser?.uid || !selectedPuzzle.id) return;
+        if (!currentPuzzle || selectedWords.size !== 4 || !currentUser?.uid || !currentPuzzle.id) return;
 
         const selectedWordsArray = Array.from(selectedWords);
 
@@ -245,7 +241,7 @@ const Player = () => {
         }
 
         // Convert the guess to a 16-bit number
-        const guessNumber = guessToNumber(selectedWordsArray, selectedPuzzle.words);
+        const guessNumber = guessToNumber(selectedWordsArray, currentPuzzle.words);
 
         // Add to guess numbers for saving
         const updatedGuessNumbers = [...guessNumbers, guessNumber];
@@ -261,8 +257,8 @@ const Player = () => {
         // Check each category to see if it matches the selected words
         // Each category has 4 words, and the words array is structured as:
         // [cat1_word1, cat1_word2, cat1_word3, cat1_word4, cat2_word1, ...]
-        for (let i = 0; i < selectedPuzzle.categories.length; i++) {
-            const categoryWords = selectedPuzzle.words.slice(i * 4, (i + 1) * 4);
+        for (let i = 0; i < currentPuzzle.categories.length; i++) {
+            const categoryWords = currentPuzzle.words.slice(i * 4, (i + 1) * 4);
 
             // Check if all selected words are in this category
             const isMatch = categoryWords.every(word => selectedWords.has(word)) &&
@@ -272,7 +268,7 @@ const Player = () => {
                 // Correct match! Add to solved categories
                 const sortedWords = [...categoryWords].sort();
                 setSolvedCategories(prev => [...prev, {
-                    name: selectedPuzzle.categories[i],
+                    name: currentPuzzle.categories[i],
                     words: sortedWords,
                     categoryIndex: i
                 }]);
@@ -286,7 +282,7 @@ const Player = () => {
                 // Save game state to Firestore
                 await saveGameState({
                     userId: currentUser.uid,
-                    puzzleId: selectedPuzzle.id,
+                    puzzleId: currentPuzzle.id,
                     guesses: updatedGuessNumbers
                 });
 
@@ -307,17 +303,13 @@ const Player = () => {
             // Save game state to Firestore
             await saveGameState({
                 userId: currentUser.uid,
-                puzzleId: selectedPuzzle.id!,
+                puzzleId: currentPuzzle.id!,
                 guesses: updatedGuessNumbers
             });
         }, 500);
     };
 
-    const handleBack = () => {
-        dispatch(navigateToPlayList());
-    };
-
-    if (!selectedPuzzle) {
+    if (!currentPuzzle) {
         return (
             <div className={styles.puzzlePlayerContainer}>
                 <p>No puzzle selected</p>
@@ -335,8 +327,8 @@ const Player = () => {
 
     // Format creator name and date
     const creatorName = currentUser?.displayName || currentUser?.email || 'Unknown';
-    const createdDate = selectedPuzzle.createdAt
-        ? new Date(selectedPuzzle.createdAt.toDate()).toLocaleDateString('en-US', {
+    const createdDate = currentPuzzle.createdAt
+        ? new Date(currentPuzzle.createdAt.toDate()).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
             day: 'numeric'

@@ -64,7 +64,6 @@ export const {selectPuzzle, clearSelectedPuzzle, clearError} = puzzlesSlice.acti
 export const selectPuzzles = (state: RootState) => state.puzzles.puzzles;
 export const selectPuzzlesLoading = (state: RootState) => state.puzzles.loading;
 export const selectPuzzlesError = (state: RootState) => state.puzzles.error;
-export const selectSelectedPuzzle = (state: RootState) => state.puzzles.selectedPuzzle;
 
 export default puzzlesSlice.reducer;
 

@@ -2,9 +2,9 @@ import React, {useState, useMemo} from "react";
 import styles from "./style.module.css";
 import {Puzzle} from '../../firebase/firestore';
 import {useAppDispatch, useAppSelector} from '../../common/hooks';
+import {selectCurrentPuzzle} from '../app/slice';
 import {selectUser} from '../auth/slice';
-import {createPuzzleThunk, updatePuzzleThunk, selectSelectedPuzzle} from './slice';
-import {navigateToList} from '../app/slice';
+import {createPuzzleThunk, updatePuzzleThunk} from './slice';
 
 // Default puzzle for creation
 const emptyPuzzle: Puzzle = {
@@ -34,21 +34,24 @@ function isPuzzleChanged(puzzle: Puzzle, initial?: Puzzle) {
 const Composer = () => {
     const dispatch = useAppDispatch();
     const user = useAppSelector(selectUser);
-    const initialPuzzle = useAppSelector(selectSelectedPuzzle);
+    const initialPuzzle = useAppSelector(selectCurrentPuzzle);
 
     const initialState = initialPuzzle || emptyPuzzle;
     const [puzzle, setPuzzle] = useState<Puzzle>(initialState);
+    const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+    const [savedPuzzle, setSavedPuzzle] = useState<Puzzle | undefined>(initialPuzzle);
 
     // Update puzzle state when initialPuzzle changes
     React.useEffect(() => {
         setPuzzle(initialPuzzle || emptyPuzzle);
+        setSavedPuzzle(initialPuzzle);
     }, [initialPuzzle]);
 
     // Memoize to avoid unnecessary recalculation
     const canSave = useMemo(() => {
         if (!isPuzzleStarted(puzzle)) return false;
-        return !(initialPuzzle && !isPuzzleChanged(puzzle, initialPuzzle));
-    }, [puzzle, initialPuzzle]);
+        return !(savedPuzzle && !isPuzzleChanged(puzzle, savedPuzzle));
+    }, [puzzle, savedPuzzle]);
 
     const handleCategoryNameChange = (catIdx: number, value: string) => {
         setPuzzle(prev => {
@@ -82,7 +85,14 @@ const Composer = () => {
     const handleSave = async () => {
         if (canSave) {
             await saveOrCreate();
-            dispatch(navigateToList());
+            // Update the saved puzzle to match the current state
+            setSavedPuzzle({...puzzle});
+            // Show success message
+            setShowSaveSuccess(true);
+            // Hide the message after 3 seconds
+            setTimeout(() => {
+                setShowSaveSuccess(false);
+            }, 3000);
         }
     };
 
@@ -135,6 +145,11 @@ const Composer = () => {
                 >
                     Save
                 </button>
+                {showSaveSuccess && (
+                    <span className={styles.saveSuccessMessage}>
+                        Saved successfully!
+                    </span>
+                )}
             </div>
         </div>
     );

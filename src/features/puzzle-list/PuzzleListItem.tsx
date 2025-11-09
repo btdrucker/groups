@@ -1,11 +1,11 @@
 import React from 'react';
 import {Puzzle} from '../../firebase/firestore';
 import styles from './style.module.css';
+import {useAppDispatch} from "../../common/hooks";
+import {composePuzzle, playPuzzle} from "../app/slice";
 
 interface Props {
     puzzle: Puzzle;
-    onSelectPuzzle: (puzzleId: string) => void;
-    onPlayPuzzle?: (puzzleId: string) => void;
 }
 
 // Helper function to check if puzzle is complete
@@ -17,7 +17,8 @@ const isPuzzleComplete = (puzzle: Puzzle): boolean => {
     return hasAllCategories && hasAllWords;
 };
 
-const PuzzleListItem = ({puzzle, onSelectPuzzle, onPlayPuzzle}: Props) => {
+const PuzzleListItem = ({puzzle}: Props) => {
+    const dispatch = useAppDispatch();
     const isComplete = isPuzzleComplete(puzzle);
 
     const handleCardClick = (e: React.MouseEvent) => {
@@ -25,12 +26,12 @@ const PuzzleListItem = ({puzzle, onSelectPuzzle, onPlayPuzzle}: Props) => {
         if ((e.target as HTMLElement).tagName === 'BUTTON') {
             return;
         }
-        puzzle.id && onSelectPuzzle(puzzle.id);
+        puzzle.id && dispatch(composePuzzle(puzzle));
     };
 
     const handlePlayClick = (e: React.MouseEvent) => {
         e.stopPropagation();
-        puzzle.id && onPlayPuzzle?.(puzzle.id);
+        puzzle.id && dispatch(playPuzzle(puzzle));
     };
 
     return (
@@ -46,7 +47,7 @@ const PuzzleListItem = ({puzzle, onSelectPuzzle, onPlayPuzzle}: Props) => {
                     {new Date(puzzle.createdAt.toDate()).toLocaleDateString()}
                 </p>
             )}
-            {isComplete && onPlayPuzzle && (
+            {isComplete && (
                 <button
                     className={styles.actionButton}
                     onClick={handlePlayClick}

@@ -6,11 +6,14 @@ import {
     signUpWithEmail,
     signOut as firebaseSignOut,
     resetPassword as firebaseResetPassword,
-    onAuthStateChange
 } from '../../firebase/auth';
 import { RootState } from '../../common/store';
 
-export type AuthMode = 'login' | 'signup' | 'reset';
+export enum AuthMode {
+    LOGIN,
+    SIGNUP,
+    RESET,
+}
 
 interface AuthState {
     user: User | null;
@@ -24,7 +27,7 @@ const initialState: AuthState = {
     user: null,
     loading: false,
     error: null,
-    authMode: 'login',
+    authMode: AuthMode.LOGIN,
     initialized: false,
 };
 
@@ -182,4 +185,3 @@ export const selectAuthMode = (state: RootState) => state.auth.authMode;
 export const selectAuthInitialized = (state: RootState) => state.auth.initialized;
 
 export default authSlice.reducer;
-

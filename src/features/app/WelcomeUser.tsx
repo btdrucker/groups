@@ -1,11 +1,10 @@
 import React from "react";
-import { User } from "firebase/auth";
+import {User} from "firebase/auth";
 import styles from "./style.module.css";
-import { useAppDispatch, useAppSelector } from "../../common/hooks";
-import { signOutThunk } from "../auth/slice";
-import { classes } from "../../common/classUtils";
-import { navigateToList, navigateToPlayList, navigateToComposer, selectCurrentView } from "./slice";
-import { clearSelectedPuzzle } from "../puzzle-list/slice";
+import {useAppDispatch, useAppSelector} from "../../common/hooks";
+import {signOutThunk} from "../auth/slice";
+import {classes} from "../../common/classUtils";
+import {AppMode, composeNewPuzzle, navigateToComposeList, navigateToPlayList, selectAppMode} from "./slice";
 
 interface Props {
     user: User;
@@ -13,59 +12,64 @@ interface Props {
 
 const WelcomeUser = ({ user }: Props) => {
     const dispatch = useAppDispatch();
-    const currentView = useAppSelector(selectCurrentView);
+    const appMode = useAppSelector(selectAppMode);
 
     const handleSignOut = async () => {
         dispatch(signOutThunk());
     };
 
     const handleMakePuzzles = () => {
-        if (currentView !== 'compose-list') {
-            dispatch(navigateToList());
-        }
+        dispatch(navigateToComposeList());
     };
 
     const handlePlayPuzzles = () => {
-        if (currentView !== 'play-list') {
-            dispatch(navigateToPlayList());
-        }
+        dispatch(navigateToPlayList());
     };
 
     const handleBack = () => {
-        if (currentView === 'composer') {
-            dispatch(navigateToList());
-        } else if (currentView === 'player') {
+        if (appMode === AppMode.Compose) {
+            dispatch(navigateToComposeList());
+        } else if (appMode === AppMode.Play) {
             dispatch(navigateToPlayList());
         }
     };
     const handleCreateNew = () => {
-        dispatch(clearSelectedPuzzle());
-        dispatch(navigateToComposer());
+        dispatch(composeNewPuzzle());
     };
 
 
     const displayName = user.displayName || user.email || "User";
 
     // Determine which buttons to show based on current view
-    const showMakePuzzlesButton = currentView !== 'compose-list' && currentView !== 'composer' && currentView !== 'player';
-    const showPlayPuzzlesButton = currentView !== 'play-list' && currentView !== 'player' && currentView !== 'composer';
-    const showCreateNewButton = currentView === 'compose-list';
-    const showBackButton = currentView === 'composer' || currentView === 'player';
+    const showMakePuzzlesButton = appMode === AppMode.PlayList;
+    const showPlayPuzzlesButton = appMode === AppMode.ComposeList;
+    const showCreateNewButton = appMode === AppMode.ComposeList;
+    const showBackButton = appMode === AppMode.Compose || appMode === AppMode.Play;
 
     // Determine screen title
     let screenTitle = '';
-    if (currentView === 'compose-list') {
+    if (appMode === AppMode.ComposeList) {
         screenTitle = "Puzzles I've made";
-    } else if (currentView === 'composer') {
+    } else if (appMode === AppMode.Compose) {
         screenTitle = "Edit puzzle";
-    } else if (currentView === 'play-list' || currentView === 'player') {
+    } else if (appMode === AppMode.PlayList) {
         screenTitle = "Play puzzles";
+    } else if (appMode === AppMode.Play) {
+        screenTitle = "Playing puzzle";
     }
 
     return (
         <div className={styles.welcomeContainer}>
             <div className={styles.welcomeContent}>
                 <div className={styles.leftSection}>
+                    {showBackButton && (
+                        <button
+                            className={styles.actionButton}
+                            onClick={handleBack}
+                        >
+                            ← Back
+                        </button>
+                    )}
                     <span className={styles.welcomeText}>
                         Welcome, {displayName}!
                     </span>
@@ -96,14 +100,6 @@ const WelcomeUser = ({ user }: Props) => {
                             onClick={handlePlayPuzzles}
                         >
                             Play puzzles
-                        </button>
-                    )}
-                    {showBackButton && (
-                        <button
-                            className={styles.actionButton}
-                            onClick={handleBack}
-                        >
-                            ← Back
                         </button>
                     )}
                     <button
