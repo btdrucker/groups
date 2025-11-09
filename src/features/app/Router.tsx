@@ -155,7 +155,7 @@ const AppRouter: React.FC = () => {
     }
 
     return (
-        <BrowserRouter basename="/groups">
+        <BrowserRouter>
             <Routes>
                 <Route path="/" element={<HomeRoute />} />
                 <Route path="/play/:puzzleId" element={<PlayRoute />} />
