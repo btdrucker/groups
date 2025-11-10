@@ -179,6 +179,7 @@ export const { setUser, setAuthMode, clearError } = authSlice.actions;
 
 // Selectors
 export const selectUser = (state: RootState) => state.auth.user;
+export const selectUserId = (state: RootState) => state.auth.user?.uid;
 export const selectAuthLoading = (state: RootState) => state.auth.loading;
 export const selectAuthError = (state: RootState) => state.auth.error;
 export const selectAuthMode = (state: RootState) => state.auth.authMode;

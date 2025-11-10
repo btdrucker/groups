@@ -12,17 +12,6 @@ const PlayListItem = ({ gameStateWithPuzzle }: Props) => {
     const { puzzle, correctGuesses, mistakes } = gameStateWithPuzzle;
 
     const handleCardClick = (e: React.MouseEvent) => {
-        // Don't trigger card click if clicking a button
-        if ((e.target as HTMLElement).tagName === 'BUTTON') {
-            return;
-        }
-        if (puzzle?.id) {
-            navigate(`/play/${puzzle.id}`);
-        }
-    };
-
-    const handlePlayClick = (e: React.MouseEvent) => {
-        e.stopPropagation();
         if (puzzle?.id) {
             navigate(`/play/${puzzle.id}`);
         }
@@ -32,7 +21,6 @@ const PlayListItem = ({ gameStateWithPuzzle }: Props) => {
         return null;
     }
 
-    // Determine puzzle status
     const totalCategories = puzzle.categories.length;
     const isWon = correctGuesses === totalCategories;
     const isLost = !isWon && mistakes === 4;
@@ -43,7 +31,6 @@ const PlayListItem = ({ gameStateWithPuzzle }: Props) => {
             className={styles.puzzleCard}
             onClick={handleCardClick}
         >
-            {/* Puzzle creator and date at the top */}
             <div className={styles.puzzleMeta}>
                 {puzzle.createdAt && (
                     <span className={styles.createdDate}>
@@ -57,11 +44,6 @@ const PlayListItem = ({ gameStateWithPuzzle }: Props) => {
                         <p className={styles.statusWin}>
                             You won! ({mistakes} mistake{mistakes !== 1 ? 's' : ''})
                         </p>
-                        <ul className={styles.categoriesList}>
-                            {puzzle.categories.map((cat, idx) => (
-                                <li key={idx} className={styles.categoryItem}>{cat}</li>
-                            ))}
-                        </ul>
                     </>
                 )}
                 {isLost && (
@@ -76,10 +58,7 @@ const PlayListItem = ({ gameStateWithPuzzle }: Props) => {
                 )}
             </div>
             {isInProgress && (
-                <button
-                    className={styles.actionButton}
-                    onClick={handlePlayClick}
-                >
+                <button className={styles.actionButton}>
                     Continue Playing
                 </button>
             )}

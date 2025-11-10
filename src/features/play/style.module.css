@@ -35,7 +35,6 @@
     display: grid;
     grid-template-columns: repeat(4, 160px);
     gap: 0.75rem;
-    margin-bottom: 2rem;
 }
 
 .wordButton {
@@ -179,6 +178,7 @@
 
 .mistakesContainer {
     display: flex;
+    margin-top: 2rem;
     align-items: center;
     justify-content: center;
     gap: 1rem;
@@ -208,6 +208,20 @@
     background-color: #333;
 }
 
+.duplicateGuessMessageOverlay {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    pointer-events: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: auto;
+    height: auto;
+}
+
 .duplicateGuessMessage {
     text-align: center;
     padding: 1rem;
@@ -217,8 +231,9 @@
     background-color: #FFF3E0;
     border: 2px solid #FFB74D;
     border-radius: 8px;
-    margin: 1rem 0;
+    margin: 0 0;
     animation: fadeIn 0.3s ease-in-out;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.12);
 }
 
 .copyMessage {
@@ -302,4 +317,3 @@
 .shakeWord {
     animation: shake 0.75s ease-in-out;
 }
-
