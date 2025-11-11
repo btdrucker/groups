@@ -61,6 +61,11 @@ function isOneAway(
     return false;
 }
 
+// Checks if a guess number already exists in guesses
+const hasDuplicateGuess = (guesses: number[], guessNumber: number): boolean => {
+    return guesses.includes(guessNumber);
+};
+
 const Play = () => {
     const currentPuzzle = useAppSelector(selectPuzzle);
     const userId = useAppSelector(selectUserId);
@@ -76,17 +81,6 @@ const Play = () => {
     const [isLoadingGameState, setIsLoadingGameState] = useState(false);
     const {puzzleId} = useParams();
     const [loadError, setLoadError] = useState(false);
-
-    // Checks if a guess (as sorted string key) exists in guessNumbers
-    const hasDuplicateGuess = (guessKey: string): boolean => {
-        if (!currentPuzzle) return false;
-        return guesses.some(guessNumber => {
-            const wordIndices = numberToWordIndices(guessNumber);
-            const words = wordIndices.map(i => currentPuzzle.words[i]);
-            const key = [...words].sort().join('|');
-            return key === guessKey;
-        });
-    };
 
     // Load game state from Firestore when component mounts or puzzle changes
     useEffect(() => {
@@ -307,12 +301,11 @@ const Play = () => {
         if (selectedWords.size !== 4 || !userId || !currentPuzzle?.id) return;
 
         const selectedWordsArray = Array.from(selectedWords);
-        const guessKey = [...selectedWordsArray].sort().join('|');
-        const isDuplicate = hasDuplicateGuess(guessKey);
+        const guessNumber = guessToNumber(selectedWordsArray, currentPuzzle.words);
+        const isDuplicate = hasDuplicateGuess(guesses, guessNumber);
         const isOneAwayGuess = isOneAway(selectedWords, currentPuzzle, solvedCategories);
 
         // Save game state immediately (for all guesses)
-        const guessNumber = guessToNumber(selectedWordsArray, currentPuzzle.words);
         const updatedGuesses = [...guesses, guessNumber];
         setGuesses(updatedGuesses);
 
