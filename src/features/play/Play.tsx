@@ -69,15 +69,24 @@ const Play = () => {
     const [solvedCategories, setSolvedCategories] = useState<SolvedCategory[]>([]);
     const [mistakesRemaining, setMistakesRemaining] = useState(4);
     const [isRevealing, setIsRevealing] = useState(false);
-    const [shakingWords, setShakingWords] = useState<Set<string>>(new Set());
-    const [guessHistory, setGuessHistory] = useState<Set<string>>(new Set());
-    const [duplicateGuessMessage, setDuplicateGuessMessage] = useState(false);
-    const [oneAwayMessage, setOneAwayMessage] = useState(false);
-    const [guessNumbers, setGuessNumbers] = useState<number[]>([]); // Track guesses as 16-bit numbers
+    const [isShakingWords, setIsShakingWords] = useState<Set<string>>(new Set());
+    const [isShowingMessage, setIsShowingMessage] = useState(false);
+    const [messageText, setMessageText] = useState<string | null>(null);
+    const [guesses, setGuesses] = useState<number[]>([]); // Track guesses as 16-bit numbers from gameState
     const [isLoadingGameState, setIsLoadingGameState] = useState(false);
     const {puzzleId} = useParams();
     const [loadError, setLoadError] = useState(false);
-    const [duplicateGuessText, setDuplicateGuessText] = useState<string | null>(null);
+
+    // Checks if a guess (as sorted string key) exists in guessNumbers
+    const hasDuplicateGuess = (guessKey: string): boolean => {
+        if (!currentPuzzle) return false;
+        return guesses.some(guessNumber => {
+            const wordIndices = numberToWordIndices(guessNumber);
+            const words = wordIndices.map(i => currentPuzzle.words[i]);
+            const key = [...words].sort().join('|');
+            return key === guessKey;
+        });
+    };
 
     // Load game state from Firestore when component mounts or puzzle changes
     useEffect(() => {
@@ -95,16 +104,13 @@ const Play = () => {
             }
 
             if (gameState && gameState.guesses.length > 0) {
-                // Restore game state from saved guesses
-                const savedGuesses = gameState.guesses;
-                setGuessNumbers(savedGuesses);
+                setGuesses(gameState.guesses);
 
                 // Reconstruct the game state from the saved guesses
                 const solved: SolvedCategory[] = [];
                 const incorrectGuesses: number[] = [];
-                const allGuessKeys = new Set<string>();
 
-                savedGuesses.forEach(guessNumber => {
+                gameState.guesses.forEach(guessNumber => {
                     // Check if this guess was correct
                     let wasCorrect = false;
                     for (let categoryIndex = 0; categoryIndex < currentPuzzle.categories.length; categoryIndex++) {
@@ -124,12 +130,6 @@ const Play = () => {
                     if (!wasCorrect) {
                         incorrectGuesses.push(guessNumber);
                     }
-
-                    // Add to guess history
-                    const wordIndices = numberToWordIndices(guessNumber);
-                    const words = wordIndices.map(i => currentPuzzle.words[i]);
-                    const guessKey = [...words].sort().join('|');
-                    allGuessKeys.add(guessKey);
                 });
 
                 // Set the solved categories
@@ -138,9 +138,6 @@ const Play = () => {
                 // Set mistakes remaining based on incorrect guesses
                 const mistakes = Math.max(0, 4 - incorrectGuesses.length);
                 setMistakesRemaining(mistakes);
-
-                // Set guess history
-                setGuessHistory(allGuessKeys);
 
                 // Set shuffled words (excluding solved category words)
                 const solvedWords = new Set(solved.flatMap(cat => cat.words));
@@ -154,16 +151,13 @@ const Play = () => {
                 setSelectedWords(new Set());
                 setSolvedCategories([]);
                 setMistakesRemaining(4);
-                setGuessNumbers([]);
-                setGuessHistory(new Set());
+                setGuesses([]);
             }
-
             setIsRevealing(false);
-            setDuplicateGuessMessage(false);
+            setIsShowingMessage(false);
             setSelectedWords(new Set());
             setIsLoadingGameState(false);
         };
-
         loadGameState();
     }, [currentPuzzle, userId]);
 
@@ -252,42 +246,27 @@ const Play = () => {
         const guessKey = [...selectedWordsArray].sort().join('|');
         const isOneAwayGuess = isOneAway(selectedWords, currentPuzzle);
 
-        console.log("Has key: " + guessHistory.has(guessKey));
-        console.log("Is one away:" + isOneAwayGuess);
-
-        // Check if this guess has been made before
-        if (guessHistory.has(guessKey)) {
-            // Duplicate guess! Show message and don't deduct mistake
-            if (isOneAwayGuess) {
-                setDuplicateGuessText('Already guessed (One away)!');
-            } else {
-                setDuplicateGuessText('Already guessed!');
-            }
-            setDuplicateGuessMessage(true);
-            setSelectedWords(new Set()); // Deselect the words
+        if (hasDuplicateGuess(guessKey)) {
+            setMessageText(isOneAwayGuess ? 'Already guessed (One away)!' : 'Already guessed!');
+            setIsShowingMessage(true);
+            setSelectedWords(new Set());
             setTimeout(() => {
-                setDuplicateGuessMessage(false);
-                setDuplicateGuessText(null);
+                setIsShowingMessage(false);
+                setMessageText(null);
             }, 2000);
             return;
         }
 
-        // Always add guessKey to guessHistory, even for 'one away' guesses
-        setGuessHistory(prev => {
-            const newHistory = new Set(prev);
-            newHistory.add(guessKey);
-            return newHistory;
-        });
-
-        // Only show 'One away!' for non-duplicate guesses
         if (isOneAwayGuess) {
-            setShakingWords(new Set(selectedWords));
+            setIsShakingWords(new Set(selectedWords));
             setTimeout(() => {
-                setShakingWords(new Set());
-                setOneAwayMessage(true);
+                setIsShakingWords(new Set());
+                setMessageText('One away!');
+                setIsShowingMessage(true);
                 setSelectedWords(new Set());
                 setTimeout(() => {
-                    setOneAwayMessage(false);
+                    setIsShowingMessage(false);
+                    setMessageText(null);
                 }, 2000);
             }, 500);
             return;
@@ -296,9 +275,9 @@ const Play = () => {
         // Convert the guess to a 16-bit number
         const guessNumber = guessToNumber(selectedWordsArray, currentPuzzle.words);
 
-        // Add to guess numbers for saving
-        const updatedGuessNumbers = [...guessNumbers, guessNumber];
-        setGuessNumbers(updatedGuessNumbers);
+        // Add to guesses for saving
+        const updatedGuesses = [...guesses, guessNumber];
+        setGuesses(updatedGuesses);
 
         // Check each category to see if it matches the selected words
         // Each category has 4 words, and the words array is structured as:
@@ -329,7 +308,7 @@ const Play = () => {
                 await saveGameState({
                     userId: userId,
                     puzzleId: currentPuzzle.id,
-                    guesses: updatedGuessNumbers
+                    guesses: updatedGuesses
                 });
 
                 return;
@@ -338,11 +317,11 @@ const Play = () => {
 
         // If we get here, no match was found - incorrect guess
         // Trigger shake animation
-        setShakingWords(new Set(selectedWords));
+        setIsShakingWords(new Set(selectedWords));
 
         // After shake animation completes (500ms), deselect and remove mistake
         setTimeout(async () => {
-            setShakingWords(new Set());
+            setIsShakingWords(new Set());
             setSelectedWords(new Set());
             setMistakesRemaining(prev => prev - 1);
 
@@ -350,7 +329,7 @@ const Play = () => {
             await saveGameState({
                 userId: userId,
                 puzzleId: currentPuzzle.id!,
-                guesses: updatedGuessNumbers
+                guesses: updatedGuesses
             });
         }, 500);
     };
@@ -402,19 +381,11 @@ const Play = () => {
             </div>
 
             <div className={styles.wordGrid}>
-                {/* Overlay duplicate guess message if active */}
-                {duplicateGuessMessage && (
+                {/* Overlay message if active */}
+                {isShowingMessage && (
                     <div className={styles.duplicateGuessMessageOverlay}>
                         <div className={styles.duplicateGuessMessage}>
-                            {duplicateGuessText || 'Already guessed!'}
-                        </div>
-                    </div>
-                )}
-                {/* Overlay one away message if active */}
-                {oneAwayMessage && (
-                    <div className={styles.duplicateGuessMessageOverlay}>
-                        <div className={styles.duplicateGuessMessage}>
-                            One away!
+                            {messageText}
                         </div>
                     </div>
                 )}
@@ -436,7 +407,7 @@ const Play = () => {
                 {shuffledWords.map((word, index) => (
                     <button
                         key={index}
-                        className={`${styles.wordButton} ${selectedWords.has(word) ? styles.selectedWord : ''} ${shakingWords.has(word) ? styles.shakeWord : ''}`}
+                        className={`${styles.wordButton} ${selectedWords.has(word) ? styles.selectedWord : ''} ${isShakingWords.has(word) ? styles.shakeWord : ''}`}
                         onClick={() => handleWordClick(word)}
                         disabled={isGameLost}
                     >
