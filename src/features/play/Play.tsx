@@ -239,100 +239,106 @@ const Play = () => {
         setSelectedWords(new Set());
     };
 
+    const processGuessIfCorrect = async (selectedWordsArray: string[], updatedGuesses: number[]) => {
+        if (!currentPuzzle) return false;
+
+        for (let i = 0; i < currentPuzzle.categories.length; i++) {
+            const categoryWords = currentPuzzle.words.slice(i * 4, (i + 1) * 4);
+            const isMatch = categoryWords.every(word => selectedWords.has(word)) &&
+                selectedWordsArray.every(word => categoryWords.includes(word));
+            if (isMatch) {
+                await processCorrectGuess(i, updatedGuesses, categoryWords);
+                return true
+            }
+        }
+        return false;
+    }
+
+    // Shows a message for a set duration
+    const showMessageWithTimeout = (text: string, duration: number = 2000) => {
+        setMessageText(text);
+        setIsShowingMessage(true);
+        setTimeout(() => {
+            setIsShowingMessage(false);
+            setMessageText(null);
+        }, duration);
+    };
+
+    // Triggers shake animation for the given words for a set duration
+    const triggerShakeAnimation = (words: Set<string>, duration: number = 500) => {
+        setIsShakingWords(new Set(words));
+        setTimeout(() => {
+            setIsShakingWords(new Set());
+            setSelectedWords(new Set());
+        }, duration);
+    };
+
+    // Saves the current game state to Firestore
+    const saveCurrentGameState = async (updatedGuesses: number[]) => {
+        if (!userId || !currentPuzzle?.id) return;
+        await saveGameState({
+            userId,
+            puzzleId: currentPuzzle.id,
+            guesses: updatedGuesses
+        });
+    };
+
+    // Handles a correct guess: updates solved categories, removes words, and saves state
+    const processCorrectGuess = async (categoryIndex: number, updatedGuesses: number[], categoryWords: string[]) => {
+        const sortedWords = [...categoryWords].sort();
+        setSolvedCategories(prev => [...prev, {
+            name: currentPuzzle!.categories[categoryIndex],
+            words: sortedWords,
+            categoryIndex
+        }]);
+        setSelectedWords(new Set());
+        setShuffledWords(prev => prev.filter(word => !categoryWords.includes(word)));
+        await saveCurrentGameState(updatedGuesses);
+    };
+
+    // Handles an incorrect guess: triggers shake, updates mistakes, and saves state
+    const processIncorrectGuess = async (updatedGuesses: number[]) => {
+        triggerShakeAnimation(selectedWords);
+        setMistakesRemaining(prev => prev - 1);
+        await saveCurrentGameState(updatedGuesses);
+    };
+
     const handleSubmit = async () => {
         if (selectedWords.size !== 4 || !userId || !currentPuzzle?.id) return;
 
         const selectedWordsArray = Array.from(selectedWords);
         const guessKey = [...selectedWordsArray].sort().join('|');
-        const isOneAwayGuess = isOneAway(selectedWords, currentPuzzle);
+        const isDuplicate = hasDuplicateGuess(guessKey);
+        const isOneAwayGuess = isOneAway(selectedWords, currentPuzzle, solvedCategories);
 
-        if (hasDuplicateGuess(guessKey)) {
-            setMessageText(isOneAwayGuess ? 'Already guessed (One away)!' : 'Already guessed!');
-            setIsShowingMessage(true);
-            setSelectedWords(new Set());
-            setTimeout(() => {
-                setIsShowingMessage(false);
-                setMessageText(null);
-            }, 2000);
+        // Save game state immediately (for all guesses)
+        const guessNumber = guessToNumber(selectedWordsArray, currentPuzzle.words);
+        const updatedGuesses = [...guesses, guessNumber];
+        setGuesses(updatedGuesses);
+
+        // Check for correct guess
+        if (await processGuessIfCorrect(selectedWordsArray, updatedGuesses)) {
+            return;
+        }
+
+        // If we've gotten here, the guess was wrong.
+        triggerShakeAnimation(selectedWords);
+
+        if (isDuplicate) {
+            if (isOneAwayGuess) {
+                showMessageWithTimeout('Already guessed (One away)!');
+            } else {
+                showMessageWithTimeout('Already guessed!');
+            }
             return;
         }
 
         if (isOneAwayGuess) {
-            setIsShakingWords(new Set(selectedWords));
-            setTimeout(() => {
-                setIsShakingWords(new Set());
-                setMessageText('One away!');
-                setIsShowingMessage(true);
-                setSelectedWords(new Set());
-                setTimeout(() => {
-                    setIsShowingMessage(false);
-                    setMessageText(null);
-                }, 2000);
-            }, 500);
+            showMessageWithTimeout('One away!');
+            await processIncorrectGuess(updatedGuesses);
             return;
         }
-
-        // Convert the guess to a 16-bit number
-        const guessNumber = guessToNumber(selectedWordsArray, currentPuzzle.words);
-
-        // Add to guesses for saving
-        const updatedGuesses = [...guesses, guessNumber];
-        setGuesses(updatedGuesses);
-
-        // Check each category to see if it matches the selected words
-        // Each category has 4 words, and the words array is structured as:
-        // [cat1_word1, cat1_word2, cat1_word3, cat1_word4, cat2_word1, ...]
-        for (let i = 0; i < currentPuzzle.categories.length; i++) {
-            const categoryWords = currentPuzzle.words.slice(i * 4, (i + 1) * 4);
-
-            // Check if all selected words are in this category
-            const isMatch = categoryWords.every(word => selectedWords.has(word)) &&
-                selectedWordsArray.every(word => categoryWords.includes(word));
-
-            if (isMatch) {
-                // Correct match! Add to solved categories
-                const sortedWords = [...categoryWords].sort();
-                setSolvedCategories(prev => [...prev, {
-                    name: currentPuzzle.categories[i],
-                    words: sortedWords,
-                    categoryIndex: i
-                }]);
-
-                // Remove these words from the shuffled words
-                setShuffledWords(prev => prev.filter(word => !categoryWords.includes(word)));
-
-                // Clear selection
-                setSelectedWords(new Set());
-
-                // Save game state to Firestore
-                await saveGameState({
-                    userId: userId,
-                    puzzleId: currentPuzzle.id,
-                    guesses: updatedGuesses
-                });
-
-                return;
-            }
-        }
-
-        // If we get here, no match was found - incorrect guess
-        // Trigger shake animation
-        setIsShakingWords(new Set(selectedWords));
-
-        // After shake animation completes (500ms), deselect and remove mistake
-        setTimeout(async () => {
-            setIsShakingWords(new Set());
-            setSelectedWords(new Set());
-            setMistakesRemaining(prev => prev - 1);
-
-            // Save game state to Firestore
-            await saveGameState({
-                userId: userId,
-                puzzleId: currentPuzzle.id!,
-                guesses: updatedGuesses
-            });
-        }, 500);
-    };
+    }
 
     // Conditional rendering for loading, error, not found
     if (isLoadingGameState) {

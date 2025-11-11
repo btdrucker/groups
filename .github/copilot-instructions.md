@@ -45,6 +45,7 @@ This is a React + TypeScript project using:
 
 ## Code Commenting
 - Avoid obvious comments that simply restate what the code does or explain standard language or CSS properties.
+- Comments should describe the purpose or behavior of code, not its structural role (e.g., avoid 'helper function' or 'utility function' comments).
 
 ## Before Making Changes
 
