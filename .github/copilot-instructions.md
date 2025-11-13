@@ -9,7 +9,7 @@ Before implementing any request, ask all necessary clarifying questions to fully
 - User preferences
 - Scope of changes
 
-Wait for explicit confirmation before proceeding with any work.
+**Wait for explicit confirmation and answers to all clarifying questions before proceeding with any work. If the user indicates they cannot or do not want to answer a specific question, proceed accordingly and note this in your process.**
 
 ## Project Context
 
