@@ -1,15 +1,15 @@
 import React, {useEffect, useState} from 'react';
 import styles from './style.module.css';
 import {useAppSelector} from '../../common/hooks';
-import {selectAvailableMistakes, selectNumCategories, selectPuzzle, selectWordsPerCategory} from './slice';
+import {selectPuzzle, selectPlayLoading, selectPlayError} from './slice';
 import {selectUserId} from '../auth/slice';
 import {getGameState, saveGameState} from '../../firebase/firestore';
-import {useParams} from 'react-router-dom';
 import {classes} from "../../common/classUtils";
+import {Puzzle} from '../../firebase/firestore';
 
-interface SolvedCategory {
+interface DisplayedCategory {
     categoryIndex: number;
-    wasNotGuessed?: boolean;
+    wasGuessed?: boolean;
 }
 
 interface Word {
@@ -17,6 +17,21 @@ interface Word {
     indexInPuzzle: number;
     indexInGrid: number;
 }
+
+// Calculate the number of categories in a puzzle
+const getNumCategories = (puzzle: Puzzle): number => {
+    return puzzle.categories.length;
+};
+
+// Calculate the number of words per category in a puzzle
+const getWordsPerCategory = (puzzle: Puzzle): number => {
+    return puzzle.words.length / puzzle.categories.length;
+};
+
+// Calculate the number of available mistakes (same as number of categories)
+const getAvailableMistakes = (puzzle: Puzzle): number => {
+    return puzzle.categories.length;
+};
 
 // Converts a guess (set of words) to a number where each bit represents whether a word was selected.
 // The bit position is determined by the word's position in the puzzle's words array.
@@ -119,17 +134,17 @@ const toggleWordSelection = (word: Word, prev: Word[], wordsPerCategory: number)
 }
 
 const Play = () => {
-    const {puzzleId} = useParams();
     const currentPuzzle = useAppSelector(selectPuzzle);
-    const availableMistakes = useAppSelector(selectAvailableMistakes);
-    const numCategories = useAppSelector(selectNumCategories);
-    const wordsPerCategory = useAppSelector(selectWordsPerCategory);
+    const isLoadingPuzzle = useAppSelector(selectPlayLoading);
+    const puzzleError = useAppSelector(selectPlayError);
     const userId = useAppSelector(selectUserId);
+
+
     const [guesses, setGuesses] = useState<number[]>([]); // Track guesses as 16-bit numbers from gameState
     const [selectedWords, setSelectedWords] = useState<Word[]>([]);
     const [gridWords, setGridWords] = useState<Word[]>([]);
-    const [solvedCategories, setSolvedCategories] = useState<SolvedCategory[]>([]);
-    const [mistakesRemaining, setMistakesRemaining] = useState(wordsPerCategory);
+    const [displayedCategories, setDisplayedCategories] = useState<DisplayedCategory[]>([]);
+    const [mistakesRemaining, setMistakesRemaining] = useState(0);
     const [isShaking, setIsShaking] = useState(false);
     const [messageText, setMessageText] = useState<string | null>(null);
     const [isRevealing, setIsRevealing] = useState(false);
@@ -151,7 +166,7 @@ const Play = () => {
                 return;
             }
 
-            const startingSolvedCategories: SolvedCategory[] = [];
+            const startingDisplayedCategories: DisplayedCategory[] = [];
             let startingMistakes = 0;
             const startingGuesses: number[] = [];
 
@@ -161,6 +176,9 @@ const Play = () => {
                 indexInGrid: indexInPuzzle
             }));
 
+            const numCategories = getNumCategories(currentPuzzle);
+            const wordsPerCategory = getWordsPerCategory(currentPuzzle);
+
             // Reconstruct the game state from the saved guesses.
             if (gameState && gameState.guesses.length > 0) {
                 startingGuesses.push(...gameState.guesses);
@@ -169,9 +187,9 @@ const Play = () => {
                     let wasCorrect = false;
                     for (let categoryIndex = 0; categoryIndex < numCategories; categoryIndex++) {
                         if (isGuessCorrect(guessNumber, categoryIndex, wordsPerCategory)) {
-                            startingSolvedCategories.push({categoryIndex});
+                            startingDisplayedCategories.push({categoryIndex, wasGuessed: true});
                             wasCorrect = true;
-                            words = moveCategoryWordsToGridRow(words, categoryIndex, startingSolvedCategories.length - 1, wordsPerCategory);
+                            words = moveCategoryWordsToGridRow(words, categoryIndex, startingDisplayedCategories.length - 1, wordsPerCategory);
                             break;
                         }
                     }
@@ -182,7 +200,12 @@ const Play = () => {
                 });
             }
 
-            setSolvedCategories(startingSolvedCategories);
+            for (let categoryIndex = 0; categoryIndex < numCategories; categoryIndex++) {
+                if (startingDisplayedCategories.every(cat => cat.categoryIndex !== categoryIndex)) {
+                    startingDisplayedCategories.push({categoryIndex, wasGuessed: false});
+                }
+            }
+            setDisplayedCategories(startingDisplayedCategories);
             setGuesses(startingGuesses);
             const mistakes = Math.max(0, wordsPerCategory - startingMistakes);
             setMistakesRemaining(mistakes);
@@ -190,7 +213,7 @@ const Play = () => {
             setMessageText(null);
             setSelectedWords([]);
 
-            words = shuffleWordsFromGridRow(words, startingSolvedCategories.length, wordsPerCategory)
+            words = shuffleWordsFromGridRow(words, startingDisplayedCategories.length, wordsPerCategory)
             setGridWords(words);
 
             setIsLoadingGameState(false);
@@ -203,6 +226,9 @@ const Play = () => {
         if (mistakesRemaining === 0 && !isRevealing && currentPuzzle) {
             setIsRevealing(true);
 
+            const numCategories = getNumCategories(currentPuzzle);
+            const wordsPerCategory = getWordsPerCategory(currentPuzzle);
+
             // Start revealing unsolved categories one by one
             const revealNextCategory = (categoryIndex: number) => {
                 if (!currentPuzzle || categoryIndex >= numCategories) {
@@ -210,7 +236,7 @@ const Play = () => {
                 }
 
                 // Check if this category is already solved
-                const isSolved = solvedCategories.some(cat => cat.categoryIndex === categoryIndex);
+                const isSolved = displayedCategories.some(cat => cat.categoryIndex === categoryIndex);
                 if (isSolved) {
                     // Skip to next category
                     setTimeout(() => revealNextCategory(categoryIndex + 1), 100);
@@ -218,15 +244,15 @@ const Play = () => {
                 }
 
                 // Rearrange shuffledWords to put category words at the top
-                setGridWords(moveCategoryWordsToGridRow(gridWords, categoryIndex, solvedCategories.length, wordsPerCategory));
+                setGridWords(moveCategoryWordsToGridRow(gridWords, categoryIndex, displayedCategories.length, wordsPerCategory));
 
                 // After animation completes, add to solved categories with fade
                 setTimeout(() => {
                     if (!currentPuzzle) return;
 
-                    setSolvedCategories(prevSolved => [...prevSolved, {
+                    setDisplayedCategories(prevSolved => [...prevSolved, {
                         categoryIndex: categoryIndex,
-                        wasNotGuessed: true
+                        wasGuessed: false
                     }]);
 
                     // Reveal next category
@@ -239,7 +265,37 @@ const Play = () => {
             // Start the reveal sequence after a short delay
             setTimeout(() => revealNextCategory(0), 500);
         }
-    }, [mistakesRemaining, currentPuzzle, solvedCategories, isRevealing]);
+    }, [mistakesRemaining, currentPuzzle, displayedCategories, isRevealing, gridWords]);
+
+    // Conditional rendering for loading, error, not found
+    if (isLoadingPuzzle || isLoadingGameState) {
+        return (
+            <div className={styles.puzzlePlayerContainer}>
+                <p>Loading...</p>
+            </div>
+        );
+    }
+
+    if (puzzleError || loadError) {
+        return (
+            <div className={styles.puzzlePlayerContainer}>
+                <p>There was an error loading the puzzle.</p>
+            </div>
+        );
+    }
+
+    if (!currentPuzzle) {
+        return (
+            <div className={styles.puzzlePlayerContainer}>
+                <p>I can't find that puzzle!</p>
+            </div>
+        );
+    }
+
+    // At this point, currentPuzzle is guaranteed to exist
+    const numCategories = getNumCategories(currentPuzzle);
+    const wordsPerCategory = getWordsPerCategory(currentPuzzle);
+    const availableMistakes = getAvailableMistakes(currentPuzzle);
 
     const handleWordClick = (word: Word) => {
         setSelectedWords(prev => toggleWordSelection(word, prev, wordsPerCategory));
@@ -254,8 +310,11 @@ const Play = () => {
         setSelectedWords([]);
     };
 
+    const categoryWords = (categoryIndex: number): string[] => {
+        return currentPuzzle.words.slice(categoryIndex * wordsPerCategory, (categoryIndex + 1) * wordsPerCategory);
+    }
+
     const processGuessIfCorrect = async (guess: Word[], updatedGuesses: number[]) => {
-        if (!currentPuzzle) return false;
 
         for (let i = 0; i < numCategories; i++) {
             const categoryWords = currentPuzzle.words.slice(i * wordsPerCategory, (i + 1) * wordsPerCategory);
@@ -299,8 +358,8 @@ const Play = () => {
     // Handles a correct guess: updates solved categories, removes words, and saves state
     const processCorrectGuess = async (categoryIndex: number, updatedGuesses: number[], categoryWords: string[]) => {
         const sortedWords = [...categoryWords].sort();
-        setSolvedCategories(prev => [...prev, {
-            name: currentPuzzle!.categories[categoryIndex],
+        setDisplayedCategories(prev => [...prev, {
+            name: currentPuzzle.categories[categoryIndex],
             words: sortedWords,
             categoryIndex
         }]);
@@ -317,7 +376,7 @@ const Play = () => {
     };
 
     const handleSubmit = async () => {
-        if (selectedWords.length !== wordsPerCategory || !userId || !currentPuzzle?.id) return;
+        if (selectedWords.length !== wordsPerCategory || !userId) return;
 
         const selectedWordsArray = Array.from(selectedWords);
         const guessNumber = guessToNumber(selectedWordsArray);
@@ -352,39 +411,8 @@ const Play = () => {
         }
     }
 
-    const categoryWords = (categoryIndex: number): string[] => {
-        if (!currentPuzzle) return [];
-        return currentPuzzle.words.slice(categoryIndex * wordsPerCategory, (categoryIndex + 1) * wordsPerCategory);
-    }
-
-    // Conditional rendering for loading, error, not found
-    if (isLoadingGameState) {
-        return (
-            <div className={styles.puzzlePlayerContainer}>
-                <p>Loading...</p>
-            </div>
-        );
-    }
-
-    if (loadError) {
-        return (
-            <div className={styles.puzzlePlayerContainer}>
-                <p>There was an error loading the puzzle.</p>
-            </div>
-        );
-    }
-
-    if (!isLoadingGameState && puzzleId && !currentPuzzle) {
-        return (
-            <div className={styles.puzzlePlayerContainer}>
-                <p>I can't find that puzzle!</p>
-            </div>
-        );
-    }
 
     // Format creator name and date
-    if (!currentPuzzle) return null; // Defensive, should never hit due to above guards
-    // const creatorName = currentPuzzle.creatorDisplayName || currentPuzzle.creatorEmail || 'Unknown';
     const createdDate = currentPuzzle.createdAt
         ? new Date(currentPuzzle.createdAt).toLocaleDateString('en-US', {
             year: 'numeric',
@@ -394,7 +422,7 @@ const Play = () => {
         : 'Unknown date';
 
     const isGameLost = mistakesRemaining === 0;
-    const isComplete = solvedCategories.length === numCategories && !isGameLost;
+    const isComplete = displayedCategories.length === numCategories && !isGameLost;
 
     return (
         <div className={styles.puzzlePlayerContainer}>
@@ -413,10 +441,10 @@ const Play = () => {
                     </div>
                 )}
                 {/* Show solved categories at the top */}
-                {solvedCategories.map((category, index) => (
+                {displayedCategories.map((category, index) => (
                     <div
                         key={index}
-                        className={`${styles.solvedCategoryRow} ${category.wasNotGuessed ? styles.missedCategory : ''}`}
+                        className={classes(styles.solvedCategoryRow, !category.wasGuessed && styles.missedCategory)}
                         data-category-index={category.categoryIndex}
                     >
                         <div className={styles.categoryName}>{currentPuzzle.categories[category.categoryIndex]}</div>
