@@ -1,10 +1,11 @@
 import React, {useEffect, useState} from 'react';
 import styles from './style.module.css';
 import {useAppSelector} from '../../common/hooks';
-import {selectPuzzle} from './slice';
+import {selectAvailableMistakes, selectNumCategories, selectPuzzle, selectWordsPerCategory} from './slice';
 import {selectUserId} from '../auth/slice';
-import {getGameState, Puzzle, saveGameState} from '../../firebase/firestore';
+import {getGameState, saveGameState} from '../../firebase/firestore';
 import {useParams} from 'react-router-dom';
+import {classes} from "../../common/classUtils";
 
 interface SolvedCategory {
     categoryIndex: number;
@@ -13,18 +14,19 @@ interface SolvedCategory {
 
 interface Word {
     word: string;
+    indexInPuzzle: number;
     indexInGrid: number;
 }
 
-// Converts a guess (set of 4 words) to a 16-bit number.
+// Converts a guess (set of words) to a number where each bit represents whether a word was selected.
 // The bit position is determined by the word's position in the puzzle's words array.
 const guessToNumber = (guess: Word[]): number => {
     let result = 0;
-    guess.forEach((word, index) => result |= (1 << index));
+    guess.forEach((word) => result |= (1 << word.indexInPuzzle));
     return result;
 };
 
-// Counts the number of set bits in a 16-bit numbers.
+// Counts the number of set bits in a number.
 const countSetBits = (n: number): number => {
     let count = 0;
     while (n) {
@@ -34,21 +36,22 @@ const countSetBits = (n: number): number => {
     return count;
 }
 
-const correctWordsForCategory = (guessNumber: number, categoryIndex: number): number => {
-    const categoryMask = 0b1111 << (categoryIndex * 4);
+// Returns the number of correct words in a specified category for a given guess.
+const numCorrectWordsForCategory = (guessNumber: number, categoryIndex: number, wordsInCategory: number): number => {
+    const categoryMask = ((1 << wordsInCategory) - 1) << (categoryIndex * wordsInCategory);
     const guessMasked = guessNumber & categoryMask;
     return countSetBits(guessMasked);
 }
 
-// Checks if a guess matches a category.
-const isGuessCorrect = (guessNumber: number, categoryIndex: number): boolean => {
-    return correctWordsForCategory(guessNumber, categoryIndex) === 4;
+// Checks if a guess matches a specified category.
+const isGuessCorrect = (guessNumber: number, categoryIndex: number, wordsPerCategory: number): boolean => {
+    return numCorrectWordsForCategory(guessNumber, categoryIndex, wordsPerCategory) === wordsPerCategory;
 };
 
-// Returns true if exactly three out of four selected words are in any unsolved category
-function isOneAway(guessNumber: number, puzzle: Puzzle): boolean {
-    for (let categoryIndex = 0; categoryIndex < puzzle.categories.length; categoryIndex++) {
-        if (correctWordsForCategory(guessNumber, categoryIndex) === 3) {
+// Checks if a guess has all but one correct words in any category.
+function isOneAway(guessNumber: number, numCategories: number, wordsPerCategory: number): boolean {
+    for (let categoryIndex = 0; categoryIndex < numCategories; categoryIndex++) {
+        if (numCorrectWordsForCategory(guessNumber, categoryIndex, wordsPerCategory) === (wordsPerCategory - 1)) {
             return true;
         }
     }
@@ -60,52 +63,78 @@ const isDuplicateGuess = (guessNumber: number, guesses: number[]): boolean => {
     return guesses.includes(guessNumber);
 };
 
+const deepCopyWords = (words: Word[]): Word[] => {
+    return words.map(word => ({...word}));
+}
+
+const moveCategoryWordsToGridRow = (words: Word[], categoryIndex: number, targetRow: number, wordsPerCategory: number): Word[] => {
+    const updatedWords = deepCopyWords(words);
+
+    // Swap indexInGrid of category words to target row words.
+    for (let x = 0; x < wordsPerCategory; x++) {
+        // Find the word currently at targetGridIndex
+        const targetGridIndex = targetRow * wordsPerCategory + x;
+        const wordAtTargetIndex = updatedWords.find(word => word.indexInGrid === targetGridIndex);
+        if (!wordAtTargetIndex) throw new Error('Target grid index word not found');
+
+        // Swap the indexInGrid values
+        const categoryWordIndex = categoryIndex * wordsPerCategory + x;
+        const tempIndex = updatedWords[categoryWordIndex].indexInGrid;
+        updatedWords[categoryWordIndex].indexInGrid = wordAtTargetIndex.indexInGrid;
+        wordAtTargetIndex.indexInGrid = tempIndex;
+    }
+
+    return updatedWords;
+}
+
+const shuffleWordsFromGridRow = (words: Word[], startRow: number, wordsPerCategory: number): Word[] => {
+    const updatedWords = deepCopyWords(words);
+
+    const indicesOfWordsToShuffle: number[] = [];
+    const gridIndicesOfWordsToShuffle: number[] = [];
+    for (let i = 0; i < words.length - 1; i++) {
+        if (updatedWords[i].indexInGrid >= startRow * wordsPerCategory) {
+            indicesOfWordsToShuffle.push(i);
+            gridIndicesOfWordsToShuffle.push(updatedWords[i].indexInGrid);
+        }
+    }
+    // Shuffle the grid indices
+    gridIndicesOfWordsToShuffle.sort(() => Math.random() - 0.5);
+    // Reassign the shuffled grid indices back to the words
+    indicesOfWordsToShuffle.forEach((wordIndex, i) => {
+        updatedWords[wordIndex].indexInGrid = gridIndicesOfWordsToShuffle[i];
+    });
+
+    return updatedWords;
+}
+
+const toggleWordSelection = (word: Word, prev: Word[], wordsPerCategory: number): Word[] => {
+    const newSet = new Set(prev);
+    if (newSet.has(word)) {
+        newSet.delete(word);
+    } else if (newSet.size < wordsPerCategory) {
+        newSet.add(word);
+    }
+    return Array.from(newSet);
+}
+
 const Play = () => {
     const {puzzleId} = useParams();
     const currentPuzzle = useAppSelector(selectPuzzle);
+    const availableMistakes = useAppSelector(selectAvailableMistakes);
+    const numCategories = useAppSelector(selectNumCategories);
+    const wordsPerCategory = useAppSelector(selectWordsPerCategory);
     const userId = useAppSelector(selectUserId);
     const [guesses, setGuesses] = useState<number[]>([]); // Track guesses as 16-bit numbers from gameState
     const [selectedWords, setSelectedWords] = useState<Word[]>([]);
-    const [shuffledWords, setShuffledWords] = useState<Word[]>([]);
+    const [gridWords, setGridWords] = useState<Word[]>([]);
     const [solvedCategories, setSolvedCategories] = useState<SolvedCategory[]>([]);
-    const [mistakesRemaining, setMistakesRemaining] = useState(4);
-    const [shakingWords, setShakingWords] = useState<Word[]>([]);
+    const [mistakesRemaining, setMistakesRemaining] = useState(wordsPerCategory);
+    const [isShaking, setIsShaking] = useState(false);
     const [messageText, setMessageText] = useState<string | null>(null);
     const [isRevealing, setIsRevealing] = useState(false);
     const [isLoadingGameState, setIsLoadingGameState] = useState(false);
     const [loadError, setLoadError] = useState(false);
-
-    const shuffleWords = (words: Word[], solvedCategories: SolvedCategory[], numCategories: number, wordsPerCategory: number): Word[] => {
-        // Deep copy words array.
-        const wordList = words.map(word => ({...word}));
-
-        // Place words of solved categories on the top rows, in the order the categories were solved.
-        solvedCategories.forEach((cat, solvedIndex) => {
-            for (let x = 0; x < wordsPerCategory; x++) {
-                const indexInPuzzle = cat.categoryIndex * wordsPerCategory + x;
-                const word = wordList[indexInPuzzle];
-                word.indexInGrid = solvedIndex * wordsPerCategory + x;
-            }
-        })
-
-        // Make an array of remaining indices in grid, randomly sorted.
-        let remainingIndices = Array.from(
-            {length: (numCategories - solvedCategories.length) * wordsPerCategory},
-            (_, i) => i + solvedCategories.length * wordsPerCategory
-        ).sort(() => Math.random() - 0.5)
-
-        // Place remaining words in the remaining indices, randomly.
-        for (let i = 0; i < numCategories; i++) {
-            if (solvedCategories.some(cat => cat.categoryIndex === i)) continue
-
-            for (let x = 0; x < wordsPerCategory; x++) {
-                const indexInPuzzle = i * wordsPerCategory + x;
-                const word = wordList[indexInPuzzle];
-                word.indexInGrid = remainingIndices.pop() || -1;
-            }
-        }
-        return wordList;
-    }
 
     // Load game state from Firestore when component mounts or puzzle changes.
     useEffect(() => {
@@ -126,16 +155,23 @@ const Play = () => {
             let startingMistakes = 0;
             const startingGuesses: number[] = [];
 
+            let words: Word[] = currentPuzzle.words.map((word, indexInPuzzle) => ({
+                word,
+                indexInPuzzle,
+                indexInGrid: indexInPuzzle
+            }));
+
             // Reconstruct the game state from the saved guesses.
             if (gameState && gameState.guesses.length > 0) {
                 startingGuesses.push(...gameState.guesses);
                 gameState.guesses.forEach(guessNumber => {
                     // Check if this guess was correct
                     let wasCorrect = false;
-                    for (let categoryIndex = 0; categoryIndex < currentPuzzle.categories.length; categoryIndex++) {
-                        if (isGuessCorrect(guessNumber, categoryIndex)) {
+                    for (let categoryIndex = 0; categoryIndex < numCategories; categoryIndex++) {
+                        if (isGuessCorrect(guessNumber, categoryIndex, wordsPerCategory)) {
                             startingSolvedCategories.push({categoryIndex});
                             wasCorrect = true;
+                            words = moveCategoryWordsToGridRow(words, categoryIndex, startingSolvedCategories.length - 1, wordsPerCategory);
                             break;
                         }
                     }
@@ -148,17 +184,14 @@ const Play = () => {
 
             setSolvedCategories(startingSolvedCategories);
             setGuesses(startingGuesses);
-            const mistakes = Math.max(0, 4 - startingMistakes);
+            const mistakes = Math.max(0, wordsPerCategory - startingMistakes);
             setMistakesRemaining(mistakes);
             setIsRevealing(false);
             setMessageText(null);
             setSelectedWords([]);
 
-            const wordList: Word[] = currentPuzzle.words.map((word) => ({
-                word,
-                indexInGrid: -1
-            }));
-            setShuffledWords(shuffleWords(wordList, startingSolvedCategories, currentPuzzle.categories.length, 4));
+            words = shuffleWordsFromGridRow(words, startingSolvedCategories.length, wordsPerCategory)
+            setGridWords(words);
 
             setIsLoadingGameState(false);
         };
@@ -171,37 +204,34 @@ const Play = () => {
             setIsRevealing(true);
 
             // Start revealing unsolved categories one by one
-            const revealNextCategory = (index: number) => {
-                if (!currentPuzzle || index >= currentPuzzle.categories.length) {
+            const revealNextCategory = (categoryIndex: number) => {
+                if (!currentPuzzle || categoryIndex >= numCategories) {
                     return;
                 }
 
                 // Check if this category is already solved
-                const isSolved = solvedCategories.some(cat => cat.categoryIndex === index);
+                const isSolved = solvedCategories.some(cat => cat.categoryIndex === categoryIndex);
                 if (isSolved) {
                     // Skip to next category
-                    setTimeout(() => revealNextCategory(index + 1), 100);
+                    setTimeout(() => revealNextCategory(categoryIndex + 1), 100);
                     return;
                 }
 
                 // Rearrange shuffledWords to put category words at the top
-                // TODO
+                setGridWords(moveCategoryWordsToGridRow(gridWords, categoryIndex, solvedCategories.length, wordsPerCategory));
 
                 // After animation completes, add to solved categories with fade
                 setTimeout(() => {
                     if (!currentPuzzle) return;
 
                     setSolvedCategories(prevSolved => [...prevSolved, {
-                        categoryIndex: index,
+                        categoryIndex: categoryIndex,
                         wasNotGuessed: true
                     }]);
 
-                    // Remove these words from shuffled words
-                    // TODO
-
                     // Reveal next category
-                    if (index + 1 < currentPuzzle.categories.length) {
-                        setTimeout(() => revealNextCategory(index + 1), 800);
+                    if (categoryIndex + 1 < numCategories) {
+                        setTimeout(() => revealNextCategory(categoryIndex + 1), 800);
                     }
                 }, 800);
             };
@@ -212,21 +242,12 @@ const Play = () => {
     }, [mistakesRemaining, currentPuzzle, solvedCategories, isRevealing]);
 
     const handleWordClick = (word: Word) => {
-        setSelectedWords(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(word)) {
-                newSet.delete(word);
-            } else if (newSet.size < 4) {
-                // Only allow selecting if less than 4 words are selected
-                newSet.add(word);
-            }
-            return Array.from(newSet);
-        });
+        setSelectedWords(prev => toggleWordSelection(word, prev, wordsPerCategory));
     };
 
     const handleShuffle = () => {
-        const shuffled = [...shuffledWords].sort(() => Math.random() - 0.5);
-        setShuffledWords(shuffled);
+        const shuffled = [...gridWords].sort(() => Math.random() - 0.5);
+        setGridWords(shuffled);
     };
 
     const handleDeselectAll = () => {
@@ -236,8 +257,8 @@ const Play = () => {
     const processGuessIfCorrect = async (guess: Word[], updatedGuesses: number[]) => {
         if (!currentPuzzle) return false;
 
-        for (let i = 0; i < currentPuzzle.categories.length; i++) {
-            const categoryWords = currentPuzzle.words.slice(i * 4, (i + 1) * 4);
+        for (let i = 0; i < numCategories; i++) {
+            const categoryWords = currentPuzzle.words.slice(i * wordsPerCategory, (i + 1) * wordsPerCategory);
             const isMatch = categoryWords.every(word => selectedWords.some((obj) => obj.word === word)) &&
                 guess.every(word => categoryWords.includes(word.word));
             if (isMatch) {
@@ -258,9 +279,9 @@ const Play = () => {
 
     // Triggers shake animation for the given words for a set duration
     const triggerShakeAnimation = (words: Word[], duration: number = 500) => {
-        setShakingWords(words);
+        setIsShaking(true);
         setTimeout(() => {
-            setShakingWords([]);
+            setIsShaking(false);
             setSelectedWords([]);
         }, duration);
     };
@@ -284,7 +305,7 @@ const Play = () => {
             categoryIndex
         }]);
         setSelectedWords([]);
-        setShuffledWords(prev => prev.filter(word => !categoryWords.includes(word.word)));
+        setGridWords(prev => prev.filter(word => !categoryWords.includes(word.word)));
         await saveCurrentGameState(updatedGuesses);
     };
 
@@ -296,12 +317,12 @@ const Play = () => {
     };
 
     const handleSubmit = async () => {
-        if (selectedWords.length !== 4 || !userId || !currentPuzzle?.id) return;
+        if (selectedWords.length !== wordsPerCategory || !userId || !currentPuzzle?.id) return;
 
         const selectedWordsArray = Array.from(selectedWords);
         const guessNumber = guessToNumber(selectedWordsArray);
         const isDuplicate = isDuplicateGuess(guessNumber, guesses);
-        const isOneAwayGuess = isOneAway(guessNumber, currentPuzzle);
+        const isOneAwayGuess = isOneAway(guessNumber, numCategories, wordsPerCategory);
 
         // Save game state immediately (for all guesses)
         const updatedGuesses = [...guesses, guessNumber];
@@ -333,7 +354,7 @@ const Play = () => {
 
     const categoryWords = (categoryIndex: number): string[] => {
         if (!currentPuzzle) return [];
-        return currentPuzzle.words.slice(categoryIndex * 4, (categoryIndex + 1) * 4);
+        return currentPuzzle.words.slice(categoryIndex * wordsPerCategory, (categoryIndex + 1) * wordsPerCategory);
     }
 
     // Conditional rendering for loading, error, not found
@@ -373,7 +394,7 @@ const Play = () => {
         : 'Unknown date';
 
     const isGameLost = mistakesRemaining === 0;
-    const isComplete = solvedCategories.length === 4 && !isGameLost;
+    const isComplete = solvedCategories.length === numCategories && !isGameLost;
 
     return (
         <div className={styles.puzzlePlayerContainer}>
@@ -406,10 +427,10 @@ const Play = () => {
                 ))}
 
                 {/* Show remaining words */}
-                {shuffledWords.map((word, index) => (
+                {gridWords.map((word, index) => (
                     <button
                         key={index}
-                        className={`${styles.wordButton} ${selectedWords.includes(word) ? styles.selectedWord : ''} ${shakingWords.includes(word) ? styles.shakeWord : ''}`}
+                        className={classes(styles.wordButton, selectedWords.includes(word) && styles.selectedWord, isShaking && selectedWords.includes(word) && styles.shakeWord)}
                         onClick={() => handleWordClick(word)}
                         disabled={isGameLost}
                     >
@@ -421,10 +442,10 @@ const Play = () => {
             <div className={styles.mistakesContainer}>
                 <span className={styles.mistakesLabel}>Mistakes remaining:</span>
                 <div className={styles.mistakesDots}>
-                    {Array.from({length: 4}).map((_, index) => (
+                    {Array.from({length: availableMistakes}).map((_, index) => (
                         <span
                             key={index}
-                            className={`${styles.mistakeDot} ${index < mistakesRemaining ? styles.mistakeDotActive : ''}`}
+                            className={classes(styles.mistakeDot, index < mistakesRemaining && styles.mistakeDotActive)}
                         />
                     ))}
                 </div>
@@ -453,7 +474,7 @@ const Play = () => {
                     <button
                         className={styles.actionButton}
                         onClick={handleSubmit}
-                        disabled={selectedWords.length !== 4}
+                        disabled={selectedWords.length !== wordsPerCategory}
                     >
                         Submit
                     </button>

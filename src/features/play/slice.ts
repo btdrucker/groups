@@ -68,6 +68,8 @@ export const playPuzzle = (puzzle: Puzzle) => (dispatch: AppDispatch) => {
 export const selectPuzzle = (state: any): Puzzle | undefined => state.play.puzzle;
 export const selectPlayLoading = (state: any): boolean => state.play.loading;
 export const selectPlayError = (state: any): string | null => state.play.error;
+export const selectAvailableMistakes = (state: any): number => state.play.puzzle?.categories?.length || 0;
+export const selectNumCategories = (state: any): number => state.play.puzzle?.categories?.length || 0;
+export const selectWordsPerCategory = (state: any): number => (state.play.puzzle?.words || 0) / (state.play.puzzle?.categories?.length || 1);
 
 export default playSlice.reducer;
-
