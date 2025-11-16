@@ -200,18 +200,21 @@ const Play = () => {
                 });
             }
 
-            for (let categoryIndex = 0; categoryIndex < numCategories; categoryIndex++) {
-                if (startingDisplayedCategories.every(cat => cat.categoryIndex !== categoryIndex)) {
-                    startingDisplayedCategories.push({categoryIndex, wasGuessed: false});
-                }
-            }
-            setDisplayedCategories(startingDisplayedCategories);
             setGuesses(startingGuesses);
-            const mistakes = Math.max(0, wordsPerCategory - startingMistakes);
-            setMistakesRemaining(mistakes);
+            const startingMistakesRemaining = Math.max(0, wordsPerCategory - startingMistakes);
+            setMistakesRemaining(startingMistakesRemaining);
             setIsRevealing(false);
             setMessageText(null);
             setSelectedWords([]);
+
+            if (startingMistakesRemaining === 0) {
+                for (let categoryIndex = 0; categoryIndex < numCategories; categoryIndex++) {
+                    if (startingDisplayedCategories.every(cat => cat.categoryIndex !== categoryIndex)) {
+                        startingDisplayedCategories.push({categoryIndex, wasGuessed: false});
+                    }
+                }
+            }
+            setDisplayedCategories(startingDisplayedCategories);
 
             words = shuffleWordsFromGridRow(words, startingDisplayedCategories.length, wordsPerCategory)
             setGridWords(words);
@@ -454,17 +457,29 @@ const Play = () => {
                     </div>
                 ))}
 
-                {/* Show remaining words */}
-                {gridWords.map((word, index) => (
-                    <button
-                        key={index}
-                        className={classes(styles.wordButton, selectedWords.includes(word) && styles.selectedWord, isShaking && selectedWords.includes(word) && styles.shakeWord)}
-                        onClick={() => handleWordClick(word)}
-                        disabled={isGameLost}
-                    >
-                        {word.word}
-                    </button>
-                ))}
+                {/* Show remaining words in grid rows */}
+                {Array.from({length: numCategories - displayedCategories.length}).map((_, rowIdx) => {
+                    const start = (displayedCategories.length + rowIdx) * wordsPerCategory;
+                    const end = start + wordsPerCategory;
+                    return (
+                        <div className={styles.wordRow} key={rowIdx}>
+                            {gridWords.slice(start, end).map((word, index) => (
+                                <button
+                                    key={index}
+                                    className={classes(
+                                        styles.wordButton,
+                                        selectedWords.includes(word) && styles.selectedWord,
+                                        isShaking && selectedWords.includes(word) && styles.shakeWord
+                                    )}
+                                    onClick={() => handleWordClick(word)}
+                                    disabled={isGameLost}
+                                >
+                                    {word.word}
+                                </button>
+                            ))}
+                        </div>
+                    );
+                })}
             </div>
 
             <div className={styles.mistakesContainer}>
