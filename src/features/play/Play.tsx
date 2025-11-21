@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useRef, useLayoutEffect} from 'react';
 import styles from './style.module.css';
 import {useAppSelector} from '../../common/hooks';
 import {selectPuzzle, selectPlayLoading, selectPlayError} from './slice';
@@ -107,7 +107,7 @@ const shuffleWordsFromGridRow = (words: Word[], startRow: number, wordsPerCatego
 
     const indicesOfWordsToShuffle: number[] = [];
     const gridIndicesOfWordsToShuffle: number[] = [];
-    for (let i = 0; i < words.length - 1; i++) {
+    for (let i = 0; i < words.length; i++) {
         if (updatedWords[i].indexInGrid >= startRow * wordsPerCategory) {
             indicesOfWordsToShuffle.push(i);
             gridIndicesOfWordsToShuffle.push(updatedWords[i].indexInGrid);
@@ -139,7 +139,6 @@ const Play = () => {
     const puzzleError = useAppSelector(selectPlayError);
     const userId = useAppSelector(selectUserId);
 
-
     const [guesses, setGuesses] = useState<number[]>([]); // Track guesses as 16-bit numbers from gameState
     const [selectedWords, setSelectedWords] = useState<Word[]>([]);
     const [gridWords, setGridWords] = useState<Word[]>([]);
@@ -150,6 +149,52 @@ const Play = () => {
     const [isRevealing, setIsRevealing] = useState(false);
     const [isLoadingGameState, setIsLoadingGameState] = useState(false);
     const [loadError, setLoadError] = useState(false);
+    const [isShuffling, setIsShuffling] = useState(false);
+
+    // --- FLIP animation setup ---
+    const cellRefs = useRef<(HTMLButtonElement | null)[]>([]);
+    const prevPositions = useRef<Map<number, DOMRect>>(new Map());
+    const shouldAnimate = useRef(false);
+
+    const measureCellPositions = () => {
+        const positions = new Map<number, DOMRect>();
+        gridWords.forEach(word => {
+            const ref = cellRefs.current[word.indexInPuzzle];
+            if (ref) {
+                positions.set(word.indexInPuzzle, ref.getBoundingClientRect());
+            }
+        });
+        return positions;
+    };
+
+    useLayoutEffect(() => {
+        if (!shouldAnimate.current) {
+            prevPositions.current = measureCellPositions();
+            return;
+        }
+        // Animate moved cells
+        const newPositions = measureCellPositions();
+        prevPositions.current.forEach((prevRect, index) => {
+            const newRect = newPositions.get(index);
+            if (newRect) {
+                const dx = prevRect.left - newRect.left;
+                const dy = prevRect.top - newRect.top;
+                if (dx !== 0 || dy !== 0) {
+                    const ref = cellRefs.current[index];
+                    if (ref) {
+                        ref.style.transition = 'none';
+                        ref.style.transform = `translate(${dx}px, ${dy}px)`;
+                        requestAnimationFrame(() => {
+                            ref.style.transition = 'transform 600ms cubic-bezier(0.25, 0.1, 0.25, 1)';
+                            ref.style.transform = '';
+                        });
+                    }
+                }
+            }
+        });
+        shouldAnimate.current = false;
+        prevPositions.current = newPositions;
+    }, [gridWords]);
 
     // Load game state from Firestore when component mounts or puzzle changes.
     useEffect(() => {
@@ -164,6 +209,15 @@ const Play = () => {
                 setIsLoadingGameState(false);
                 setLoadError(true);
                 return;
+            }
+
+            // If no game state exists, create a new one with empty guesses
+            if (!gameState) {
+                await saveGameState({
+                    userId,
+                    puzzleId: currentPuzzle.id,
+                    guesses: []
+                });
             }
 
             const startingDisplayedCategories: DisplayedCategory[] = [];
@@ -304,9 +358,16 @@ const Play = () => {
         setSelectedWords(prev => toggleWordSelection(word, prev, wordsPerCategory));
     };
 
-    const handleShuffle = () => {
-        const shuffled = [...gridWords].sort(() => Math.random() - 0.5);
-        setGridWords(shuffled);
+    const handleShuffle = async () => {
+        // Step 1: Measure cell positions before gridWords update
+        prevPositions.current = measureCellPositions();
+        shouldAnimate.current = true;
+        setIsShuffling(true);
+        // Step 2: Shuffle words in grid
+        setGridWords(prev => shuffleWordsFromGridRow(prev, displayedCategories.length, wordsPerCategory));
+        // Step 3: Wait for animation duration (600ms)
+        await new Promise(resolve => setTimeout(resolve, 600));
+        setIsShuffling(false);
     };
 
     const handleDeselectAll = () => {
@@ -324,7 +385,7 @@ const Play = () => {
             const isMatch = categoryWords.every(word => selectedWords.some((obj) => obj.word === word)) &&
                 guess.every(word => categoryWords.includes(word.word));
             if (isMatch) {
-                await processCorrectGuess(i, updatedGuesses, categoryWords);
+                await processCorrectGuess(i, updatedGuesses);
                 return true
             }
         }
@@ -359,15 +420,19 @@ const Play = () => {
     };
 
     // Handles a correct guess: updates solved categories, removes words, and saves state
-    const processCorrectGuess = async (categoryIndex: number, updatedGuesses: number[], categoryWords: string[]) => {
-        const sortedWords = [...categoryWords].sort();
-        setDisplayedCategories(prev => [...prev, {
-            name: currentPuzzle.categories[categoryIndex],
-            words: sortedWords,
-            categoryIndex
-        }]);
-        setSelectedWords([]);
-        setGridWords(prev => prev.filter(word => !categoryWords.includes(word.word)));
+    const processCorrectGuess = async (categoryIndex: number, updatedGuesses: number[]) => {
+        // Step 1: Measure cell positions before gridWords update
+        prevPositions.current = measureCellPositions();
+        shouldAnimate.current = true;
+        // Step 2: Move words to target row (triggers FLIP animation)
+        setGridWords(moveCategoryWordsToGridRow(gridWords, categoryIndex, displayedCategories.length, wordsPerCategory));
+        // Step 3: Wait for animation duration (600ms)
+        await new Promise(resolve => setTimeout(resolve, 600));
+        // Step 4: Wait for pause before reveal (600ms)
+        await new Promise(resolve => setTimeout(resolve, 600));
+        // Step 5: Reveal category
+        setDisplayedCategories(prev => [...prev, {categoryIndex, wasGuessed: true}]);
+        setSelectedWords([]); // Clear selection after reveal
         await saveCurrentGameState(updatedGuesses);
     };
 
@@ -457,29 +522,39 @@ const Play = () => {
                     </div>
                 ))}
 
-                {/* Show remaining words in grid rows */}
-                {Array.from({length: numCategories - displayedCategories.length}).map((_, rowIdx) => {
-                    const start = (displayedCategories.length + rowIdx) * wordsPerCategory;
-                    const end = start + wordsPerCategory;
-                    return (
-                        <div className={styles.wordRow} key={rowIdx}>
-                            {gridWords.slice(start, end).map((word, index) => (
-                                <button
-                                    key={index}
-                                    className={classes(
-                                        styles.wordButton,
-                                        selectedWords.includes(word) && styles.selectedWord,
-                                        isShaking && selectedWords.includes(word) && styles.shakeWord
-                                    )}
-                                    onClick={() => handleWordClick(word)}
-                                    disabled={isGameLost}
-                                >
-                                    {word.word}
-                                </button>
-                            ))}
-                        </div>
-                    );
-                })}
+                {/* Show remaining words in grid */}
+                <div
+                    className={styles.wordGrid}
+                    style={{
+                        display: 'grid',
+                        gridTemplateColumns: `repeat(${wordsPerCategory}, 1fr)`,
+                        gridTemplateRows: `repeat(${numCategories - displayedCategories.length}, 1fr)`
+                    }}
+                >
+                    {gridWords.filter(word => {
+                        // Exclude words in guessed categories
+                        const categoryIdx = Math.floor(word.indexInPuzzle / wordsPerCategory);
+                        return !displayedCategories.some(cat => cat.categoryIndex === categoryIdx);
+                    }).map(word => (
+                        <button
+                            key={word.indexInPuzzle}
+                            ref={el => { cellRefs.current[word.indexInPuzzle] = el; }}
+                            className={classes(
+                                styles.wordButton,
+                                selectedWords.some(sel => sel.indexInPuzzle === word.indexInPuzzle) && styles.selectedWord,
+                                isShaking && selectedWords.some(sel => sel.indexInPuzzle === word.indexInPuzzle) && styles.shakeWord
+                            )}
+                            style={{
+                                gridColumn: (word.indexInGrid % wordsPerCategory) + 1,
+                                gridRow: Math.floor(word.indexInGrid / wordsPerCategory) + 1
+                            }}
+                            onClick={() => handleWordClick(word)}
+                            disabled={isGameLost}
+                        >
+                            {word.word}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             <div className={styles.mistakesContainer}>
@@ -504,7 +579,7 @@ const Play = () => {
                 </div>
             ) : (
                 <div className={styles.buttonRow}>
-                    <button className={styles.actionButton} onClick={handleShuffle}>
+                    <button className={styles.actionButton} onClick={handleShuffle} disabled={isShuffling}>
                         Shuffle
                     </button>
                     <button

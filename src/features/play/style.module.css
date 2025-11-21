@@ -32,8 +32,8 @@
 }
 
 .wordGrid {
-    display: grid;
-    grid-template-columns: repeat(4, 160px);
+    display: flex;
+    flex-direction: column;
     gap: 0.75rem;
 }
 
