@@ -134,6 +134,11 @@ const toggleWordSelection = (word: Word, prev: Word[], wordsPerCategory: number)
     return Array.from(newSet);
 }
 
+const calculateGridWidth = (window: Window | undefined): number => {
+    // Subtract 32 to match 1rem of puzzlePlayerContainer horizontal padding.
+    return Math.max(400, Math.min((window?.innerWidth || 675) - 32, 675));
+}
+
 const Play = () => {
     const currentPuzzle = useAppSelector(selectPuzzle);
     const isLoadingPuzzle = useAppSelector(selectPlayLoading);
@@ -151,6 +156,13 @@ const Play = () => {
     const [isLoadingGameState, setIsLoadingGameState] = useState(false);
     const [loadError, setLoadError] = useState(false);
     const [isShuffling, setIsShuffling] = useState(false);
+    const [gridWidth, setGridWidth] = useState<number>(() => calculateGridWidth(window));
+
+    useEffect(() => {
+        const handleResize = () => setGridWidth(calculateGridWidth(window));
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // --- FLIP animation setup ---
     const cellRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -316,7 +328,7 @@ const Play = () => {
 
                     // Reveal next category
                     if (categoryIndex + 1 < numCategories) {
-                        setTimeout(() => revealNextCategory(newGridWords, categoryIndex + 1, row + 1), 3000);
+                        setTimeout(() => revealNextCategory(newGridWords, categoryIndex + 1, row + 1), 800);
                     }
                 }, 800);
             };
@@ -490,6 +502,11 @@ const Play = () => {
     const isGameLost = mistakesRemaining === 0;
     const isComplete = displayedCategories.length === numCategories && !isGameLost;
 
+    // Calculate cell width (4 columns, 3 gaps of 0.75rem)
+    const gapPx = 0.75 * 16; // 0.75rem = 12px (assuming 1rem = 16px)
+    const totalGap = 3 * gapPx;
+    const cellWidth = (gridWidth - totalGap) / 4;
+
     return (
         <div className={styles.puzzlePlayerContainer}>
             <div className={styles.puzzlePlayerHeader}>
@@ -500,9 +517,9 @@ const Play = () => {
             <div
                 className={styles.wordGrid}
                 style={{
-                    display: 'grid',
-                    gridTemplateColumns: `repeat(${wordsPerCategory}, 1fr)`,
-                    gridTemplateRows: `repeat(${numCategories}, 1fr)`
+                    width: gridWidth,
+                    gap: '0.75rem',
+                    gridTemplateColumns: `repeat(${wordsPerCategory}, 1fr)`
                 }}
             >
                 {/* Overlay message if active */}
@@ -540,7 +557,9 @@ const Play = () => {
                 }).map(word => (
                     <button
                         key={word.indexInPuzzle}
-                        ref={el => { cellRefs.current[word.indexInPuzzle] = el; }}
+                        ref={el => {
+                            cellRefs.current[word.indexInPuzzle] = el;
+                        }}
                         className={classes(
                             styles.wordButton,
                             selectedWords.some(sel => sel.indexInPuzzle === word.indexInPuzzle) && styles.selectedWord,
@@ -548,7 +567,13 @@ const Play = () => {
                         )}
                         style={{
                             gridColumn: (word.indexInGrid % wordsPerCategory) + 1,
-                            gridRow: Math.floor(word.indexInGrid / wordsPerCategory) + 1
+                            gridRow: Math.floor(word.indexInGrid / wordsPerCategory) + 1,
+                            width: cellWidth,
+                            minWidth: cellWidth,
+                            maxWidth: cellWidth,
+                            height: cellWidth * 0.5, // maintain aspect ratio similar to previous 160x80
+                            minHeight: cellWidth * 0.5,
+                            maxHeight: cellWidth * 0.5
                         }}
                         onClick={() => handleWordClick(word)}
                     >

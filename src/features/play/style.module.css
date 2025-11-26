@@ -5,8 +5,7 @@
 }
 
 .puzzlePlayerContainer {
-    padding: 2rem;
-    max-width: 800px;
+    padding: 2rem 0;
     margin: 0 auto;
     font-family: sans-serif;
 }
@@ -32,8 +31,7 @@
 }
 
 .wordGrid {
-    display: flex;
-    flex-direction: column;
+    display: grid;
     gap: 0.75rem;
 }
 
@@ -47,8 +45,6 @@
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s ease;
-    width: 160px;
-    height: 80px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -65,8 +61,6 @@
 .wordButton:disabled {
     cursor: not-allowed;
     opacity: 0.6;
-    width: 160px;
-    height: 80px;
 }
 
 .wordButton:disabled:hover {
