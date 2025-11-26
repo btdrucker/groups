@@ -499,7 +499,14 @@ const Play = () => {
                 <p className={styles.createdDate}>{createdDate}</p>
             </div>
 
-            <div className={styles.wordGrid}>
+            <div
+                className={styles.wordGrid}
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${wordsPerCategory}, 1fr)`,
+                    gridTemplateRows: `repeat(${numCategories}, 1fr)`
+                }}
+            >
                 {/* Overlay message if active */}
                 {messageText && (
                     <div className={styles.messageOverlay}>
@@ -508,12 +515,17 @@ const Play = () => {
                         </div>
                     </div>
                 )}
+
                 {/* Show solved categories at the top */}
                 {displayedCategories.map((category, index) => (
                     <div
                         key={index}
                         className={classes(styles.solvedCategoryRow, !category.wasGuessed && styles.missedCategory)}
                         data-category-index={category.categoryIndex}
+                        style={{
+                            gridColumn: 0,
+                            gridRow: index + 1
+                        }}
                     >
                         <div className={styles.categoryName}>{currentPuzzle.categories[category.categoryIndex]}</div>
                         <div className={styles.categoryWords}>
@@ -523,38 +535,29 @@ const Play = () => {
                 ))}
 
                 {/* Show remaining words in grid */}
-                <div
-                    className={styles.wordGrid}
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: `repeat(${wordsPerCategory}, 1fr)`,
-                        gridTemplateRows: `repeat(${numCategories - displayedCategories.length}, 1fr)`
-                    }}
-                >
-                    {gridWords.filter(word => {
-                        // Exclude words in guessed categories
-                        const categoryIdx = Math.floor(word.indexInPuzzle / wordsPerCategory);
-                        return !displayedCategories.some(cat => cat.categoryIndex === categoryIdx);
-                    }).map(word => (
-                        <button
-                            key={word.indexInPuzzle}
-                            ref={el => { cellRefs.current[word.indexInPuzzle] = el; }}
-                            className={classes(
-                                styles.wordButton,
-                                selectedWords.some(sel => sel.indexInPuzzle === word.indexInPuzzle) && styles.selectedWord,
-                                isShaking && selectedWords.some(sel => sel.indexInPuzzle === word.indexInPuzzle) && styles.shakeWord
-                            )}
-                            style={{
-                                gridColumn: (word.indexInGrid % wordsPerCategory) + 1,
-                                gridRow: Math.floor(word.indexInGrid / wordsPerCategory) + 1
-                            }}
-                            onClick={() => handleWordClick(word)}
-                            disabled={isGameLost}
-                        >
-                            {word.word}
-                        </button>
-                    ))}
-                </div>
+                {gridWords.filter(word => {
+                    // Exclude words in guessed categories
+                    const categoryIdx = Math.floor(word.indexInPuzzle / wordsPerCategory);
+                    return !displayedCategories.some(cat => cat.categoryIndex === categoryIdx);
+                }).map(word => (
+                    <button
+                        key={word.indexInPuzzle}
+                        ref={el => { cellRefs.current[word.indexInPuzzle] = el; }}
+                        className={classes(
+                            styles.wordButton,
+                            selectedWords.some(sel => sel.indexInPuzzle === word.indexInPuzzle) && styles.selectedWord,
+                            isShaking && selectedWords.some(sel => sel.indexInPuzzle === word.indexInPuzzle) && styles.shakeWord
+                        )}
+                        style={{
+                            gridColumn: (word.indexInGrid % wordsPerCategory) + 1,
+                            gridRow: Math.floor(word.indexInGrid / wordsPerCategory) + 1
+                        }}
+                        onClick={() => handleWordClick(word)}
+                        disabled={isGameLost}
+                    >
+                        {word.word}
+                    </button>
+                ))}
             </div>
 
             <div className={styles.mistakesContainer}>
