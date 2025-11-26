@@ -6,6 +6,7 @@ import {selectUserId} from '../auth/slice';
 import {getGameState, saveGameState} from '../../firebase/firestore';
 import {classes} from "../../common/classUtils";
 import {Puzzle} from '../../firebase/firestore';
+import {sleep} from '../../common/utils';
 
 interface DisplayedCategory {
     categoryIndex: number;
@@ -89,14 +90,14 @@ const moveCategoryWordsToGridRow = (words: Word[], categoryIndex: number, target
     for (let x = 0; x < wordsPerCategory; x++) {
         // Find the word currently at targetGridIndex
         const targetGridIndex = targetRow * wordsPerCategory + x;
-        const wordAtTargetIndex = updatedWords.find(word => word.indexInGrid === targetGridIndex);
-        if (!wordAtTargetIndex) throw new Error('Target grid index word not found');
+        const wordIndex = updatedWords.findIndex(word => word.indexInGrid === targetGridIndex);
+        if (wordIndex < 0) throw new Error('Word at target grid index not found');
 
         // Swap the indexInGrid values
         const categoryWordIndex = categoryIndex * wordsPerCategory + x;
         const tempIndex = updatedWords[categoryWordIndex].indexInGrid;
-        updatedWords[categoryWordIndex].indexInGrid = wordAtTargetIndex.indexInGrid;
-        wordAtTargetIndex.indexInGrid = tempIndex;
+        updatedWords[categoryWordIndex].indexInGrid = updatedWords[wordIndex].indexInGrid;
+        updatedWords[wordIndex].indexInGrid = tempIndex;
     }
 
     return updatedWords;
@@ -287,26 +288,27 @@ const Play = () => {
             const wordsPerCategory = getWordsPerCategory(currentPuzzle);
 
             // Start revealing unsolved categories one by one
-            const revealNextCategory = (categoryIndex: number) => {
-                if (!currentPuzzle || categoryIndex >= numCategories) {
+            const revealNextCategory = (gridWords: Word[], categoryIndex: number, row: number) => {
+                if (categoryIndex >= numCategories) {
                     return;
                 }
 
                 // Check if this category is already solved
                 const isSolved = displayedCategories.some(cat => cat.categoryIndex === categoryIndex);
                 if (isSolved) {
-                    // Skip to next category
-                    setTimeout(() => revealNextCategory(categoryIndex + 1), 100);
+                    revealNextCategory(gridWords, categoryIndex + 1, row + 1);
                     return;
                 }
 
                 // Rearrange shuffledWords to put category words at the top
-                setGridWords(moveCategoryWordsToGridRow(gridWords, categoryIndex, displayedCategories.length, wordsPerCategory));
+                prevPositions.current = measureCellPositions();
+                shouldAnimate.current = true;
+
+                const newGridWords = moveCategoryWordsToGridRow(gridWords, categoryIndex, row, wordsPerCategory);
+                setGridWords(newGridWords);
 
                 // After animation completes, add to solved categories with fade
                 setTimeout(() => {
-                    if (!currentPuzzle) return;
-
                     setDisplayedCategories(prevSolved => [...prevSolved, {
                         categoryIndex: categoryIndex,
                         wasGuessed: false
@@ -314,13 +316,13 @@ const Play = () => {
 
                     // Reveal next category
                     if (categoryIndex + 1 < numCategories) {
-                        setTimeout(() => revealNextCategory(categoryIndex + 1), 800);
+                        setTimeout(() => revealNextCategory(newGridWords, categoryIndex + 1, row + 1), 3000);
                     }
                 }, 800);
             };
 
             // Start the reveal sequence after a short delay
-            setTimeout(() => revealNextCategory(0), 500);
+            setTimeout(() => revealNextCategory(gridWords, 0, 0), 500);
         }
     }, [mistakesRemaining, currentPuzzle, displayedCategories, isRevealing, gridWords]);
 
@@ -401,12 +403,11 @@ const Play = () => {
     };
 
     // Triggers shake animation for the given words for a set duration
-    const triggerShakeAnimation = (words: Word[], duration: number = 500) => {
+    const triggerShakeAnimation = async (duration: number = 750): Promise<void> => {
         setIsShaking(true);
-        setTimeout(() => {
-            setIsShaking(false);
-            setSelectedWords([]);
-        }, duration);
+        await sleep(duration);
+        setIsShaking(false);
+        setSelectedWords([]);
     };
 
     // Saves the current game state to Firestore
@@ -437,9 +438,12 @@ const Play = () => {
     };
 
     // Handles an incorrect guess: triggers shake, updates mistakes, and saves state
-    const processIncorrectGuess = async (updatedGuesses: number[]) => {
-        triggerShakeAnimation(selectedWords);
+    const processIncorrectGuess = async (updatedGuesses: number[], isOneAwayGuess: boolean) => {
         setMistakesRemaining(prev => prev - 1);
+        await triggerShakeAnimation();
+        if (isOneAwayGuess) {
+            showMessageWithTimeout('One away!');
+        }
         await saveCurrentGameState(updatedGuesses);
     };
 
@@ -460,10 +464,8 @@ const Play = () => {
             return;
         }
 
-        // If we've gotten here, the guess was wrong.
-        triggerShakeAnimation(selectedWords);
-
         if (isDuplicate) {
+            await triggerShakeAnimation();
             if (isOneAwayGuess) {
                 showMessageWithTimeout('Already guessed (One away)!');
             } else {
@@ -472,11 +474,7 @@ const Play = () => {
             return;
         }
 
-        if (isOneAwayGuess) {
-            showMessageWithTimeout('One away!');
-            await processIncorrectGuess(updatedGuesses);
-            return;
-        }
+        await processIncorrectGuess(updatedGuesses, isOneAwayGuess);
     }
 
 
@@ -553,7 +551,6 @@ const Play = () => {
                             gridRow: Math.floor(word.indexInGrid / wordsPerCategory) + 1
                         }}
                         onClick={() => handleWordClick(word)}
-                        disabled={isGameLost}
                     >
                         {word.word}
                     </button>

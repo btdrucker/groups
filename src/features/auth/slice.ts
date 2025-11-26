@@ -56,8 +56,8 @@ export const signInWithEmailThunk = createAsyncThunk(
 
 export const signUpWithEmailThunk = createAsyncThunk(
     'auth/signUpWithEmail',
-    async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
-        const { user, error } = await signUpWithEmail(email, password);
+    async ({ email, password, displayName }: { email: string; password: string; displayName: string }, { rejectWithValue }) => {
+        const { user, error } = await signUpWithEmail(email, password, displayName);
         if (error) {
             return rejectWithValue(error);
         }

@@ -161,6 +161,7 @@ const AppRouter: React.FC = () => {
                 <Route path="/play/:puzzleId" element={<PlayRoute />} />
                 <Route path="/compose" element={<ComposeRoute />} />
                 <Route path="/puzzles" element={<PlayListRoute />} />
+                <Route path="*" element={<PlayListRoute />} />
             </Routes>
         </BrowserRouter>
     );

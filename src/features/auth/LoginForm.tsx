@@ -1,14 +1,15 @@
-import React, { useState } from "react";
+import React, {useState} from "react";
 import styles from "./style.module.css";
-import { classes } from "../../common/classUtils";
-import { isValidEmail } from "../../common/utils";
-import { useAppDispatch, useAppSelector } from "../../common/hooks";
+import {classes} from "../../common/classUtils";
+import {isValidEmail} from "../../common/utils";
+import {useAppDispatch, useAppSelector} from "../../common/hooks";
 import {
-    signInWithGoogleThunk,
-    signInWithEmailThunk,
-    setAuthMode,
+    AuthMode,
+    selectAuthError,
     selectAuthLoading,
-    selectAuthError
+    setAuthMode,
+    signInWithEmailThunk,
+    signInWithGoogleThunk
 } from "./slice";
 
 // Firebase authError values:
@@ -77,14 +78,14 @@ const LoginForm = () => {
             <div className={styles.authLinks}>
                 <button
                     className={styles.linkButton}
-                    onClick={() => dispatch(setAuthMode('signup'))}
+                    onClick={() => dispatch(setAuthMode(AuthMode.SIGNUP))}
                     disabled={loading}
                 >
                     Create account
                 </button>
                 <button
                     className={styles.linkButton}
-                    onClick={() => dispatch(setAuthMode('reset'))}
+                    onClick={() => dispatch(setAuthMode(AuthMode.RESET))}
                     disabled={loading}
                 >
                     Forgot password?

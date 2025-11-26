@@ -6,7 +6,8 @@ import {
   sendPasswordResetEmail,
   signOut as firebaseSignOut,
   onAuthStateChanged,
-  User
+  User,
+  updateProfile
 } from 'firebase/auth';
 import { auth } from './config';
 
@@ -36,10 +37,12 @@ export const signInWithEmail = async (email: string, password: string) => {
 };
 
 // Sign up with Email/Password
-export const signUpWithEmail = async (email: string, password: string) => {
+export const signUpWithEmail = async (email: string, password: string, displayName: string) => {
   try {
-    const result = await createUserWithEmailAndPassword(auth, email, password);
-    return { user: result.user, error: null };
+    const result = await createUserWithEmailAndPassword(auth, email.trim(), password.trim());
+    await updateProfile(result.user, { displayName: displayName.trim() });
+    await result.user.reload();
+    return { user: auth.currentUser, error: null };
   } catch (error: any) {
     console.error('Email sign-up error:', error);
     return { user: null, error: error.message };
@@ -72,4 +75,3 @@ export const signOut = async () => {
 export const onAuthStateChange = (callback: (user: User | null) => void) => {
   return onAuthStateChanged(auth, callback);
 };
-

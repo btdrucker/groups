@@ -303,13 +303,13 @@
 }
 
 @keyframes shake {
-    0%, 100% {
+    0%, 70% {
         transform: translateX(0);
     }
-    10%, 30%, 50%, 70%, 90% {
+    10%, 30%, 50% {
         transform: translateX(-4px);
     }
-    20%, 40%, 60%, 80% {
+    20%, 40%, 60% {
         transform: translateX(4px);
     }
 }

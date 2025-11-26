@@ -2,13 +2,8 @@ import React, {useState} from "react";
 import styles from "./style.module.css";
 import {classes} from "../../common/classUtils";
 import {isValidEmail} from "../../common/utils";
-import { useAppDispatch, useAppSelector } from "../../common/hooks";
-import {
-    signUpWithEmailThunk,
-    setAuthMode,
-    selectAuthLoading,
-    selectAuthError
-} from "./slice";
+import {useAppDispatch, useAppSelector} from "../../common/hooks";
+import {AuthMode, selectAuthError, selectAuthLoading, setAuthMode, signUpWithEmailThunk} from "./slice";
 
 const SignupForm = () => {
     const dispatch = useAppDispatch();
@@ -18,10 +13,11 @@ const SignupForm = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirm, setConfirm] = useState("");
-    const isFormValid = isValidEmail(email) && !!password && password === confirm;
+    const [displayName, setDisplayName] = useState("");
+    const isFormValid = isValidEmail(email) && !!password && password === confirm && !!displayName.trim();
 
     async function handleSignup() {
-        dispatch(signUpWithEmailThunk({ email, password }));
+        dispatch(signUpWithEmailThunk({ email, password, displayName: displayName.trim() }));
     }
 
     return (
@@ -52,6 +48,14 @@ const SignupForm = () => {
                 onChange={e => setConfirm(e.target.value)}
                 disabled={loading}
             />
+            <input
+                className={classes(styles.authInput)}
+                type="text"
+                placeholder="Display Name"
+                value={displayName}
+                onChange={e => setDisplayName(e.target.value)}
+                disabled={loading}
+            />
             <button
                 className={styles.actionButton}
                 disabled={!isFormValid || loading}
@@ -62,7 +66,7 @@ const SignupForm = () => {
             <div className={styles.authLinks}>
                 <button
                     className={styles.linkButton}
-                    onClick={() => dispatch(setAuthMode('login'))}
+                    onClick={() => dispatch(setAuthMode(AuthMode.LOGIN))}
                     disabled={loading}
                 >
                     Back to sign in
