@@ -32,7 +32,7 @@ const ComposeList = () => {
                 puzzles.length === 0 ? (
                     <div className={styles.emptyState}>
                         <p>You haven't created any puzzles yet.</p>
-                        <p>Click "Create New Puzzle" to get started!</p>
+                        <p>Click "Make a new Puzzle" to get started!</p>
                     </div>
                 ) : (
                     <div className={styles.puzzleGrid}>

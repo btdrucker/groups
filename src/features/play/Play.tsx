@@ -491,6 +491,7 @@ const Play = () => {
 
 
     // Format creator name and date
+    const creatorName = currentPuzzle.creatorName || 'Unknown creator';
     const createdDate = currentPuzzle.createdAt
         ? new Date(currentPuzzle.createdAt).toLocaleDateString('en-US', {
             year: 'numeric',
@@ -510,8 +511,9 @@ const Play = () => {
     return (
         <div className={styles.puzzlePlayerContainer}>
             <div className={styles.puzzlePlayerHeader}>
-                {/* <h2>{creatorName}</h2> */}
-                <p className={styles.createdDate}>{createdDate}</p>
+                <p className={styles.createdDate}>
+                    By {creatorName} ({createdDate})
+                </p>
             </div>
 
             <div

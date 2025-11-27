@@ -57,14 +57,14 @@ const WelcomeUser = ({ user }: Props) => {
 
     // Determine screen title
     let screenTitle = '';
-    if (isComposeList) {
-        screenTitle = "Puzzles I've made";
+    if (isPlayList) {
+        screenTitle = `Welcome, ${displayName} -- Play Puzzles!`;
+    } else if (isComposeList) {
+        screenTitle = `Welcome, ${displayName} -- Make Puzzles!`;
     } else if (isCompose) {
-        screenTitle = "Edit puzzle";
-    } else if (isPlayList) {
-        screenTitle = "Play puzzles";
+        screenTitle = 'Making puzzle';
     } else if (isPlay) {
-        screenTitle = "Playing puzzle";
+        screenTitle = 'Playing puzzle';
     }
 
     return (
@@ -79,11 +79,18 @@ const WelcomeUser = ({ user }: Props) => {
                             ← Back
                         </button>
                     )}
-                    <span className={styles.welcomeText}>
-                        Welcome, {displayName}!
-                    </span>
-                    {screenTitle && (
+                    {/* Show only the combined title for play list and puzzle list */}
+                    {(isPlayList || isComposeList) && screenTitle && (
                         <h2 className={styles.screenTitle}>{screenTitle}</h2>
+                    )}
+                    {/* For other screens, show the previous logic */}
+                    {!(isPlayList || isComposeList) && !(isCompose || isPlay) && (
+                        <span className={styles.welcomeText}>
+                            Welcome, {displayName}!
+                        </span>
+                    )}
+                    {!(isPlayList || isComposeList) && screenTitle && (
+                        <h2 className={styles.centeredTitle}>{screenTitle}</h2>
                     )}
                 </div>
                 <div className={styles.buttonGroup}>
@@ -92,7 +99,7 @@ const WelcomeUser = ({ user }: Props) => {
                             className={styles.actionButton}
                             onClick={handleCreateNew}
                         >
-                            Create new puzzle
+                            Make a new Puzzle
                         </button>
                     )}
                     {showMakePuzzlesButton && (

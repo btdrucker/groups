@@ -25,6 +25,8 @@ const PlayListItem = ({ gameStateWithPuzzle }: Props) => {
     const isWon = correctGuesses === totalCategories;
     const isLost = !isWon && mistakes === 4;
     const isInProgress = !isWon && !isLost;
+    const creatorName = puzzle.creatorName ? puzzle.creatorName : 'Unknown creator';
+    const createdDate = puzzle.createdAt ? new Date(puzzle.createdAt).toLocaleDateString() : '';
 
     return (
         <div
@@ -32,9 +34,9 @@ const PlayListItem = ({ gameStateWithPuzzle }: Props) => {
             onClick={handleCardClick}
         >
             <div className={styles.puzzleMeta}>
-                {puzzle.createdAt && (
+                {createdDate && (
                     <span className={styles.createdDate}>
-                        {new Date(puzzle.createdAt).toLocaleDateString()}
+                        By {creatorName} ({createdDate})
                     </span>
                 )}
             </div>
