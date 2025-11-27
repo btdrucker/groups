@@ -7,6 +7,7 @@ import {getGameState, saveGameState} from '../../firebase/firestore';
 import {classes} from "../../common/classUtils";
 import {Puzzle} from '../../firebase/firestore';
 import {sleep} from '../../common/utils';
+import PlayHeader from './PlayHeader';
 
 interface DisplayedCategory {
     categoryIndex: number;
@@ -509,123 +510,126 @@ const Play = () => {
     const cellWidth = (gridWidth - totalGap) / 4;
 
     return (
-        <div className={styles.puzzlePlayerContainer}>
-            <div className={styles.puzzlePlayerHeader}>
-                <p className={styles.createdDate}>
-                    By {creatorName} ({createdDate})
-                </p>
-            </div>
+        <>
+            <PlayHeader />
+            <div className={styles.puzzlePlayerContainer}>
+                <div className={styles.puzzlePlayerHeader}>
+                    <p className={styles.createdDate}>
+                        By {creatorName} ({createdDate})
+                    </p>
+                </div>
 
-            <div
-                className={styles.wordGrid}
-                style={{
-                    width: gridWidth,
-                    gap: '0.75rem',
-                    gridTemplateColumns: `repeat(${wordsPerCategory}, 1fr)`
-                }}
-            >
-                {/* Overlay message if active */}
-                {messageText && (
-                    <div className={styles.messageOverlay}>
-                        <div className={styles.message}>
-                            {messageText}
+                <div
+                    className={styles.wordGrid}
+                    style={{
+                        width: gridWidth,
+                        gap: '0.75rem',
+                        gridTemplateColumns: `repeat(${wordsPerCategory}, 1fr)`
+                    }}
+                >
+                    {/* Overlay message if active */}
+                    {messageText && (
+                        <div className={styles.messageOverlay}>
+                            <div className={styles.message}>
+                                {messageText}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* Show solved categories at the top */}
-                {displayedCategories.map((category, index) => (
-                    <div
-                        key={index}
-                        className={classes(styles.solvedCategoryRow, !category.wasGuessed && styles.missedCategory)}
-                        data-category-index={category.categoryIndex}
-                        style={{
-                            gridColumn: 0,
-                            gridRow: index + 1
-                        }}
-                    >
-                        <div className={styles.categoryName}>{currentPuzzle.categories[category.categoryIndex]}</div>
-                        <div className={styles.categoryWords}>
-                            {categoryWords(category.categoryIndex).join(', ')}
-                        </div>
-                    </div>
-                ))}
-
-                {/* Show remaining words in grid */}
-                {gridWords.filter(word => {
-                    // Exclude words in guessed categories
-                    const categoryIdx = Math.floor(word.indexInPuzzle / wordsPerCategory);
-                    return !displayedCategories.some(cat => cat.categoryIndex === categoryIdx);
-                }).map(word => (
-                    <button
-                        key={word.indexInPuzzle}
-                        ref={el => {
-                            cellRefs.current[word.indexInPuzzle] = el;
-                        }}
-                        className={classes(
-                            styles.wordButton,
-                            selectedWords.some(sel => sel.indexInPuzzle === word.indexInPuzzle) && styles.selectedWord,
-                            isShaking && selectedWords.some(sel => sel.indexInPuzzle === word.indexInPuzzle) && styles.shakeWord
-                        )}
-                        style={{
-                            gridColumn: (word.indexInGrid % wordsPerCategory) + 1,
-                            gridRow: Math.floor(word.indexInGrid / wordsPerCategory) + 1,
-                            width: cellWidth,
-                            minWidth: cellWidth,
-                            maxWidth: cellWidth,
-                            height: cellWidth * 0.5, // maintain aspect ratio similar to previous 160x80
-                            minHeight: cellWidth * 0.5,
-                            maxHeight: cellWidth * 0.5
-                        }}
-                        onClick={() => handleWordClick(word)}
-                    >
-                        {word.word}
-                    </button>
-                ))}
-            </div>
-
-            <div className={styles.mistakesContainer}>
-                <span className={styles.mistakesLabel}>Mistakes remaining:</span>
-                <div className={styles.mistakesDots}>
-                    {Array.from({length: availableMistakes}).map((_, index) => (
-                        <span
+                    {/* Show solved categories at the top */}
+                    {displayedCategories.map((category, index) => (
+                        <div
                             key={index}
-                            className={classes(styles.mistakeDot, index < mistakesRemaining && styles.mistakeDotActive)}
-                        />
+                            className={classes(styles.solvedCategoryRow, !category.wasGuessed && styles.missedCategory)}
+                            data-category-index={category.categoryIndex}
+                            style={{
+                                gridColumn: 0,
+                                gridRow: index + 1
+                            }}
+                        >
+                            <div className={styles.categoryName}>{currentPuzzle.categories[category.categoryIndex]}</div>
+                            <div className={styles.categoryWords}>
+                                {categoryWords(category.categoryIndex).join(', ')}
+                            </div>
+                        </div>
+                    ))}
+
+                    {/* Show remaining words in grid */}
+                    {gridWords.filter(word => {
+                        // Exclude words in guessed categories
+                        const categoryIdx = Math.floor(word.indexInPuzzle / wordsPerCategory);
+                        return !displayedCategories.some(cat => cat.categoryIndex === categoryIdx);
+                    }).map(word => (
+                        <button
+                            key={word.indexInPuzzle}
+                            ref={el => {
+                                cellRefs.current[word.indexInPuzzle] = el;
+                            }}
+                            className={classes(
+                                styles.wordButton,
+                                selectedWords.some(sel => sel.indexInPuzzle === word.indexInPuzzle) && styles.selectedWord,
+                                isShaking && selectedWords.some(sel => sel.indexInPuzzle === word.indexInPuzzle) && styles.shakeWord
+                            )}
+                            style={{
+                                gridColumn: (word.indexInGrid % wordsPerCategory) + 1,
+                                gridRow: Math.floor(word.indexInGrid / wordsPerCategory) + 1,
+                                width: cellWidth,
+                                minWidth: cellWidth,
+                                maxWidth: cellWidth,
+                                height: cellWidth * 0.5, // maintain aspect ratio similar to previous 160x80
+                                minHeight: cellWidth * 0.5,
+                                maxHeight: cellWidth * 0.5
+                            }}
+                            onClick={() => handleWordClick(word)}
+                        >
+                            {word.word}
+                        </button>
                     ))}
                 </div>
-            </div>
 
-            {isComplete ? (
-                <div className={styles.congratulations}>
-                    🎉 Congratulations! You solved the puzzle! 🎉
+                <div className={styles.mistakesContainer}>
+                    <span className={styles.mistakesLabel}>Mistakes remaining:</span>
+                    <div className={styles.mistakesDots}>
+                        {Array.from({length: availableMistakes}).map((_, index) => (
+                            <span
+                                key={index}
+                                className={classes(styles.mistakeDot, index < mistakesRemaining && styles.mistakeDotActive)}
+                            />
+                        ))}
+                    </div>
                 </div>
-            ) : isGameLost ? (
-                <div className={styles.gameOver}>
-                    Better luck next time!
-                </div>
-            ) : (
-                <div className={styles.buttonRow}>
-                    <button className={styles.actionButton} onClick={handleShuffle} disabled={isShuffling}>
-                        Shuffle
-                    </button>
-                    <button
-                        className={styles.actionButton}
-                        onClick={handleDeselectAll}
-                        disabled={selectedWords.length === 0}
-                    >
-                        Deselect all
-                    </button>
-                    <button
-                        className={styles.actionButton}
-                        onClick={handleSubmit}
-                        disabled={selectedWords.length !== wordsPerCategory}
-                    >
-                        Submit
-                    </button>
-                </div>
-            )}
-        </div>
+
+                {isComplete ? (
+                    <div className={styles.congratulations}>
+                        🎉 Congratulations! You solved the puzzle! 🎉
+                    </div>
+                ) : isGameLost ? (
+                    <div className={styles.gameOver}>
+                        Better luck next time!
+                    </div>
+                ) : (
+                    <div className={styles.buttonRow}>
+                        <button className={styles.actionButton} onClick={handleShuffle} disabled={isShuffling}>
+                            Shuffle
+                        </button>
+                        <button
+                            className={styles.actionButton}
+                            onClick={handleDeselectAll}
+                            disabled={selectedWords.length === 0}
+                        >
+                            Deselect all
+                        </button>
+                        <button
+                            className={styles.actionButton}
+                            onClick={handleSubmit}
+                            disabled={selectedWords.length !== wordsPerCategory}
+                        >
+                            Submit
+                        </button>
+                    </div>
+                )}
+            </div>
+        </>
     );
 };
 

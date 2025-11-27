@@ -7,7 +7,6 @@
 .puzzlePlayerContainer {
     padding: 2rem 0;
     margin: 0 auto;
-    font-family: sans-serif;
 }
 
 .puzzlePlayerHeader {
@@ -271,6 +270,59 @@
 
 .shareButton:active {
     transform: translateY(0);
+}
+
+.headerSticky {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.headerContent {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    width: 100%;
+    position: relative;
+    padding: 1rem 2rem;
+}
+
+.headerContentCentered {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    width: 100%;
+    position: relative;
+    padding: 1rem 2rem;
+}
+
+.centeredTitle {
+    font-size: 1.5rem;
+    color: #333;
+    font-weight: 600;
+    margin: 0 auto;
+    text-align: center;
+    width: 100%;
+    display: block;
+}
+
+.screenTitle {
+    font-size: 1.5rem;
+    color: #333;
+    font-weight: 600;
+    margin: 0;
+    text-align: left;
+    flex: unset;
+    min-width: 0;
+}
+
+.buttonGroup {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
 }
 
 @keyframes fadeIn {

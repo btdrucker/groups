@@ -9,7 +9,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: sans-serif;
     background: #f5f6fa;
     z-index: 1000;
 }
@@ -111,4 +110,13 @@
     margin-top: 1rem;
     font-size: 0.9rem;
     border: 1px solid #cfc;
+}
+
+.authContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    /* font-family removed, now set globally */
 }

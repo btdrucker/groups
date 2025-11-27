@@ -55,7 +55,7 @@ const PlayListItem = ({ gameStateWithPuzzle }: Props) => {
                 )}
                 {isInProgress && (
                     <p className={styles.statusInProgress}>
-                        Keep going! ({correctGuesses} group{correctGuesses !== 1 ? 's' : ''} guessed, {mistakes} mistake{mistakes !== 1 ? 's' : ''})
+                        Keep going! {correctGuesses} group{correctGuesses !== 1 ? 's' : ''} guessed, {mistakes} mistake{mistakes !== 1 ? 's' : ''}.
                     </p>
                 )}
             </div>

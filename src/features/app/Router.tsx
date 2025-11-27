@@ -10,7 +10,6 @@ import Compose from '../compose/Compose';
 import ComposeList from '../compose-list/ComposeList';
 import Play from '../play/Play';
 import PlayList from '../play-list/PlayList';
-import WelcomeUser from './WelcomeUser';
 import styles from './style.module.css';
 
 const PlayRoute: React.FC = () => {
@@ -39,7 +38,6 @@ const PlayRoute: React.FC = () => {
 
     return (
         <div className={styles.appContainer}>
-            <WelcomeUser user={user} />
             <div className={styles.mainContent}>
                 <Play />
             </div>
@@ -63,7 +61,6 @@ const ComposeRoute: React.FC = () => {
 
     return (
         <div className={styles.appContainer}>
-            <WelcomeUser user={user} />
             <div className={styles.mainContent}>
                 <Compose />
             </div>
@@ -96,7 +93,6 @@ const HomeRoute: React.FC = () => {
 
     return (
         <div className={styles.appContainer}>
-            <WelcomeUser user={user} />
             <div className={styles.mainContent}>
                 <ComposeList />
             </div>
@@ -123,7 +119,6 @@ const PlayListRoute: React.FC = () => {
 
     return (
         <div className={styles.appContainer}>
-            <WelcomeUser user={user} />
             <div className={styles.mainContent}>
                 <PlayList />
             </div>

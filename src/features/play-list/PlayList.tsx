@@ -9,6 +9,7 @@ import {
     selectGameStatesLoading,
     selectGameStatesError,
 } from './slice';
+import PlayListHeader from './PlayListHeader';
 
 const PlayList = () => {
     const dispatch = useAppDispatch();
@@ -25,30 +26,30 @@ const PlayList = () => {
     }, [user?.uid, dispatch]);
 
     return (
-        <div className={styles.playListContainer}>
-            {loading && (<p>Loading puzzles...</p>)}
-            {error && (<p className={styles.error}>Error loading puzzles: {error}</p>)}
-            {showList && (
-                gameStatesWithPuzzles.length === 0 ? (
-                    <div className={styles.emptyMessage}>
-                        You have no puzzles you are playing yet.
-                    </div>
-                ) : (
-                    <div className={styles.puzzleGrid}>
-                        {gameStatesWithPuzzles.map((gameStateWithPuzzle) => (
-                            <PlayListItem
-                                key={gameStateWithPuzzle.gameState.id}
-                                gameStateWithPuzzle={gameStateWithPuzzle}
-                            />
-                        ))}
-                    </div>
-                )
-            )}
-        </div>
+        <>
+            <PlayListHeader />
+            <div className={styles.playListContainer}>
+                {loading && (<p>Loading puzzles...</p>)}
+                {error && (<p className={styles.error}>Error loading puzzles: {error}</p>)}
+                {showList && (
+                    gameStatesWithPuzzles.length === 0 ? (
+                        <div className={styles.emptyMessage}>
+                            You have no puzzles you are playing yet.
+                        </div>
+                    ) : (
+                        <div className={styles.puzzleGrid}>
+                            {gameStatesWithPuzzles.map((gameStateWithPuzzle) => (
+                                <PlayListItem
+                                    key={gameStateWithPuzzle.gameState.id}
+                                    gameStateWithPuzzle={gameStateWithPuzzle}
+                                />
+                            ))}
+                        </div>
+                    )
+                )}
+            </div>
+        </>
     );
 };
 
 export default PlayList;
-
-
-

@@ -8,7 +8,6 @@
     margin-left: auto;
     margin-right: auto;
     width: fit-content;
-    font-family: sans-serif;
 }
 
 .composerLeftColumn {
@@ -155,5 +154,57 @@
     white-space: pre-wrap;
     overflow-wrap: break-word;
     word-break: break-word;
-    box-sizing: border-box;
+}
+
+.headerSticky {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.headerContent {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    width: 100%;
+    position: relative;
+    padding: 1rem 2rem;
+}
+
+.headerContentCentered {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    width: 100%;
+    position: relative;
+    padding: 1rem 2rem;
+}
+
+.screenTitle {
+    font-size: 1.5rem;
+    color: #333;
+    font-weight: 600;
+    margin: 0;
+    text-align: left;
+    flex: unset;
+    min-width: 0;
+}
+
+.centeredTitle {
+    font-size: 1.5rem;
+    color: #333;
+    font-weight: 600;
+    margin: 0 auto;
+    text-align: center;
+    width: 100%;
+    display: block;
+}
+
+.buttonGroup {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
 }

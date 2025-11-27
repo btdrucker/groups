@@ -1,6 +1,5 @@
 import React from "react";
 import Compose from "../compose/Compose";
-import WelcomeUser from "./WelcomeUser";
 import ComposeList from "../compose-list/ComposeList";
 import Play from "../play/Play";
 import PlayList from "../play-list/PlayList";
@@ -32,7 +31,6 @@ const App = () => {
 
     return (
         <div className={styles.appContainer}>
-            {user && <WelcomeUser user={user}/>}
             <div className={styles.mainContent}>
                 {user ? (
                     appMode === AppMode.ComposeList ? (

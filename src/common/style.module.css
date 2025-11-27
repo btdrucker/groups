@@ -1,3 +1,7 @@
+:root {
+    font-family: sans-serif;
+}
+
 .actionButton {
     padding: 0.75rem 1.5rem;
     font-size: 1rem;
@@ -27,4 +31,24 @@
     background-color: #cccccc;
     transform: none;
     box-shadow: none;
+}
+
+.actionButton.logout {
+    background-color: #dc3545;
+}
+
+.actionButton.logout:hover {
+    background-color: #c82333;
+}
+
+/* Green modifier for action buttons */
+.greenButton {
+    background-color: #2ecc40;
+}
+.greenButton:hover {
+    background-color: #27ae38;
+}
+.greenButton:disabled,
+.greenButton:disabled:hover {
+    background-color: #b2eabf;
 }

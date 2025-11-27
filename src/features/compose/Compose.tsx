@@ -5,6 +5,7 @@ import {useAppDispatch, useAppSelector} from '../../common/hooks';
 import {selectUser} from '../auth/slice';
 import {createPuzzleThunk, updatePuzzleThunk, selectPuzzle} from './slice';
 import { useAutosizeTextarea } from "./useAutosizeTextarea";
+import ComposeHeader from './ComposeHeader';
 
 function isPuzzleStarted(puzzle: Puzzle) {
     return puzzle.categories.some(cat => cat.trim() !== "") ||
@@ -32,9 +33,11 @@ const Compose = () => {
     const emptyPuzzle: Puzzle = {
         categories: Array(4).fill("") as string[],
         words: Array(16).fill("") as string[],
-        creatorId: user?.uid || '<none>',  // Should not show this component without a user
+        creatorId: user?.uid || '<none>',
         createdAt: undefined,
-        id: undefined
+        id: undefined,
+        creatorName: '',
+        creatorEmail: '',
     }
 
     const initialState = initialPuzzle || emptyPuzzle;
@@ -107,70 +110,73 @@ const Compose = () => {
     };
 
     return (
-        <div className={styles.composerContainer}>
-            <div className={styles.gridContainer}>
-                <table className={styles.gridTable}>
-                    <thead>
-                    <tr>
-                        <th>Category</th>
-                        <th>Word 1</th>
-                        <th>Word 2</th>
-                        <th>Word 3</th>
-                        <th>Word 4</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {puzzle.categories.map((cat, catIdx) => (
-                        <tr key={catIdx}>
-                            <td>
-                                <textarea
-                                    ref={useAutosizeTextarea(cat)}
-                                    value={cat}
-                                    placeholder={`Category ${catIdx + 1}`}
-                                    onChange={e => handleCategoryNameChange(catIdx, e.target.value)}
-                                    className={`${styles.categoryInput} ${styles.textareaWrap}`}
-                                    rows={1}
-                                    style={{ resize: "none" }}
-                                />
-                            </td>
-                            {[0, 1, 2, 3].map(wordIdx => (
-                                <td key={wordIdx}>
+        <>
+            <ComposeHeader />
+            <div className={styles.composerContainer}>
+                <div className={styles.gridContainer}>
+                    <table className={styles.gridTable}>
+                        <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Word 1</th>
+                            <th>Word 2</th>
+                            <th>Word 3</th>
+                            <th>Word 4</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {puzzle.categories.map((cat, catIdx) => (
+                            <tr key={catIdx}>
+                                <td>
                                     <textarea
-                                        ref={useAutosizeTextarea(puzzle.words[catIdx * 4 + wordIdx])}
-                                        value={puzzle.words[catIdx * 4 + wordIdx]}
-                                        placeholder={`Word ${wordIdx + 1}`}
-                                        onChange={e => handleWordChange(catIdx, wordIdx, e.target.value)}
-                                        className={`${styles.wordInput} ${styles.textareaWrap}`}
+                                        ref={useAutosizeTextarea(cat)}
+                                        value={cat}
+                                        placeholder={`Category ${catIdx + 1}`}
+                                        onChange={e => handleCategoryNameChange(catIdx, e.target.value)}
+                                        className={`${styles.categoryInput} ${styles.textareaWrap}`}
                                         rows={1}
                                         style={{ resize: "none" }}
                                     />
                                 </td>
-                            ))}
-                        </tr>
-                    ))}
-                    </tbody>
-                </table>
-            </div>
-            <div className={styles.composerLeftColumn}>
-                <button
-                    className={styles.actionButton}
-                    onClick={handleSave}
-                    disabled={!canSave}
-                >
-                    Save
-                </button>
-                {composeError && showSaveError && (
-                    <span className={styles.saveErrorMessage}>
+                                {[0, 1, 2, 3].map(wordIdx => (
+                                    <td key={wordIdx}>
+                                        <textarea
+                                            ref={useAutosizeTextarea(puzzle.words[catIdx * 4 + wordIdx])}
+                                            value={puzzle.words[catIdx * 4 + wordIdx]}
+                                            placeholder={`Word ${wordIdx + 1}`}
+                                            onChange={e => handleWordChange(catIdx, wordIdx, e.target.value)}
+                                            className={`${styles.wordInput} ${styles.textareaWrap}`}
+                                            rows={1}
+                                            style={{ resize: "none" }}
+                                        />
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                        </tbody>
+                    </table>
+                </div>
+                <div className={styles.composerLeftColumn}>
+                    <button
+                        className={styles.actionButton}
+                        onClick={handleSave}
+                        disabled={!canSave}
+                    >
+                        Save
+                    </button>
+                    {composeError && showSaveError && (
+                        <span className={styles.saveErrorMessage}>
                         {composeError}
                     </span>
-                )}
-                {showSaveSuccess && !composeError && (
-                    <span className={styles.saveSuccessMessage}>
+                    )}
+                    {showSaveSuccess && !composeError && (
+                        <span className={styles.saveSuccessMessage}>
                         Saved successfully!
                     </span>
-                )}
+                    )}
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 
