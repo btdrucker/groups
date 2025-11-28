@@ -100,22 +100,22 @@
 }
 
 .solvedCategoryRow[data-category-index="0"] {
-    background-color: #E6C200;
+    background-color: #e5fcc2;
     color: #1a1a1a;
 }
 
 .solvedCategoryRow[data-category-index="1"] {
-    background-color: #388E3C;
+    background-color: #9de0ad;
     color: #1a1a1a;
 }
 
 .solvedCategoryRow[data-category-index="2"] {
-    background-color: #5282D9;
+    background-color: #45ada8;
     color: #1a1a1a;
 }
 
 .solvedCategoryRow[data-category-index="3"] {
-    background-color: #9370DB;
+    background-color: #547980;
     color: #1a1a1a;
 }
 

@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "group-game-3f364",
     "public": "dist",
     "ignore": [
       "firebase.json",

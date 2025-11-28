@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "group-game-3f364"
-  }
+    "default": "group-game-3f364",
+    "staging": "group-game-3f364"
+  },
+  "targets": {},
+  "etags": {}
 }

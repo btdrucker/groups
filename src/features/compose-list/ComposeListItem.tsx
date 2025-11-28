@@ -38,7 +38,7 @@ const ComposeListItem = ({puzzle}: Props) => {
     const handleShareClick = async (e: React.MouseEvent) => {
         e.stopPropagation();
         if (puzzle.id) {
-            const shareUrl = `${window.location.origin}/groups/play/${puzzle.id}`;
+            const shareUrl = `${window.location.origin}/play/${puzzle.id}`;
             try {
                 await navigator.clipboard.writeText(shareUrl);
                 setShowCopyMessage(true);

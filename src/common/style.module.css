@@ -43,6 +43,7 @@
 
 /* Green modifier for action buttons */
 .greenButton {
+    color: black;
     background-color: #2ecc40;
 }
 .greenButton:hover {
