@@ -21,7 +21,7 @@ const PlayListHeader: React.FC = () => {
                 <h2 className={styles.screenTitle}>{`Welcome, ${displayName} -- Play Puzzles!`}</h2>
                 <div className={styles.buttonGroup}>
                     <button className={commonStyles.actionButton} onClick={handleMakePuzzles}>
-                        Make puzzles
+                        <span className={commonStyles.hideOnMobile}>Make puzzles</span> <i className="fa-solid fa-pen-to-square"></i>
                     </button>
                     <LogoutButton />
                 </div>

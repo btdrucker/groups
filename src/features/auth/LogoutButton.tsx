@@ -10,7 +10,7 @@ const LogoutButton: React.FC = () => {
     };
     return (
         <button className={`${commonStyles.actionButton} ${commonStyles.logout}`} onClick={handleLogout}>
-            Log out
+            <span className={commonStyles.hideOnMobile}>Log out</span> <i className="fa-solid fa-right-from-bracket"></i>
         </button>
     );
 };

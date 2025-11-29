@@ -21,7 +21,7 @@ const ComposeListHeader: React.FC = () => {
                 <h2 className={styles.screenTitle}>{`Welcome, ${displayName} -- Make Puzzles!`}</h2>
                 <div className={styles.buttonGroup}>
                     <button className={commonStyles.actionButton} onClick={handlePlayPuzzles}>
-                        Play puzzles
+                        <span className={commonStyles.hideOnMobile}>Play puzzles</span> <i className="fa-solid fa-puzzle-piece"></i>
                     </button>
                     <LogoutButton />
                 </div>

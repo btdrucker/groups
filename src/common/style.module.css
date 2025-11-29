@@ -53,3 +53,13 @@
 .greenButton:disabled:hover {
     background-color: #b2eabf;
 }
+
+.hideOnMobile {
+    display: inline;
+}
+
+@media (max-width: 600px) {
+    .hideOnMobile {
+        display: none;
+    }
+}
