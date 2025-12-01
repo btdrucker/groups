@@ -1,12 +1,11 @@
 @import '../../common/style.module.css';
 
 .createdDate {
-    margin: 0;
-}
-
-.puzzlePlayerContainer {
-    padding: 2rem 0;
-    margin: 0 auto;
+    margin: 0 0 1.5rem 0;
+    font-size: 1rem;
+    color: #666;
+    font-weight: normal;
+    text-align: center;
 }
 
 .puzzlePlayerHeader {
@@ -20,13 +19,6 @@
     margin: 0.5rem 0 0 0;
     font-size: 2rem;
     color: #333;
-}
-
-.puzzlePlayerHeader .createdDate {
-    margin: 0.25rem 0 0 0;
-    font-size: 1rem;
-    color: #666;
-    font-weight: normal;
 }
 
 .wordGrid {
@@ -86,7 +78,7 @@
     padding: 1rem 0;
 }
 
-.solvedCategoryRow {
+.categoryRow {
     grid-column: 1 / -1;
     border-radius: 8px;
     padding: 1rem;
@@ -95,28 +87,25 @@
     flex-direction: column;
     justify-content: center;
     gap: 0.25rem;
+    color: #1a1a1a;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
     height: 80px;
 }
 
-.solvedCategoryRow[data-category-index="0"] {
-    background-color: #e5fcc2;
-    color: #1a1a1a;
+.categoryRow[data-category-index="0"] {
+    background-color: rgb(229,252,194);
 }
 
-.solvedCategoryRow[data-category-index="1"] {
-    background-color: #9de0ad;
-    color: #1a1a1a;
+.categoryRow[data-category-index="1"] {
+    background-color: rgb(157,224,173);
 }
 
-.solvedCategoryRow[data-category-index="2"] {
-    background-color: #45ada8;
-    color: #1a1a1a;
+.categoryRow[data-category-index="2"] {
+    background-color: rgb(69,173,168);
 }
 
-.solvedCategoryRow[data-category-index="3"] {
-    background-color: #547980;
-    color: #1a1a1a;
+.categoryRow[data-category-index="3"] {
+    background-color: rgb(84,121,128);
 }
 
 .missedCategory {
@@ -125,19 +114,19 @@
 }
 
 .missedCategory[data-category-index="0"] {
-    background-color: #FFF9CC !important;
+    background-color: rgba(229,252,194,0.5) !important;
 }
 
 .missedCategory[data-category-index="1"] {
-    background-color: #C8E6C9 !important;
+    background-color: rgba(157,224,173,0.5) !important;
 }
 
 .missedCategory[data-category-index="2"] {
-    background-color: #D4E3F7 !important;
+    background-color: rgba(69,173,168,0.5) !important;
 }
 
 .missedCategory[data-category-index="3"] {
-    background-color: #E8DEF8 !important;
+    background-color: rgba(84,121,128,0.5) !important;
 }
 
 .categoryName {
@@ -270,33 +259,6 @@
 
 .shareButton:active {
     transform: translateY(0);
-}
-
-.headerSticky {
-    position: sticky;
-    top: 0;
-    background: white;
-    z-index: 100;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.headerContent {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-    width: 100%;
-    position: relative;
-    padding: 1rem 2rem;
-}
-
-.headerContentCentered {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 2rem;
-    width: 100%;
-    position: relative;
-    padding: 1rem 2rem;
 }
 
 .centeredTitle {

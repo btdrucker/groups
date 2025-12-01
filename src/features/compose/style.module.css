@@ -1,23 +1,5 @@
 @import '../../common/style.module.css';
 
-.composerContainer {
-    padding-top: 4rem;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    margin-left: auto;
-    margin-right: auto;
-    width: fit-content;
-}
-
-.composerLeftColumn {
-    width: fit-content;
-    margin-left: 2rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
 .saveSuccessMessage,
 .saveErrorMessage {
     display: block;
@@ -26,20 +8,17 @@
     width: fit-content;
     word-break: break-word;
     box-sizing: border-box;
+    font-weight: 500;
+    font-size: 0.9rem;
+    animation: fadeIn 0.3s ease-in;
 }
 
 .saveSuccessMessage {
     color: #28a745;
-    font-weight: 500;
-    font-size: 0.9rem;
-    animation: fadeIn 0.3s ease-in;
 }
 
 .saveErrorMessage {
     color: #dc3545;
-    font-weight: 500;
-    font-size: 0.9rem;
-    animation: fadeIn 0.3s ease-in;
 }
 
 @keyframes fadeIn {
@@ -51,61 +30,8 @@
     }
 }
 
-.group {
-
-}
-
-.group .title {
-
-}
-
-.group .word {
-
-}
-
-.group0 {
-    background-color: gold;
-}
-
-.group1 {
-    background-color: olivedrab;
-}
-
-.group2 {
-    background-color: cornflowerblue;
-}
-
-.group3 {
-    background-color: mediumorchid;
-}
-
-.gameLink {
-    background-color: gray;
-}
-
 .hidden {
     display: none;
-}
-
-.grid {
-    background-color: aquamarine;
-}
-
-.grid .row {
-    background-color: antiquewhite;
-    min-height: 30pt;
-}
-
-.grid .cell {
-    background-color: darksalmon;
-    min-height: 30pt;
-}
-
-.gridContainer {
-    margin: 1rem 0;
-    width: fit-content;
-    margin-left: 2rem;
-    display: block;
 }
 
 .gridTable {
@@ -113,19 +39,18 @@
     width: auto;
     background: #fff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
 }
 
 .gridTable th, .gridTable td {
-    border: 1px solid #ddd;
-    padding: 0.5rem;
-    text-align: center;
+    border: none;
+    padding: 0;
+    text-align: left;
     vertical-align: top;
 }
 
 .categoryInput {
     width: 240px;
-    min-height: 1em;
-    padding: 0.3rem;
     font-weight: bold;
     resize: vertical;
     white-space: pre-wrap;
@@ -136,8 +61,6 @@
 
 .wordInput {
     width: 150px;
-    min-height: 1em;
-    padding: 0.3rem;
     resize: vertical;
     white-space: pre-wrap;
     overflow-wrap: break-word;
@@ -145,42 +68,15 @@
     box-sizing: border-box;
 }
 
-/* Shared style for all textareas to wrap text and prevent horizontal scrolling */
 .textareaWrap {
     width: 100%;
-    min-height: 1em; /* start at single line */
     resize: none;
+    padding: 0;
+    border: none;
     overflow: hidden;
     white-space: pre-wrap;
     overflow-wrap: break-word;
     word-break: break-word;
-}
-
-.headerSticky {
-    position: sticky;
-    top: 0;
-    background: white;
-    z-index: 100;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.headerContent {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-    width: 100%;
-    position: relative;
-    padding: 1rem 2rem;
-}
-
-.headerContentCentered {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 2rem;
-    width: 100%;
-    position: relative;
-    padding: 1rem 2rem;
 }
 
 .screenTitle {

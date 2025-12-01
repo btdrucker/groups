@@ -31,21 +31,19 @@ const App = () => {
 
     return (
         <div className={styles.appContainer}>
-            <div className={styles.mainContent}>
-                {user ? (
-                    appMode === AppMode.ComposeList ? (
-                        <ComposeList />
-                    ) : appMode === AppMode.Compose ? (
-                        <Compose />
-                    ) : appMode === AppMode.Play ? (
-                        <Play />
-                    ) : (
-                        <PlayList />
-                    )
+            {user ? (
+                appMode === AppMode.ComposeList ? (
+                    <ComposeList/>
+                ) : appMode === AppMode.Compose ? (
+                    <Compose/>
+                ) : appMode === AppMode.Play ? (
+                    <Play/>
                 ) : (
-                    <AuthScreen/>
-                )}
-            </div>
+                    <PlayList/>
+                )
+            ) : (
+                <AuthScreen/>
+            )}
         </div>
     )
 }

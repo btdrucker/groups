@@ -342,7 +342,7 @@ const Play = () => {
     // Conditional rendering for loading, error, not found
     if (isLoadingPuzzle || isLoadingGameState) {
         return (
-            <div className={styles.puzzlePlayerContainer}>
+            <div className={styles.screenContainer}>
                 <p>Loading...</p>
             </div>
         );
@@ -350,7 +350,7 @@ const Play = () => {
 
     if (puzzleError || loadError) {
         return (
-            <div className={styles.puzzlePlayerContainer}>
+            <div className={styles.screenContainer}>
                 <p>There was an error loading the puzzle.</p>
             </div>
         );
@@ -358,7 +358,7 @@ const Play = () => {
 
     if (!currentPuzzle) {
         return (
-            <div className={styles.puzzlePlayerContainer}>
+            <div className={styles.screenContainer}>
                 <p>I can't find that puzzle!</p>
             </div>
         );
@@ -511,18 +511,15 @@ const Play = () => {
 
     return (
         <>
-            <PlayHeader />
-            <div className={styles.puzzlePlayerContainer}>
-                <div className={styles.puzzlePlayerHeader}>
-                    <p className={styles.createdDate}>
-                        By {creatorName} ({createdDate})
-                    </p>
-                </div>
+            <PlayHeader/>
+            <div className={styles.screenContainer}>
+                <p className={styles.createdDate}>
+                    By {creatorName} ({createdDate}) - {gridWidth}
+                </p>
 
                 <div
                     className={styles.wordGrid}
                     style={{
-                        width: gridWidth,
                         gap: '0.75rem',
                         gridTemplateColumns: `repeat(${wordsPerCategory}, 1fr)`
                     }}
@@ -540,14 +537,15 @@ const Play = () => {
                     {displayedCategories.map((category, index) => (
                         <div
                             key={index}
-                            className={classes(styles.solvedCategoryRow, !category.wasGuessed && styles.missedCategory)}
+                            className={classes(styles.categoryRow, !category.wasGuessed && styles.missedCategory)}
                             data-category-index={category.categoryIndex}
                             style={{
                                 gridColumn: 0,
                                 gridRow: index + 1
                             }}
                         >
-                            <div className={styles.categoryName}>{currentPuzzle.categories[category.categoryIndex]}</div>
+                            <div
+                                className={styles.categoryName}>{currentPuzzle.categories[category.categoryIndex]}</div>
                             <div className={styles.categoryWords}>
                                 {categoryWords(category.categoryIndex).join(', ')}
                             </div>

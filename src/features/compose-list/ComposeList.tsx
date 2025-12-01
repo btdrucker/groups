@@ -42,7 +42,7 @@ const ComposeList = () => {
     return (
         <>
             <ComposeListHeader />
-            <div className={styles.puzzleListContainer}>
+            <div className={styles.screenContainer}>
                 {loading && (<p>Loading puzzles...</p>)}
                 {error && (<p className={styles.error}>Error loading puzzles: {error}</p>)}
                 {showList && (

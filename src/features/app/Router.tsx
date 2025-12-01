@@ -1,10 +1,10 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../../common/hooks';
-import { selectUser, selectAuthInitialized, setUser } from '../auth/slice';
-import { setPendingPuzzleId, selectPendingPuzzleId } from './slice';
-import { loadPuzzleById } from '../play/slice';
-import { onAuthStateChange } from '../../firebase/auth';
+import React, {useEffect} from 'react';
+import {BrowserRouter, Routes, Route, useNavigate, useParams, useLocation} from 'react-router-dom';
+import {useAppDispatch, useAppSelector} from '../../common/hooks';
+import {selectUser, selectAuthInitialized, setUser} from '../auth/slice';
+import {setPendingPuzzleId, selectPendingPuzzleId} from './slice';
+import {loadPuzzleById} from '../play/slice';
+import {onAuthStateChange} from '../../firebase/auth';
 import AuthScreen from '../auth/AuthScreen';
 import Compose from '../compose/Compose';
 import ComposeList from '../compose-list/ComposeList';
@@ -13,7 +13,7 @@ import PlayList from '../play-list/PlayList';
 import styles from './style.module.css';
 
 const PlayRoute: React.FC = () => {
-    const { puzzleId } = useParams<{ puzzleId: string }>();
+    const {puzzleId} = useParams<{ puzzleId: string }>();
     const dispatch = useAppDispatch();
     const user = useAppSelector(selectUser);
 
@@ -29,18 +29,14 @@ const PlayRoute: React.FC = () => {
     if (!user) {
         return (
             <div className={styles.appContainer}>
-                <div className={styles.mainContent}>
-                    <AuthScreen />
-                </div>
+                <AuthScreen/>
             </div>
         );
     }
 
     return (
         <div className={styles.appContainer}>
-            <div className={styles.mainContent}>
-                <Play />
-            </div>
+            <Play/>
         </div>
     );
 };
@@ -61,9 +57,7 @@ const ComposeRoute: React.FC = () => {
 
     return (
         <div className={styles.appContainer}>
-            <div className={styles.mainContent}>
-                <Compose />
-            </div>
+            <Compose/>
         </div>
     );
 };
@@ -84,18 +78,14 @@ const HomeRoute: React.FC = () => {
     if (!user) {
         return (
             <div className={styles.appContainer}>
-                <div className={styles.mainContent}>
-                    <AuthScreen />
-                </div>
+                <AuthScreen/>
             </div>
         );
     }
 
     return (
         <div className={styles.appContainer}>
-            <div className={styles.mainContent}>
-                <ComposeList />
-            </div>
+            <ComposeList/>
         </div>
     );
 };
@@ -109,7 +99,7 @@ const PlayListRoute: React.FC = () => {
         if (!user) {
             navigate('/');
         } else if (location.pathname === '/play' || location.pathname === '/play/') {
-            navigate('/puzzles', { replace: true });
+            navigate('/puzzles', {replace: true});
         }
     }, [user, navigate, location.pathname]);
 
@@ -119,18 +109,14 @@ const PlayListRoute: React.FC = () => {
 
     return (
         <div className={styles.appContainer}>
-            <div className={styles.mainContent}>
-                <PlayList />
-            </div>
+            <PlayList/>
         </div>
     );
 };
 
 const LoadingScreen: React.FC = () => (
     <div className={styles.appContainer}>
-        <div className={styles.mainContent}>
-            <div>Loading...</div>
-        </div>
+        <div>Loading...</div>
     </div>
 );
 
@@ -146,17 +132,17 @@ const AppRouter: React.FC = () => {
     }, [dispatch]);
 
     if (!initialized) {
-        return <LoadingScreen />;
+        return <LoadingScreen/>;
     }
 
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/" element={<HomeRoute />} />
-                <Route path="/play/:puzzleId" element={<PlayRoute />} />
-                <Route path="/compose" element={<ComposeRoute />} />
-                <Route path="/puzzles" element={<PlayListRoute />} />
-                <Route path="*" element={<PlayListRoute />} />
+                <Route path="/" element={<HomeRoute/>}/>
+                <Route path="/play/:puzzleId" element={<PlayRoute/>}/>
+                <Route path="/compose" element={<ComposeRoute/>}/>
+                <Route path="/puzzles" element={<PlayListRoute/>}/>
+                <Route path="*" element={<PlayListRoute/>}/>
             </Routes>
         </BrowserRouter>
     );

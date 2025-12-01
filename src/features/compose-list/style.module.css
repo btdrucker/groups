@@ -1,11 +1,5 @@
 @import '../../common/style.module.css';
 
-.puzzleListContainer {
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
 .puzzleListHeader {
     display: flex;
     flex-direction: column;
@@ -101,24 +95,6 @@
     margin-bottom: 0.2em;
     font-size: 1em;
     color: #333;
-}
-
-.headerSticky {
-    position: sticky;
-    top: 0;
-    background: white;
-    z-index: 100;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.headerContent {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    max-width: 1200px;
-    margin: 0 auto;
-    gap: 1rem;
-    padding: 1rem 2rem;
 }
 
 .screenTitle {

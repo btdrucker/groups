@@ -1,5 +1,14 @@
 :root {
     font-family: sans-serif;
+    --breakpoint-mobile: 600px;
+}
+
+.screenContainer {
+    padding: 2rem 1rem;
+    min-width: 400px;
+    max-width: 675px;
+    width: 100%;
+    margin: 0 auto;
 }
 
 .actionButton {
@@ -58,8 +67,36 @@
     display: inline;
 }
 
-@media (max-width: 600px) {
+@media (max-width: var(--breakpoint-mobile)) {
     .hideOnMobile {
         display: none;
     }
+}
+
+.headerSticky {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.headerContent {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    width: 100%;
+    position: relative;
+    padding: 1rem 2rem;
+}
+
+.headerContentCentered {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    width: 100%;
+    position: relative;
+    padding: 1rem 2rem;
 }
