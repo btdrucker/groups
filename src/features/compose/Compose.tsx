@@ -113,48 +113,40 @@ const Compose = () => {
     return (
         <>
             <ComposeHeader/>
-            <div className={styles.screenContainer}>
-                <table className={styles.gridTable}>
-                    <thead>
-                    <tr>
-                        <th>Category</th>
-                        <th>Word 1</th>
-                        <th>Word 2</th>
-                        <th>Word 3</th>
-                        <th>Word 4</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {puzzle.categories.map((cat, catIdx) => (
-                        <tr key={catIdx}>
-                            <td key={catIdx}>
+            <div className={styles.composeContainer}>
+                {puzzle.categories.map((cat, catIdx) => (
+                    <div className={styles.categoryBlock} key={catIdx}>
+                        <textarea
+                            ref={useAutosizeTextarea(cat)}
+                            value={cat}
+                            placeholder={`Category ${catIdx + 1}`}
+                            onChange={e => handleCategoryNameChange(catIdx, e.target.value)}
+                            className={classes(
+                                styles.categoryTextarea,
+                                styles[`categoryInput${catIdx + 1}`]
+                            )}
+                            rows={1}
+                            style={{resize: "none"}}
+                        />
+                        <div className={styles.wordInputsRow}>
+                            {[0, 1, 2, 3].map(wordIdx => (
                                 <textarea
-                                    ref={useAutosizeTextarea(cat)}
-                                    value={cat}
-                                    placeholder={`Category ${catIdx + 1}`}
-                                    onChange={e => handleCategoryNameChange(catIdx, e.target.value)}
-                                    className={classes(styles.categoryInput, styles.textareaWrap)}
+                                    key={wordIdx}
+                                    ref={useAutosizeTextarea(puzzle.words[catIdx * 4 + wordIdx])}
+                                    value={puzzle.words[catIdx * 4 + wordIdx]}
+                                    placeholder={`Word ${wordIdx + 1}`}
+                                    onChange={e => handleWordChange(catIdx, wordIdx, e.target.value)}
+                                    className={classes(
+                                        styles.wordTextarea,
+                                        styles[`wordInput${catIdx + 1}`]
+                                    )}
                                     rows={1}
                                     style={{resize: "none"}}
                                 />
-                            </td>
-                            {[0, 1, 2, 3].map(wordIdx => (
-                                <td key={wordIdx}>
-                                    <textarea key={wordIdx}
-                                        ref={useAutosizeTextarea(puzzle.words[catIdx * 4 + wordIdx])}
-                                        value={puzzle.words[catIdx * 4 + wordIdx]}
-                                        placeholder={`Word ${wordIdx + 1}`}
-                                        onChange={e => handleWordChange(catIdx, wordIdx, e.target.value)}
-                                        className={classes(styles.wordInput, styles.textareaWrap)}
-                                        rows={1}
-                                        style={{resize: "none"}}
-                                    />
-                                </td>
                             ))}
-                        </tr>
-                    ))}
-                    </tbody>
-                </table>
+                        </div>
+                    </div>
+                ))}
                 <button
                     className={styles.actionButton}
                     onClick={handleSave}

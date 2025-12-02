@@ -1,6 +1,11 @@
 :root {
     font-family: sans-serif;
     --breakpoint-mobile: 600px;
+
+    --category0Color-rgb: 229,252,194;
+    --category1Color-rgb: 157,224,173;
+    --category2Color-rgb: 69,173,168;
+    --category3Color-rgb: 84,121,128;
 }
 
 .screenContainer {
@@ -55,9 +60,11 @@
     color: black;
     background-color: #2ecc40;
 }
+
 .greenButton:hover {
     background-color: #27ae38;
 }
+
 .greenButton:disabled,
 .greenButton:disabled:hover {
     background-color: #b2eabf;

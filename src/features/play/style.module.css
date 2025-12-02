@@ -93,19 +93,19 @@
 }
 
 .categoryRow[data-category-index="0"] {
-    background-color: rgb(229,252,194);
+    background-color: rgb(var(--category0Color-rgb));
 }
 
 .categoryRow[data-category-index="1"] {
-    background-color: rgb(157,224,173);
+    background-color: rgb(var(--category1Color-rgb));
 }
 
 .categoryRow[data-category-index="2"] {
-    background-color: rgb(69,173,168);
+    background-color: rgb(var(--category2Color-rgb));
 }
 
 .categoryRow[data-category-index="3"] {
-    background-color: rgb(84,121,128);
+    background-color: rgb(var(--category3Color-rgb));
 }
 
 .missedCategory {
@@ -114,19 +114,19 @@
 }
 
 .missedCategory[data-category-index="0"] {
-    background-color: rgba(229,252,194,0.5) !important;
+    background-color: rgba(var(--category0Color-rgb), 0.5) !important;
 }
 
 .missedCategory[data-category-index="1"] {
-    background-color: rgba(157,224,173,0.5) !important;
+    background-color: rgba(var(--category1Color-rgb), 0.5) !important;
 }
 
 .missedCategory[data-category-index="2"] {
-    background-color: rgba(69,173,168,0.5) !important;
+    background-color: rgba(var(--category2Color-rgb), 0.5) !important;
 }
 
 .missedCategory[data-category-index="3"] {
-    background-color: rgba(84,121,128,0.5) !important;
+    background-color: rgba(var(--category3Color-rgb), 0.5) !important;
 }
 
 .categoryName {
