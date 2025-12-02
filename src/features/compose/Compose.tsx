@@ -1,4 +1,4 @@
-import React, {useState, useMemo} from "react";
+import React, {useState, useMemo, useRef, useEffect} from "react";
 import styles from "./style.module.css";
 import {Puzzle} from '../../firebase/firestore';
 import {useAppDispatch, useAppSelector} from '../../common/hooks';
@@ -7,6 +7,7 @@ import {createPuzzleThunk, updatePuzzleThunk, selectPuzzle} from './slice';
 import {useAutosizeTextarea} from "./useAutosizeTextarea";
 import ComposeHeader from './ComposeHeader';
 import {classes} from "../../common/classUtils";
+import {useNavigate} from "react-router-dom";
 
 function isPuzzleStarted(puzzle: Puzzle) {
     return puzzle.categories.some(cat => cat.trim() !== "") ||
@@ -26,6 +27,7 @@ function isPuzzleChanged(puzzle: Puzzle, initial?: Puzzle) {
 
 const Compose = () => {
     const dispatch = useAppDispatch();
+    const navigate = useNavigate();
     const user = useAppSelector(selectUser);
     const initialPuzzle = useAppSelector(selectPuzzle);
     const composeError = useAppSelector(state => state.compose.error);
@@ -76,6 +78,7 @@ const Compose = () => {
             });
             return {...prev, words};
         });
+        setTimeout(() => syncRowHeights(catIdx), 0);
     };
 
     const saveOrCreate = async () => {
@@ -110,9 +113,74 @@ const Compose = () => {
         }
     };
 
+    // No-op handleBack for now
+    const handleBack = async () => {
+        if (canSave) {
+            setShowSaveSuccess(false);
+            setShowSaveError(false);
+            await saveOrCreate();
+            if (composeError) {
+                setShowSaveError(true);
+                setTimeout(() => {
+                    setShowSaveError(false);
+                }, 3000);
+            } else {
+                navigate("/")
+            }
+        } else {
+            navigate("/")
+        }
+    };
+
+    // Refs for word textareas: 4 rows x 4 cols
+    const wordRefs = useRef<(HTMLTextAreaElement | null)[][]>(
+        Array.from({ length: 4 }, () => Array(4).fill(null))
+    );
+
+    // Create a 2D array of autosize refs for word textareas (hooks must be called at top level)
+    const wordAutosizeRefs: React.MutableRefObject<HTMLTextAreaElement | null>[][] = [];
+    for (let catIdx = 0; catIdx < 4; catIdx++) {
+        wordAutosizeRefs[catIdx] = [];
+        for (let wordIdx = 0; wordIdx < 4; wordIdx++) {
+            wordAutosizeRefs[catIdx][wordIdx] = useAutosizeTextarea(puzzle.words[catIdx * 4 + wordIdx]);
+        }
+    }
+
+    // Helper to assign both the autosize ref and the tracking ref
+    const getWordTextareaRef = (catIdx: number, wordIdx: number) => (el: HTMLTextAreaElement | null) => {
+        wordRefs.current[catIdx][wordIdx] = el;
+        wordAutosizeRefs[catIdx][wordIdx].current = el;
+    };
+
+    // Helper to sync heights for a row
+    const syncRowHeights = (catIdx: number) => {
+        const rowRefs = wordRefs.current[catIdx];
+        // First, reset all heights so scrollHeight is accurate for shrinking
+        rowRefs.forEach(ref => {
+            if (ref) {
+                ref.style.height = '';
+            }
+        });
+        // Get max scrollHeight among all textareas in the row
+        const heights = rowRefs.map(ref => ref ? ref.scrollHeight : 0);
+        const maxHeight = Math.max(...heights);
+        rowRefs.forEach(ref => {
+            if (ref) {
+                ref.style.height = maxHeight + 'px';
+            }
+        });
+    };
+
+    // On every puzzle.words change, sync all rows
+    useEffect(() => {
+        for (let catIdx = 0; catIdx < 4; catIdx++) {
+            syncRowHeights(catIdx);
+        }
+    }, [puzzle.words]);
+
     return (
         <>
-            <ComposeHeader/>
+            <ComposeHeader handleBack={handleBack}/>
             <div className={styles.composeContainer}>
                 {puzzle.categories.map((cat, catIdx) => (
                     <div className={styles.categoryBlock} key={catIdx}>
@@ -132,7 +200,7 @@ const Compose = () => {
                             {[0, 1, 2, 3].map(wordIdx => (
                                 <textarea
                                     key={wordIdx}
-                                    ref={useAutosizeTextarea(puzzle.words[catIdx * 4 + wordIdx])}
+                                    ref={getWordTextareaRef(catIdx, wordIdx)}
                                     value={puzzle.words[catIdx * 4 + wordIdx]}
                                     placeholder={`Word ${wordIdx + 1}`}
                                     onChange={e => handleWordChange(catIdx, wordIdx, e.target.value)}

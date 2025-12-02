@@ -74,7 +74,7 @@
     display: inline;
 }
 
-@media (max-width: var(--breakpoint-mobile)) {
+@media (max-width: 600px) {
     .hideOnMobile {
         display: none;
     }

@@ -184,12 +184,4 @@
         min-width: 0;
         padding: 0 0.5rem;
     }
-
-    .categoryBlock {
-        gap: 1rem;
-    }
-
-    .wordInputsRow {
-        gap: 0.5rem;
-    }
 }

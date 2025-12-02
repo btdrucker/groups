@@ -15,7 +15,7 @@ const PlayHeader: React.FC = () => {
         <div className={styles.headerSticky}>
             <div className={styles.headerContentCentered}>
                 <button className={commonStyles.actionButton} onClick={handleBack}>
-                    ← Back
+                    <i className="fa-solid fa-arrow-left"></i> <span className={commonStyles.hideOnMobile}>Back</span>
                 </button>
                 <h2 className={styles.centeredTitle}>Playing puzzle</h2>
                 <LogoutButton />
