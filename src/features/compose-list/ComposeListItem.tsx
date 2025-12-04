@@ -4,19 +4,11 @@ import styles from './style.module.css';
 import {useAppDispatch} from "../../common/hooks";
 import {composePuzzle} from "../compose/slice";
 import { useNavigate } from 'react-router-dom';
+import { isPuzzleComplete } from './slice';
 
 interface Props {
     puzzle: Puzzle;
 }
-
-// Helper function to check if puzzle is complete
-const isPuzzleComplete = (puzzle: Puzzle): boolean => {
-    const hasAllCategories = puzzle.categories.length === 4 &&
-        puzzle.categories.every(cat => cat && cat.trim() !== '');
-    const hasAllWords = puzzle.words.length === 16 &&
-        puzzle.words.every(word => word && word.trim() !== '');
-    return hasAllCategories && hasAllWords;
-};
 
 const ComposeListItem = ({puzzle}: Props) => {
     const dispatch = useAppDispatch();

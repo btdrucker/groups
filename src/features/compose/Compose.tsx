@@ -3,11 +3,12 @@ import styles from "./style.module.css";
 import {Puzzle} from '../../firebase/firestore';
 import {useAppDispatch, useAppSelector} from '../../common/hooks';
 import {selectUser} from '../auth/slice';
-import {createPuzzleThunk, updatePuzzleThunk, deletePuzzleThunk, selectPuzzle} from './slice';
+import {createPuzzleThunk, selectPuzzle} from './slice';
 import {useAutosizeTextarea} from "./useAutosizeTextarea";
 import ComposeHeader from './ComposeHeader';
 import {classes} from "../../common/classUtils";
 import {useNavigate} from "react-router-dom";
+import { updatePuzzleThunkLocal, deletePuzzleThunkLocal, createPuzzleLocally } from '../compose-list/slice';
 
 function isPuzzleStarted(puzzle: Puzzle) {
     return puzzle.categories.some(cat => cat.trim() !== "") ||
@@ -86,11 +87,15 @@ const Compose = () => {
     const saveOrCreate = async () => {
         if (user) {
             if (puzzle.id) {
-                await dispatch(updatePuzzleThunk(puzzle));
+                await dispatch(updatePuzzleThunkLocal(puzzle));
             } else {
                 // Remove id before creating
                 const {id, ...puzzleWithoutId} = puzzle;
-                await dispatch(createPuzzleThunk(puzzleWithoutId));
+                const result = await dispatch(createPuzzleThunk(puzzleWithoutId));
+                // If successful, add to compose-list
+                if (result.meta && result.meta.requestStatus === 'fulfilled' && result.payload) {
+                    dispatch(createPuzzleLocally(result.payload));
+                }
             }
         }
     }
@@ -118,7 +123,7 @@ const Compose = () => {
     const handleDelete = async () => {
         if (!puzzle.id) return; // Only delete if puzzle has an id
         setDeleting(true);
-        await dispatch(deletePuzzleThunk(puzzle.id));
+        await dispatch(deletePuzzleThunkLocal(puzzle.id));
         setDeleting(false);
         navigate("/");
     };
