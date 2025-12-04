@@ -3,7 +3,7 @@ import styles from "./style.module.css";
 import {Puzzle} from '../../firebase/firestore';
 import {useAppDispatch, useAppSelector} from '../../common/hooks';
 import {selectUser} from '../auth/slice';
-import {createPuzzleThunk, updatePuzzleThunk, selectPuzzle} from './slice';
+import {createPuzzleThunk, updatePuzzleThunk, deletePuzzleThunk, selectPuzzle} from './slice';
 import {useAutosizeTextarea} from "./useAutosizeTextarea";
 import ComposeHeader from './ComposeHeader';
 import {classes} from "../../common/classUtils";
@@ -48,6 +48,8 @@ const Compose = () => {
     const [showSaveSuccess, setShowSaveSuccess] = useState(false);
     const [showSaveError, setShowSaveError] = useState(false);
     const [savedPuzzle, setSavedPuzzle] = useState<Puzzle | undefined>(initialPuzzle);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     // Update puzzle state when initialPuzzle changes
     React.useEffect(() => {
@@ -111,6 +113,14 @@ const Compose = () => {
                 }, 3000);
             }
         }
+    };
+
+    const handleDelete = async () => {
+        if (!puzzle.id) return; // Only delete if puzzle has an id
+        setDeleting(true);
+        await dispatch(deletePuzzleThunk(puzzle.id));
+        setDeleting(false);
+        navigate("/");
     };
 
     // No-op handleBack for now
@@ -215,13 +225,25 @@ const Compose = () => {
                         </div>
                     </div>
                 ))}
-                <button
-                    className={styles.actionButton}
-                    onClick={handleSave}
-                    disabled={!canSave}
-                >
-                    Save
-                </button>
+                {/* Button row: Save left, Delete right */}
+                <div className={styles.buttonRow}>
+                    <button
+                        className={styles.actionButton}
+                        onClick={handleSave}
+                        disabled={!canSave}
+                        style={{float: 'left'}}
+                    >
+                        Save
+                    </button>
+                    <button
+                        className={classes(styles.actionButton, styles.logout)}
+                        onClick={() => setShowDeleteConfirm(true)}
+                        style={{float: 'right'}}
+                        disabled={deleting}
+                    >
+                        Delete
+                    </button>
+                </div>
                 {composeError && showSaveError && (
                     <span className={styles.saveErrorMessage}>
                         {composeError}
@@ -231,6 +253,29 @@ const Compose = () => {
                     <span className={styles.saveSuccessMessage}>
                         Saved successfully!
                     </span>
+                )}
+                {showDeleteConfirm && (
+                    <div className={styles.overlay}>
+                        <div className={styles.confirmDialog}>
+                            <p>Are you sure you want to delete this puzzle?</p>
+                            <div className={styles.confirmButtons}>
+                                <button
+                                    className={styles.actionButton}
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    disabled={deleting}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className={classes(styles.actionButton, styles.logout)}
+                                    onClick={handleDelete}
+                                    disabled={deleting || !puzzle.id}
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
         </>

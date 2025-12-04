@@ -3,7 +3,7 @@ import styles from './style.module.css';
 import {useAppSelector} from '../../common/hooks';
 import {selectPuzzle, selectPlayLoading, selectPlayError} from './slice';
 import {selectUserId} from '../auth/slice';
-import {getGameState, saveGameState} from '../../firebase/firestore';
+import {getGameState, PUZZLE_NOT_FOUND, saveGameState} from '../../firebase/firestore';
 import {classes} from "../../common/classUtils";
 import {Puzzle} from '../../firebase/firestore';
 import {sleep} from '../../common/utils';
@@ -155,7 +155,6 @@ const Play = () => {
     const [messageText, setMessageText] = useState<string | null>(null);
     const [isRevealing, setIsRevealing] = useState(false);
     const [isLoadingGameState, setIsLoadingGameState] = useState(false);
-    const [loadError, setLoadError] = useState(false);
     const [isShuffling, setIsShuffling] = useState(false);
     const [gridWidth, setGridWidth] = useState<number>(() => calculateGridWidth(window));
 
@@ -221,7 +220,6 @@ const Play = () => {
             if (error) {
                 console.error('Error loading game state:', error);
                 setIsLoadingGameState(false);
-                setLoadError(true);
                 return;
             }
 
@@ -339,29 +337,29 @@ const Play = () => {
         }
     }, [mistakesRemaining, currentPuzzle, displayedCategories, isRevealing, gridWords]);
 
-    // Conditional rendering for loading, error, not found
+    let statusMessage: string | null = null;
     if (isLoadingPuzzle || isLoadingGameState) {
-        return (
-            <div className={styles.screenContainer}>
-                <p>Loading...</p>
-            </div>
-        );
+        statusMessage = 'Loading...';
+    } else if (puzzleError === PUZZLE_NOT_FOUND || !currentPuzzle) {
+        statusMessage = "I can't find that puzzle!";
+    } else if (puzzleError) {
+        statusMessage = puzzleError;
     }
 
-    if (puzzleError || loadError) {
+    if (statusMessage) {
         return (
-            <div className={styles.screenContainer}>
-                <p>There was an error loading the puzzle.</p>
-            </div>
+            <>
+                <PlayHeader/>
+                <div className={styles.screenContainer}>
+                    <p>{statusMessage}</p>
+                </div>
+            </>
         );
     }
 
     if (!currentPuzzle) {
-        return (
-            <div className={styles.screenContainer}>
-                <p>I can't find that puzzle!</p>
-            </div>
-        );
+        // This is just for type safety, should never happen due to above
+        return null;
     }
 
     // At this point, currentPuzzle is guaranteed to exist
@@ -505,9 +503,9 @@ const Play = () => {
     const isComplete = displayedCategories.length === numCategories && !isGameLost;
 
     // Calculate cell width (4 columns, 3 gaps of 0.75rem)
-    const gapPx = 0.75 * 16; // 0.75rem = 12px (assuming 1rem = 16px)
-    const totalGap = 3 * gapPx;
-    const cellWidth = (gridWidth - totalGap) / 4;
+    const gapPx = 0.5 * 32; // Assuming 1rem = 16px
+    const totalGap = (wordsPerCategory - 1) * gapPx;
+    const cellSize = (gridWidth - totalGap) / wordsPerCategory;
 
     return (
         <>
@@ -520,7 +518,6 @@ const Play = () => {
                 <div
                     className={styles.wordGrid}
                     style={{
-                        gap: '0.75rem',
                         gridTemplateColumns: `repeat(${wordsPerCategory}, 1fr)`
                     }}
                 >
@@ -571,12 +568,11 @@ const Play = () => {
                             style={{
                                 gridColumn: (word.indexInGrid % wordsPerCategory) + 1,
                                 gridRow: Math.floor(word.indexInGrid / wordsPerCategory) + 1,
-                                width: cellWidth,
-                                minWidth: cellWidth,
-                                maxWidth: cellWidth,
-                                height: cellWidth * 0.5, // maintain aspect ratio similar to previous 160x80
-                                minHeight: cellWidth * 0.5,
-                                maxHeight: cellWidth * 0.5
+                                width: cellSize,
+                                minWidth: cellSize,
+                                maxWidth: cellSize,
+                                height: cellSize,
+                                maxHeight: 80
                             }}
                             onClick={() => handleWordClick(word)}
                         >

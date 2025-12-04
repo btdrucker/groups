@@ -2,7 +2,8 @@ import {createSlice, createAsyncThunk, PayloadAction} from '@reduxjs/toolkit';
 import {
     Puzzle,
     createPuzzle as createPuzzleFirestore,
-    updatePuzzle as updatePuzzleFirestore
+    updatePuzzle as updatePuzzleFirestore,
+    deletePuzzle as deletePuzzleFirestore
 } from '../../firebase/firestore';
 import {AppDispatch} from "../../common/store";
 import {navigateToCompose, navigateToPlay} from "../app/slice";
@@ -38,6 +39,17 @@ export const updatePuzzleThunk = createAsyncThunk(
             return rejectWithValue(error);
         }
         return puzzle;
+    }
+);
+
+export const deletePuzzleThunk = createAsyncThunk(
+    'compose/deletePuzzle',
+    async (puzzleId: string, { rejectWithValue }) => {
+        const { error } = await deletePuzzleFirestore(puzzleId);
+        if (error) {
+            return rejectWithValue(error);
+        }
+        return puzzleId;
     }
 );
 
@@ -79,6 +91,19 @@ const composeSlice = createSlice({
             state.loading = false;
         });
         builder.addCase(updatePuzzleThunk.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.payload as string;
+        });
+
+        // Delete puzzle
+        builder.addCase(deletePuzzleThunk.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(deletePuzzleThunk.fulfilled, (state, action) => {
+            state.loading = false;
+        });
+        builder.addCase(deletePuzzleThunk.rejected, (state, action) => {
             state.loading = false;
             state.error = action.payload as string;
         });

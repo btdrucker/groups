@@ -8,6 +8,7 @@ import {
     where,
     serverTimestamp,
     updateDoc,
+    deleteDoc
 } from 'firebase/firestore';
 import {db} from './config';
 
@@ -95,6 +96,8 @@ export const getUserPuzzles = async (userId: string) => {
     }
 };
 
+export const PUZZLE_NOT_FOUND = 'Puzzle not found';
+
 // Get a specific puzzle by ID
 export const getPuzzle = async (puzzleId: string) => {
     try {
@@ -109,7 +112,7 @@ export const getPuzzle = async (puzzleId: string) => {
                 createdAt: data.createdAt?.toMillis()
             } as Puzzle, error: null};
         } else {
-            return {puzzle: null, error: 'Puzzle not found'};
+            return {puzzle: null, error: PUZZLE_NOT_FOUND};
         }
     } catch (error: any) {
         console.error('Error getting puzzle:', error);
@@ -202,3 +205,15 @@ export const getUserGameStates = async (userId: string) => {
         return {gameStates: [], error: error.message};
     }
 };
+
+// Delete a puzzle by id
+export const deletePuzzle = async (puzzleId: string) => {
+    try {
+        const puzzleRef = doc(db, 'puzzles', puzzleId);
+        await deleteDoc(puzzleRef);
+        return { error: null };
+    } catch (error: any) {
+        console.error('Error deleting puzzle:', error);
+        return { error: error.message };
+    }
+}
