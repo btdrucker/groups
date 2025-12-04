@@ -1,14 +1,15 @@
 import React, {useEffect, useState, useRef, useLayoutEffect} from 'react';
-import { useParams } from 'react-router-dom';
+import {useParams} from 'react-router-dom';
 import styles from './style.module.css';
 import {useAppDispatch, useAppSelector} from '../../common/hooks';
 import {selectGameStateWithPuzzleById, ensureGameStateLoaded, selectPlayLoading, selectPlayError} from './slice';
 import {selectUserId} from '../auth/slice';
-import {getGameState, PUZZLE_NOT_FOUND, saveGameState} from '../../firebase/firestore';
+import {GameState, getGameState, PUZZLE_NOT_FOUND, saveGameState} from '../../firebase/firestore';
 import {classes} from "../../common/classUtils";
 import {Puzzle} from '../../firebase/firestore';
 import {sleep} from '../../common/utils';
 import PlayHeader from './PlayHeader';
+import {updateGameStateLocally} from '../play-list/slice';
 
 interface DisplayedCategory {
     categoryIndex: number;
@@ -146,7 +147,7 @@ const calculateGridWidth = (window: Window | undefined): number => {
 const Play = () => {
     const dispatch = useAppDispatch();
     const userId = useAppSelector(selectUserId);
-    const { puzzleId } = useParams();
+    const {puzzleId} = useParams();
     const currentPuzzleId = puzzleId;
     const gameStateWithPuzzle = useAppSelector(state => currentPuzzleId ? selectGameStateWithPuzzleById(state, currentPuzzleId) : undefined);
     const currentPuzzle = gameStateWithPuzzle?.puzzle;
@@ -161,7 +162,6 @@ const Play = () => {
     const [isShaking, setIsShaking] = useState(false);
     const [messageText, setMessageText] = useState<string | null>(null);
     const [isRevealing, setIsRevealing] = useState(false);
-    const [isLoadingGameState, setIsLoadingGameState] = useState(false);
     const [isShuffling, setIsShuffling] = useState(false);
     const [gridWidth, setGridWidth] = useState<number>(() => calculateGridWidth(window));
 
@@ -228,22 +228,22 @@ const Play = () => {
         const loadGameState = async () => {
             if (!currentPuzzle || !currentPuzzle.id || !userId) return;
 
-            setIsLoadingGameState(true);
             const {gameState, error} = await getGameState(userId, currentPuzzle.id);
 
             if (error) {
                 console.error('Error loading game state:', error);
-                setIsLoadingGameState(false);
                 return;
             }
 
             // If no game state exists, create a new one with empty guesses
             if (!gameState) {
-                await saveGameState({
+                const emptyGameState: GameState = {
                     userId,
                     puzzleId: currentPuzzle.id,
                     guesses: []
-                });
+                };
+                await saveGameState(emptyGameState);
+                dispatch(updateGameStateLocally(emptyGameState));
             }
 
             const startingDisplayedCategories: DisplayedCategory[] = [];
@@ -298,8 +298,6 @@ const Play = () => {
 
             words = shuffleWordsFromGridRow(words, startingDisplayedCategories.length, wordsPerCategory)
             setGridWords(words);
-
-            setIsLoadingGameState(false);
         };
         loadGameState();
     }, [currentPuzzle, userId]);
@@ -439,11 +437,14 @@ const Play = () => {
     // Saves the current game state to Firestore
     const saveCurrentGameState = async (updatedGuesses: number[]) => {
         if (!userId || !currentPuzzle?.id) return;
-        await saveGameState({
+        const gameState: GameState = {
+            id: gameStateWithPuzzle.gameState?.id || undefined,
             userId,
             puzzleId: currentPuzzle.id,
             guesses: updatedGuesses
-        });
+        };
+        await saveGameState(gameState);
+        dispatch(updateGameStateLocally(gameState));
     };
 
     // Handles a correct guess: updates solved categories, removes words, and saves state

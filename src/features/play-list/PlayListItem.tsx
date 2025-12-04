@@ -1,6 +1,6 @@
 import React from 'react';
-import { GameStateWithPuzzle } from './slice';
 import styles from './style.module.css';
+import { isWon, isLost, isInProgress, GameStateWithPuzzle } from './slice';
 import { useNavigate } from 'react-router-dom';
 
 interface Props {
@@ -21,10 +21,6 @@ const PlayListItem = ({ gameStateWithPuzzle }: Props) => {
         return null;
     }
 
-    const totalCategories = puzzle.categories.length;
-    const isWon = correctGuesses === totalCategories;
-    const isLost = !isWon && mistakes === 4;
-    const isInProgress = !isWon && !isLost;
     const creatorName = puzzle.creatorName ? puzzle.creatorName : 'Unknown creator';
     const createdDate = puzzle.createdAt ? new Date(puzzle.createdAt).toLocaleDateString() : '';
 
@@ -41,25 +37,25 @@ const PlayListItem = ({ gameStateWithPuzzle }: Props) => {
                 )}
             </div>
             <div className={styles.progressInfo}>
-                {isWon && (
+                {isWon(gameStateWithPuzzle) && (
                     <>
                         <p className={styles.statusWin}>
                             You won! ({mistakes} mistake{mistakes !== 1 ? 's' : ''})
                         </p>
                     </>
                 )}
-                {isLost && (
+                {isLost(gameStateWithPuzzle) && (
                     <p className={styles.statusLose}>
                         You didn't win ({correctGuesses} group{correctGuesses !== 1 ? 's' : ''} guessed)
                     </p>
                 )}
-                {isInProgress && (
+                {isInProgress(gameStateWithPuzzle) && (
                     <p className={styles.statusInProgress}>
                         Keep going! {correctGuesses} group{correctGuesses !== 1 ? 's' : ''} guessed, {mistakes} mistake{mistakes !== 1 ? 's' : ''}.
                     </p>
                 )}
             </div>
-            {isInProgress && (
+            {isInProgress(gameStateWithPuzzle) && (
                 <button className={styles.actionButton}>
                     Continue Playing
                 </button>

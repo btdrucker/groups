@@ -47,14 +47,12 @@ interface RawGameStateWithPuzzle {
 }
 
 interface PlayListState {
-    selectedGameStateId: string | null;
     gameStatesWithPuzzles: RawGameStateWithPuzzle[];
     loading: boolean;
     error: string | null;
 }
 
 const initialState: PlayListState = {
-    selectedGameStateId: null,
     gameStatesWithPuzzles: [],
     loading: false,
     error: null,
@@ -91,8 +89,17 @@ const playListSlice = createSlice({
     name: 'playList',
     initialState,
     reducers: {
-        setSelectedGameState: (state, action: PayloadAction<string | null>) => {
-            state.selectedGameStateId = action.payload;
+        updateGameStateLocally: (state, action: PayloadAction<GameState>) => {
+            const gameState = action.payload;
+            const idx = state.gameStatesWithPuzzles.findIndex(gs => gs.gameState.puzzleId === gameState.puzzleId);
+            if (idx !== -1) {
+                state.gameStatesWithPuzzles[idx] = {
+                    ...state.gameStatesWithPuzzles[idx],
+                    gameState,
+                };
+            } else {
+                console.error("Can't find game state to update locally:", gameState.id);
+            }
         },
     },
     extraReducers: (builder) => {
@@ -111,10 +118,7 @@ const playListSlice = createSlice({
     },
 });
 
-export const { setSelectedGameState } = playListSlice.actions;
-
-// Selectors
-export const selectSelectedGameStateId = (state: RootState) => state.playList.selectedGameStateId;
+export const { updateGameStateLocally } = playListSlice.actions;
 
 // Base selector for raw game states with puzzles from state
 const selectRawGameStatesWithPuzzles = (state: RootState) => state.playList.gameStatesWithPuzzles;
@@ -123,18 +127,50 @@ const selectRawGameStatesWithPuzzles = (state: RootState) => state.playList.game
 export const selectGameStatesWithPuzzles = createSelector(
     [selectRawGameStatesWithPuzzles],
     (gameStatesWithPuzzles): GameStateWithPuzzle[] => {
-        return gameStatesWithPuzzles.map(({ gameState, puzzle }) => {
-            const stats = countGuessStats(gameState, puzzle);
-            return {
-                gameState,
-                puzzle,
-                ...stats,
-            };
-        });
+        // Sort: in-progress first, then won/lost, stable
+        return [...gameStatesWithPuzzles]
+            .map(({ gameState, puzzle }) => {
+                const stats = countGuessStats(gameState, puzzle);
+                return {
+                    gameState,
+                    puzzle,
+                    ...stats,
+                };
+            })
+            .sort((a, b) => {
+                // Use isInProgress util for sorting
+                const aInProgress = isInProgress({
+                    ...a,
+                    puzzle: a.puzzle as any,
+                });
+                const bInProgress = isInProgress({
+                    ...b,
+                    puzzle: b.puzzle as any,
+                });
+                if (aInProgress === bInProgress) return 0;
+                return aInProgress ? -1 : 1;
+            });
     }
 );
 
 export const selectGameStatesLoading = (state: RootState) => state.playList.loading;
 export const selectGameStatesError = (state: RootState) => state.playList.error;
+
+// Utility functions for derived puzzle/game state flags
+export function totalCategories(puzzle: Puzzle | null): number {
+    return puzzle ? puzzle.categories.length : 0;
+}
+
+export function isWon(gameStateWithPuzzle: GameStateWithPuzzle): boolean {
+    return gameStateWithPuzzle.correctGuesses === totalCategories(gameStateWithPuzzle.puzzle);
+}
+
+export function isLost(gameStateWithPuzzle: GameStateWithPuzzle): boolean {
+    return !isWon(gameStateWithPuzzle) && gameStateWithPuzzle.mistakes === totalCategories(gameStateWithPuzzle.puzzle);
+}
+
+export function isInProgress(gameStateWithPuzzle: GameStateWithPuzzle): boolean {
+    return !isWon(gameStateWithPuzzle) && !isLost(gameStateWithPuzzle);
+}
 
 export default playListSlice.reducer;
