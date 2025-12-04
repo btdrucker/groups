@@ -1,75 +1,69 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { Puzzle, getPuzzle } from '../../firebase/firestore';
-import { AppDispatch } from '../../common/store';
-import { navigateToPlay } from '../app/slice';
+import { RootState } from '../../common/store';
+import { fetchUserGameStates, selectGameStatesWithPuzzles } from '../play-list/slice';
 
 interface PlayState {
-    puzzle?: Puzzle;
     loading: boolean;
     error: string | null;
 }
 
 const initialState: PlayState = {
-    puzzle: undefined,
     loading: false,
     error: null,
 };
 
-export const loadPuzzleById = createAsyncThunk(
-    'play/loadPuzzleById',
-    async (puzzleId: string, { rejectWithValue }) => {
-        const { puzzle, error } = await getPuzzle(puzzleId);
-        if (error || !puzzle) {
-            return rejectWithValue(error || 'Puzzle not found');
+// Thunk to ensure PlayList loads required game state/puzzle
+export const ensureGameStateLoaded = createAsyncThunk<
+    void,
+    string,
+    { state: RootState; dispatch: any }
+>(
+    'play/ensureGameStateLoaded',
+    async (gameStateId, { getState, dispatch }) => {
+        const state = getState();
+        const gameStatesWithPuzzles = selectGameStatesWithPuzzles(state);
+        const found = gameStatesWithPuzzles.find(gsp => gsp.gameState.id === gameStateId);
+        if (!found) {
+            // Dispatch PlayList thunk to load game states (assumes userId is available in auth state)
+            const userId = state.auth.user?.uid;
+            if (userId) {
+                await dispatch(fetchUserGameStates(userId));
+            }
         }
-        return puzzle;
     }
 );
+
+// Selector to get game state and puzzle by ID from PlayList state
+export const selectGameStateWithPuzzleById = (state: RootState, puzzleId: string) => {
+    const gameStatesWithPuzzles = selectGameStatesWithPuzzles(state);
+    return gameStatesWithPuzzles.find(gsp => gsp.gameState.puzzleId === puzzleId);
+};
 
 const playSlice = createSlice({
     name: 'play',
     initialState,
     reducers: {
-        setPuzzle: (state, action: PayloadAction<Puzzle>) => {
-            state.puzzle = action.payload;
-            state.error = null;
-        },
-        clearPuzzle: (state) => {
-            state.puzzle = undefined;
-            state.error = null;
+        setError: (state, action: PayloadAction<string | null>) => {
+            state.error = action.payload;
         },
     },
     extraReducers: (builder) => {
-        builder.addCase(loadPuzzleById.pending, (state) => {
+        builder.addCase(ensureGameStateLoaded.pending, (state) => {
             state.loading = true;
             state.error = null;
         });
-        builder.addCase(loadPuzzleById.fulfilled, (state, action) => {
+        builder.addCase(ensureGameStateLoaded.fulfilled, (state) => {
             state.loading = false;
-            state.puzzle = action.payload;
-            state.error = null;
         });
-        builder.addCase(loadPuzzleById.rejected, (state, action) => {
+        builder.addCase(ensureGameStateLoaded.rejected, (state, action) => {
             state.loading = false;
-            state.error = action.payload as string;
-            state.puzzle = undefined;
+            state.error = action.error.message || null;
         });
     },
 });
 
-const { setPuzzle, clearPuzzle } = playSlice.actions;
-
-// Thunk action that sets puzzle and navigates to Play mode
-export const playPuzzle = (puzzle: Puzzle) => (dispatch: AppDispatch) => {
-    dispatch(setPuzzle(puzzle));
-    dispatch(navigateToPlay());
-};
-
-export const selectPuzzle = (state: any): Puzzle | undefined => state.play.puzzle;
-export const selectPlayLoading = (state: any): boolean => state.play.loading;
-export const selectPlayError = (state: any): string | null => state.play.error;
-export const selectAvailableMistakes = (state: any): number => state.play.puzzle?.categories?.length || 0;
-export const selectNumCategories = (state: any): number => state.play.puzzle?.categories?.length || 0;
-export const selectWordsPerCategory = (state: any): number => (state.play.puzzle?.words || 0) / (state.play.puzzle?.categories?.length || 1);
+export const { setError } = playSlice.actions;
+export const selectPlayLoading = (state: RootState): boolean => state.play.loading;
+export const selectPlayError = (state: RootState): string | null => state.play.error;
 
 export default playSlice.reducer;

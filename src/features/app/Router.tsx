@@ -3,7 +3,6 @@ import {BrowserRouter, Routes, Route, useNavigate, useParams, useLocation} from 
 import {useAppDispatch, useAppSelector} from '../../common/hooks';
 import {selectUser, selectAuthInitialized, setUser} from '../auth/slice';
 import {setPendingPuzzleId, selectPendingPuzzleId} from './slice';
-import {loadPuzzleById} from '../play/slice';
 import {onAuthStateChange} from '../../firebase/auth';
 import AuthScreen from '../auth/AuthScreen';
 import Compose from '../compose/Compose';
@@ -11,6 +10,7 @@ import ComposeList from '../compose-list/ComposeList';
 import Play from '../play/Play';
 import PlayList from '../play-list/PlayList';
 import styles from './style.module.css';
+import { ensureGameStateLoaded } from '../play/slice';
 
 const PlayRoute: React.FC = () => {
     const {puzzleId} = useParams<{ puzzleId: string }>();
@@ -21,7 +21,7 @@ const PlayRoute: React.FC = () => {
         if (!user && puzzleId) {
             dispatch(setPendingPuzzleId(puzzleId));
         } else if (user && puzzleId) {
-            dispatch(loadPuzzleById(puzzleId));
+            dispatch(ensureGameStateLoaded(puzzleId));
             dispatch(setPendingPuzzleId(undefined));
         }
     }, [user, puzzleId, dispatch]);

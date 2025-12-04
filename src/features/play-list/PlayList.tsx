@@ -20,10 +20,10 @@ const PlayList = () => {
     const showList = !loading && !error;
 
     useEffect(() => {
-        if (user?.uid) {
+        if (user?.uid && gameStatesWithPuzzles.length === 0) {
             dispatch(fetchUserGameStates(user.uid));
         }
-    }, [user?.uid, dispatch]);
+    }, [user?.uid, dispatch, gameStatesWithPuzzles.length]);
 
     return (
         <>

@@ -23,10 +23,10 @@ const ComposeList = () => {
     const showList = !loading && !error;
 
     useEffect(() => {
-        if (user?.uid) {
+        if (user?.uid && puzzles.length === 0) {
             dispatch(fetchUserPuzzles(user.uid));
         }
-    }, [user?.uid, dispatch]);
+    }, [user?.uid, dispatch, puzzles.length]);
 
     const handleCreateNew = () => {
         dispatch(composeNewPuzzle());

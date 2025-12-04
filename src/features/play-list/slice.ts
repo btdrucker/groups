@@ -62,7 +62,12 @@ const initialState: PlayListState = {
 
 export const fetchUserGameStates = createAsyncThunk(
     'playList/fetchUserGameStates',
-    async (userId: string, { rejectWithValue }) => {
+    async (userId: string, { getState, rejectWithValue }) => {
+        const state = getState() as RootState;
+        if (state.playList.gameStatesWithPuzzles.length > 0) {
+            // Already loaded, skip fetching
+            return state.playList.gameStatesWithPuzzles;
+        }
         const { gameStates, error } = await getUserGameStates(userId);
         if (error) {
             return rejectWithValue(error);
@@ -133,4 +138,3 @@ export const selectGameStatesLoading = (state: RootState) => state.playList.load
 export const selectGameStatesError = (state: RootState) => state.playList.error;
 
 export default playListSlice.reducer;
-

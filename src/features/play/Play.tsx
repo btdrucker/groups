@@ -1,7 +1,8 @@
 import React, {useEffect, useState, useRef, useLayoutEffect} from 'react';
+import { useParams } from 'react-router-dom';
 import styles from './style.module.css';
-import {useAppSelector} from '../../common/hooks';
-import {selectPuzzle, selectPlayLoading, selectPlayError} from './slice';
+import {useAppDispatch, useAppSelector} from '../../common/hooks';
+import {selectGameStateWithPuzzleById, ensureGameStateLoaded, selectPlayLoading, selectPlayError} from './slice';
 import {selectUserId} from '../auth/slice';
 import {getGameState, PUZZLE_NOT_FOUND, saveGameState} from '../../firebase/firestore';
 import {classes} from "../../common/classUtils";
@@ -92,8 +93,10 @@ const moveCategoryWordsToGridRow = (words: Word[], categoryIndex: number, target
         // Find the word currently at targetGridIndex
         const targetGridIndex = targetRow * wordsPerCategory + x;
         const wordIndex = updatedWords.findIndex(word => word.indexInGrid === targetGridIndex);
-        if (wordIndex < 0) throw new Error('Word at target grid index not found');
-
+        if (wordIndex < 0) {
+            console.warn('Word at target grid index not found:', targetGridIndex, updatedWords);
+            continue; // Skip this swap
+        }
         // Swap the indexInGrid values
         const categoryWordIndex = categoryIndex * wordsPerCategory + x;
         const tempIndex = updatedWords[categoryWordIndex].indexInGrid;
@@ -141,10 +144,14 @@ const calculateGridWidth = (window: Window | undefined): number => {
 }
 
 const Play = () => {
-    const currentPuzzle = useAppSelector(selectPuzzle);
-    const isLoadingPuzzle = useAppSelector(selectPlayLoading);
-    const puzzleError = useAppSelector(selectPlayError);
+    const dispatch = useAppDispatch();
     const userId = useAppSelector(selectUserId);
+    const { puzzleId } = useParams();
+    const currentPuzzleId = puzzleId;
+    const gameStateWithPuzzle = useAppSelector(state => currentPuzzleId ? selectGameStateWithPuzzleById(state, currentPuzzleId) : undefined);
+    const currentPuzzle = gameStateWithPuzzle?.puzzle;
+    const loading = useAppSelector(selectPlayLoading);
+    const error = useAppSelector(selectPlayError);
 
     const [guesses, setGuesses] = useState<number[]>([]); // Track guesses as 16-bit numbers from gameState
     const [selectedWords, setSelectedWords] = useState<Word[]>([]);
@@ -208,6 +215,13 @@ const Play = () => {
         shouldAnimate.current = false;
         prevPositions.current = newPositions;
     }, [gridWords]);
+
+    useEffect(() => {
+        if (!currentPuzzle || !userId) return; // Guard: only run when puzzle is loaded
+        if (!gameStateWithPuzzle && typeof currentPuzzleId === 'string') {
+            dispatch(ensureGameStateLoaded(currentPuzzleId));
+        }
+    }, [currentPuzzleId, userId, gameStateWithPuzzle, dispatch]);
 
     // Load game state from Firestore when component mounts or puzzle changes.
     useEffect(() => {
@@ -292,7 +306,8 @@ const Play = () => {
 
     // Trigger reveal animation when game is lost
     useEffect(() => {
-        if (mistakesRemaining === 0 && !isRevealing && currentPuzzle) {
+        if (!currentPuzzle || !gridWords.length) return; // Guard: only run reveal when puzzle and grid are ready
+        if (mistakesRemaining === 0 && !isRevealing) {
             setIsRevealing(true);
 
             const numCategories = getNumCategories(currentPuzzle);
@@ -338,12 +353,12 @@ const Play = () => {
     }, [mistakesRemaining, currentPuzzle, displayedCategories, isRevealing, gridWords]);
 
     let statusMessage: string | null = null;
-    if (isLoadingPuzzle || isLoadingGameState) {
+    if (loading) {
         statusMessage = 'Loading...';
-    } else if (puzzleError === PUZZLE_NOT_FOUND || !currentPuzzle) {
+    } else if (error === PUZZLE_NOT_FOUND || !currentPuzzle) {
         statusMessage = "I can't find that puzzle!";
-    } else if (puzzleError) {
-        statusMessage = puzzleError;
+    } else if (error) {
+        statusMessage = error;
     }
 
     if (statusMessage) {
@@ -506,6 +521,17 @@ const Play = () => {
     const gapPx = 0.5 * 32; // Assuming 1rem = 16px
     const totalGap = (wordsPerCategory - 1) * gapPx;
     const cellSize = (gridWidth - totalGap) / wordsPerCategory;
+
+    if (loading || !currentPuzzle || !gridWords.length) {
+        return (
+            <>
+                <PlayHeader/>
+                <div className={styles.screenContainer}>
+                    <p>Loading...</p>
+                </div>
+            </>
+        );
+    }
 
     return (
         <>
