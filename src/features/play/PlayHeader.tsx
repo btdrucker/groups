@@ -1,8 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./style.module.css";
-import commonStyles from "../../common/style.module.css";
-import LogoutButton from "../auth/LogoutButton";
+import LogoutButton from "../../common/LogoutButton";
+import IconButton from "../../common/IconButton";
 
 const PlayHeader: React.FC = () => {
     const navigate = useNavigate();
@@ -13,10 +13,8 @@ const PlayHeader: React.FC = () => {
 
     return (
         <div className={styles.headerSticky}>
-            <div className={styles.headerContentCentered}>
-                <button className={commonStyles.actionButton} onClick={handleBack}>
-                    <i className="fa-solid fa-arrow-left"></i> <span className={commonStyles.hideOnMobile}>Back</span>
-                </button>
+            <div className={styles.headerContent}>
+                <IconButton onClick={handleBack} icon="fa-arrow-left">Back</IconButton>
                 <h2 className={styles.centeredTitle}>Playing puzzle</h2>
                 <LogoutButton />
             </div>

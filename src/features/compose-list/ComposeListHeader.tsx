@@ -1,10 +1,10 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
-import { useAppSelector } from "../../common/hooks";
-import { selectUser } from "../auth/slice";
+import {useNavigate} from "react-router-dom";
+import {useAppSelector} from "../../common/hooks";
+import {selectUser} from "../auth/slice";
 import styles from "./style.module.css";
-import commonStyles from "../../common/style.module.css";
-import LogoutButton from "../auth/LogoutButton";
+import LogoutButton from "../../common/LogoutButton";
+import IconButton from "../../common/IconButton";
 
 const ComposeListHeader: React.FC = () => {
     const navigate = useNavigate();
@@ -18,13 +18,9 @@ const ComposeListHeader: React.FC = () => {
     return (
         <div className={styles.headerSticky}>
             <div className={styles.headerContent}>
-                <h2 className={styles.screenTitle}>{`Welcome, ${displayName} -- Make Puzzles!`}</h2>
-                <div className={styles.buttonGroup}>
-                    <button className={commonStyles.actionButton} onClick={handlePlayPuzzles}>
-                        <span className={commonStyles.hideOnMobile}>Play puzzles</span> <i className="fa-solid fa-puzzle-piece"></i>
-                    </button>
-                    <LogoutButton />
-                </div>
+                <IconButton onClick={handlePlayPuzzles} icon="fa-puzzle-piece">Play puzzles</IconButton>
+                <h2 className={styles.screenTitle}>Make Puzzles!</h2>
+                <LogoutButton/>
             </div>
         </div>
     );

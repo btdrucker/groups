@@ -11,7 +11,6 @@ import {
 } from './slice';
 import { selectUser } from '../auth/slice';
 import ComposeListHeader from './ComposeListHeader';
-import commonStyles from '../../common/style.module.css';
 import {composeNewPuzzle} from "../compose/slice";
 
 const ComposeList = () => {
@@ -35,7 +34,7 @@ const ComposeList = () => {
     };
 
     const MakeNewPuzzleButton: React.FC = () => (
-        <button className={`${commonStyles.actionButton} ${commonStyles.greenButton}`} onClick={handleCreateNew}>
+        <button className={`${styles.actionButton} ${styles.greenButton}`} onClick={handleCreateNew}>
             Make a new Puzzle
         </button>
     );

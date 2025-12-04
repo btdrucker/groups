@@ -144,7 +144,7 @@
 
 .congratulations {
     text-align: center;
-    padding: 2rem;
+    padding: 1rem;
     font-size: 1.5rem;
     font-weight: 700;
     animation: celebration 0.6s ease-in-out;
@@ -152,7 +152,7 @@
 
 .gameOver {
     text-align: center;
-    padding: 2rem;
+    padding: 1rem;
     font-size: 1.5rem;
     font-weight: 700;
     animation: fadeIn 0.6s ease-in-out;
@@ -160,7 +160,7 @@
 
 .mistakesContainer {
     display: flex;
-    margin-top: 2rem;
+    margin-top: 1rem;
     align-items: center;
     justify-content: center;
     gap: 1rem;

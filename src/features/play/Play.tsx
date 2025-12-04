@@ -514,7 +514,7 @@ const Play = () => {
             <PlayHeader/>
             <div className={styles.screenContainer}>
                 <p className={styles.createdDate}>
-                    By {creatorName} ({createdDate}) - {gridWidth}
+                    By {creatorName} ({createdDate})
                 </p>
 
                 <div
@@ -599,7 +599,7 @@ const Play = () => {
 
                 {isComplete ? (
                     <div className={styles.congratulations}>
-                        🎉 Congratulations! You solved the puzzle! 🎉
+                        You solved the puzzle!
                     </div>
                 ) : isGameLost ? (
                     <div className={styles.gameOver}>

@@ -1,19 +1,17 @@
 import React from "react";
 import styles from "./style.module.css";
-import commonStyles from "../../common/style.module.css";
-import LogoutButton from "../auth/LogoutButton";
+import LogoutButton from "../../common/LogoutButton";
+import IconButton from "../../common/IconButton";
 
-interface ComposeHeaderProps {
+interface Props {
     handleBack: () => void;
 }
 
-const ComposeHeader: React.FC<ComposeHeaderProps> = ({ handleBack }) => {
+const ComposeHeader = ({ handleBack }: Props) => {
     return (
         <div className={styles.headerSticky}>
-            <div className={styles.headerContentCentered}>
-                <button className={commonStyles.actionButton} onClick={handleBack}>
-                    <i className="fa-solid fa-arrow-left"></i> <span className={commonStyles.hideOnMobile}>Back</span>
-                </button>
+            <div className={styles.headerContent}>
+                <IconButton onClick={handleBack} icon="fa-arrow-left">Back</IconButton>
                 <h2 className={styles.centeredTitle}>Making puzzle</h2>
                 <LogoutButton />
             </div>
