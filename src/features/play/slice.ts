@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { RootState } from '../../common/store';
-import { fetchUserGameStates, selectGameStatesWithPuzzles } from '../play-list/slice';
+import { fetchUserGameStates, selectGameStatesWithPuzzles, addGameStateWithPuzzle } from '../play-list/slice';
+import { getPuzzle } from '../../firebase/firestore';
 
 interface PlayState {
     loading: boolean;
@@ -24,10 +25,30 @@ export const ensureGameStateLoaded = createAsyncThunk<
         const gameStatesWithPuzzles = selectGameStatesWithPuzzles(state);
         const found = gameStatesWithPuzzles.find(gsp => gsp.gameState.id === gameStateId);
         if (!found) {
-            // Dispatch PlayList thunk to load game states (assumes userId is available in auth state)
             const userId = state.auth.user?.uid;
             if (userId) {
                 await dispatch(fetchUserGameStates(userId));
+                // Re-check after fetching
+                const updatedState = getState();
+                const updatedGameStatesWithPuzzles = selectGameStatesWithPuzzles(updatedState);
+                const foundAfterFetch = updatedGameStatesWithPuzzles.find(gsp => gsp.gameState.id === gameStateId);
+                if (!foundAfterFetch) {
+                    // Fallback: fetch puzzle directly by ID
+                    const { puzzle, error } = await getPuzzle(gameStateId);
+                    if (puzzle) {
+                        dispatch(addGameStateWithPuzzle({
+                            gameState: {
+                                id: gameStateId,
+                                userId,
+                                puzzleId: gameStateId,
+                                guesses: []
+                            },
+                            puzzle
+                        }));
+                    } else {
+                        throw new Error('PUZZLE_NOT_FOUND');
+                    }
+                }
             }
         }
     }

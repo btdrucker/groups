@@ -101,6 +101,10 @@ const playListSlice = createSlice({
                 console.error("Can't find game state to update locally:", gameState.id);
             }
         },
+        addGameStateWithPuzzle: (state, action: PayloadAction<{ gameState: GameState; puzzle: Puzzle }>) => {
+            const { gameState, puzzle } = action.payload;
+            state.gameStatesWithPuzzles.push({ gameState, puzzle });
+        },
     },
     extraReducers: (builder) => {
         builder.addCase(fetchUserGameStates.pending, (state) => {
@@ -118,7 +122,7 @@ const playListSlice = createSlice({
     },
 });
 
-export const { updateGameStateLocally } = playListSlice.actions;
+export const { updateGameStateLocally, addGameStateWithPuzzle } = playListSlice.actions;
 
 // Base selector for raw game states with puzzles from state
 const selectRawGameStatesWithPuzzles = (state: RootState) => state.playList.gameStatesWithPuzzles;
