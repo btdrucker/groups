@@ -130,13 +130,13 @@ const shuffleWordsFromGridRow = (words: Word[], startRow: number, wordsPerCatego
 }
 
 const toggleWordSelection = (word: Word, prev: Word[], wordsPerCategory: number): Word[] => {
-    const newSet = new Set(prev);
-    if (newSet.has(word)) {
-        newSet.delete(word);
-    } else if (newSet.size < wordsPerCategory) {
-        newSet.add(word);
+    const exists = prev.some(w => w.indexInPuzzle === word.indexInPuzzle);
+    if (exists) {
+        return prev.filter(w => w.indexInPuzzle !== word.indexInPuzzle);
+    } else if (prev.length < wordsPerCategory) {
+        return [...prev, word];
     }
-    return Array.from(newSet);
+    return prev;
 }
 
 const calculateGridWidth = (window: Window | undefined): number => {
