@@ -19,7 +19,6 @@ export interface Puzzle {
     createdAt?: number;        // Timestamp milliseconds
     creatorId: string;
     creatorName: string;       // Display name of the creator
-    creatorEmail?: string;
     words: string[];           // 4 arrays of 4 words each as a flat 16 element array
 }
 

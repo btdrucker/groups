@@ -37,11 +37,10 @@ const Compose = () => {
     const emptyPuzzle: Puzzle = {
         categories: Array(4).fill("") as string[],
         words: Array(16).fill("") as string[],
-        creatorId: user?.uid || '<none>',
+        creatorId: '',
         createdAt: undefined,
         id: undefined,
         creatorName: '',
-        creatorEmail: '',
     }
 
     const initialState = initialPuzzle || emptyPuzzle;
@@ -86,11 +85,16 @@ const Compose = () => {
 
     const saveOrCreate = async () => {
         if (user) {
+            const puzzleToSave = {
+                ...puzzle,
+                creatorName: user.displayName?.trim() || '',
+                creatorId: user.uid || '<none>',
+            };
             if (puzzle.id) {
-                await dispatch(updatePuzzleThunkLocal(puzzle));
+                await dispatch(updatePuzzleThunkLocal(puzzleToSave));
             } else {
                 // Remove id before creating
-                const {id, ...puzzleWithoutId} = puzzle;
+                const {id, ...puzzleWithoutId} = puzzleToSave;
                 const result = await dispatch(createPuzzleThunk(puzzleWithoutId));
                 // If successful, add to compose-list
                 if (result.meta && result.meta.requestStatus === 'fulfilled' && result.payload) {
@@ -120,15 +124,6 @@ const Compose = () => {
         }
     };
 
-    const handleDelete = async () => {
-        if (!puzzle.id) return; // Only delete if puzzle has an id
-        setDeleting(true);
-        await dispatch(deletePuzzleThunkLocal(puzzle.id));
-        setDeleting(false);
-        navigate("/");
-    };
-
-    // No-op handleBack for now
     const handleBack = async () => {
         if (canSave) {
             setShowSaveSuccess(false);
@@ -145,6 +140,14 @@ const Compose = () => {
         } else {
             navigate("/")
         }
+    };
+
+    const handleDelete = async () => {
+        if (!puzzle.id) return; // Only delete if puzzle has an id
+        setDeleting(true);
+        await dispatch(deletePuzzleThunkLocal(puzzle.id));
+        setDeleting(false);
+        navigate("/");
     };
 
     // Refs for word textareas: 4 rows x 4 cols
