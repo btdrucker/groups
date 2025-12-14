@@ -1,6 +1,10 @@
 # Function Comment Style Guide
 
-All comments for functions should only indicate what the function does, not state that it is a function or a helper/utility.
+- All comments for functions should only indicate what the function does, not state that it is a function or a  
+  helper/utility.
+- Avoid obvious comments that simply restate what the code does or explain standard language or CSS properties.
+- Comments should describe the purpose or behavior of code, not its structural role (e.g., avoid 'helper function' or '
+  utility function' comments).
 
 **Example:**
 - Good: `// Converts a guess (set of 4 words) to a 16-bit number`

@@ -15,6 +15,14 @@ make assumptions about:
 **Wait for explicit confirmation and answers to all clarifying questions before proceeding with any work. If the user
 indicates they cannot or do not want to answer a specific question, proceed accordingly and note this in your process.**
 
+### Before Making Changes
+
+1. Ask clarifying questions if the request is ambiguous
+2. Read relevant existing code to understand current patterns
+3. Follow established conventions in the codebase
+4. Validate changes by checking for errors after editing
+5. Ensure the build succeeds after making changes
+
 ## Project Context
 
 This is a React + TypeScript project using:
@@ -23,13 +31,6 @@ This is a React + TypeScript project using:
 - Redux Toolkit for state management
 - Firebase for backend services (Auth & Firestore)
 - CSS Modules for styling
-
-## Tooling
-
-- The GitHub CLI (`gh`) is installed and available for use in this project. It can be used for GitHub automation and
-  data fetching tasks.
-
-## Code Style Preferences
 
 ### State Management
 
@@ -41,9 +42,16 @@ This is a React + TypeScript project using:
 ### File Organization
 
 - Follow the existing feature-based structure under `src/features/`
-- Each feature should have its own `slice.ts` for Redux state
-- Co-locate component styles in `style.module.css` files
+  - app: Main application shell and routing
+  - auth: User authentication flows
+  - compose: Edit a single puzzle
+  - compose-list: List of user-created puzzles
+  - play: Play a puzzle
+  - play-list: List of available puzzles to play
+- Each feature has its own `slice.ts` for Redux state and related logic
+- Each feature has its own `style.module.css` for CSS
 - Keep components focused and single-responsibility
+- Put shared components, utilities, types and styles in src/common
 
 ### TypeScript
 
@@ -57,21 +65,6 @@ This is a React + TypeScript project using:
 - Keep component logic readable and maintainable
 - Extract complex logic into custom hooks when appropriate
 
-## Code Commenting
+## Code Commenting: see .github/comment-style.md
 
-- Avoid obvious comments that simply restate what the code does or explain standard language or CSS properties.
-- Comments should describe the purpose or behavior of code, not its structural role (e.g., avoid 'helper function' or '
-  utility function' comments).
-
-## Before Making Changes
-
-1. Ask clarifying questions if the request is ambiguous
-2. Read relevant existing code to understand current patterns
-3. Follow established conventions in the codebase
-4. Validate changes by checking for errors after editing
-5. Ensure the build succeeds after making changes
-
-## Markdown File Guidelines
-
-- When adding to markdown files, always keep new lines within
-  the file's maximum line length (80 characters in this project).
+## Markdown File Guidelines: see .github/markdown-style.md
