@@ -1,15 +1,18 @@
 import React, {useEffect, useState, useRef, useLayoutEffect} from 'react';
 import {useParams} from 'react-router-dom';
 import styles from './style.module.css';
+import {Puzzle, PUZZLE_NOT_FOUND} from '../../firebase/firestore';
 import {useAppDispatch, useAppSelector} from '../../common/hooks';
-import {selectGameStateWithPuzzleById, ensureGameStateLoaded, selectPlayLoading, selectPlayError} from './slice';
-import {selectUserId} from '../auth/slice';
-import {GameState, getGameState, PUZZLE_NOT_FOUND, saveGameState} from '../../firebase/firestore';
 import {classes} from "../../common/classUtils";
-import {Puzzle} from '../../firebase/firestore';
 import {sleep} from '../../common/utils';
+import {selectUserId} from '../auth/slice';
+import {
+    selectPlayListLoading,
+    selectPlayListError,
+    saveAndUpdateGameState,
+    loadGameStateWithPuzzle,
+} from '../play-list/slice';
 import PlayHeader from './PlayHeader';
-import {updateGameStateLocally} from '../play-list/slice';
 
 interface DisplayedCategory {
     categoryIndex: number;
@@ -144,15 +147,20 @@ const calculateGridWidth = (window: Window | undefined): number => {
     return Math.max(400, Math.min((window?.innerWidth || 675) - 32, 675));
 }
 
+const selectGameStateWithPuzzleById = (state: any, puzzleId: string) => {
+    const gameStatesWithPuzzles = state.playList?.gameStatesWithPuzzles || [];
+    return gameStatesWithPuzzles.find((gsp: any) => gsp.gameState.puzzleId === puzzleId);
+};
+
 const Play = () => {
     const dispatch = useAppDispatch();
     const userId = useAppSelector(selectUserId);
     const {puzzleId} = useParams();
     const currentPuzzleId = puzzleId;
     const gameStateWithPuzzle = useAppSelector(state => currentPuzzleId ? selectGameStateWithPuzzleById(state, currentPuzzleId) : undefined);
-    const currentPuzzle = gameStateWithPuzzle?.puzzle;
-    const loading = useAppSelector(selectPlayLoading);
-    const error = useAppSelector(selectPlayError);
+    const currentPuzzle: Puzzle | null = gameStateWithPuzzle?.puzzle ?? null;
+    const loading = useAppSelector(selectPlayListLoading);
+    const error = useAppSelector(selectPlayListError);
 
     const [guesses, setGuesses] = useState<number[]>([]); // Track guesses as 16-bit numbers from gameState
     const [selectedWords, setSelectedWords] = useState<Word[]>([]);
@@ -217,90 +225,74 @@ const Play = () => {
     }, [gridWords]);
 
     useEffect(() => {
-        if (!currentPuzzle || !userId) return; // Guard: only run when puzzle is loaded
-        if (!gameStateWithPuzzle && typeof currentPuzzleId === 'string') {
-            dispatch(ensureGameStateLoaded(currentPuzzleId));
+        if (!userId || !currentPuzzleId) return;
+
+        // Dispatch if we don't have gameStateWithPuzzle OR if we have it but puzzle is null (from cache)
+        if (!gameStateWithPuzzle || !currentPuzzle) {
+            dispatch(loadGameStateWithPuzzle({ userId, puzzleId: currentPuzzleId }));
         }
-    }, [currentPuzzleId, userId, gameStateWithPuzzle, dispatch]);
+    }, [currentPuzzleId, userId, gameStateWithPuzzle, currentPuzzle, dispatch]);
 
-    // Load game state from Firestore when component mounts or puzzle changes.
+    // Load game state from Redux when component mounts or puzzle changes.
     useEffect(() => {
-        const loadGameState = async () => {
-            if (!currentPuzzle || !currentPuzzle.id || !userId) return;
+        if (!currentPuzzle || !gameStateWithPuzzle) return;
 
-            const {gameState, error} = await getGameState(userId, currentPuzzle.id);
+        // Type assertion: currentPuzzle is guaranteed to be Puzzle at this point
+        const puzzle: Puzzle = currentPuzzle;
 
-            if (error) {
-                console.error('Error loading game state:', error);
-                return;
-            }
+        const startingDisplayedCategories: DisplayedCategory[] = [];
+        let startingMistakes = 0;
+        const startingGuesses: number[] = [];
 
-            // If no game state exists, create a new one with empty guesses
-            if (!gameState) {
-                const emptyGameState: GameState = {
-                    userId,
-                    puzzleId: currentPuzzle.id,
-                    guesses: []
-                };
-                await saveGameState(emptyGameState);
-                dispatch(updateGameStateLocally(emptyGameState));
-            }
+        let words: Word[] = puzzle.words.map((word: string, indexInPuzzle: number) => ({
+            word,
+            indexInPuzzle,
+            indexInGrid: indexInPuzzle
+        }));
 
-            const startingDisplayedCategories: DisplayedCategory[] = [];
-            let startingMistakes = 0;
-            const startingGuesses: number[] = [];
+        const numCategories = getNumCategories(puzzle);
+        const wordsPerCategory = getWordsPerCategory(puzzle);
 
-            let words: Word[] = currentPuzzle.words.map((word, indexInPuzzle) => ({
-                word,
-                indexInPuzzle,
-                indexInGrid: indexInPuzzle
-            }));
-
-            const numCategories = getNumCategories(currentPuzzle);
-            const wordsPerCategory = getWordsPerCategory(currentPuzzle);
-
-            // Reconstruct the game state from the saved guesses.
-            if (gameState && gameState.guesses.length > 0) {
-                startingGuesses.push(...gameState.guesses);
-                gameState.guesses.forEach(guessNumber => {
-                    // Check if this guess was correct
-                    let wasCorrect = false;
-                    for (let categoryIndex = 0; categoryIndex < numCategories; categoryIndex++) {
-                        if (isGuessCorrect(guessNumber, categoryIndex, wordsPerCategory)) {
-                            startingDisplayedCategories.push({categoryIndex, wasGuessed: true});
-                            wasCorrect = true;
-                            words = moveCategoryWordsToGridRow(words, categoryIndex, startingDisplayedCategories.length - 1, wordsPerCategory);
-                            break;
-                        }
-                    }
-
-                    if (!wasCorrect) {
-                        startingMistakes++;
-                    }
-                });
-            }
-
-            setGuesses(startingGuesses);
-            const startingMistakesRemaining = Math.max(0, wordsPerCategory - startingMistakes);
-            setMistakesRemaining(startingMistakesRemaining);
-            setIsRevealing(false);
-            setMessageText(null);
-            setSelectedWords([]);
-
-            if (startingMistakesRemaining === 0) {
+        // Reconstruct the game state from the saved guesses.
+        if (gameStateWithPuzzle.gameState.guesses.length > 0) {
+            startingGuesses.push(...gameStateWithPuzzle.gameState.guesses);
+            gameStateWithPuzzle.gameState.guesses.forEach((guessNumber: number) => {
+                // Check if this guess was correct
+                let wasCorrect = false;
                 for (let categoryIndex = 0; categoryIndex < numCategories; categoryIndex++) {
-                    if (startingDisplayedCategories.every(cat => cat.categoryIndex !== categoryIndex)) {
-                        startingDisplayedCategories.push({categoryIndex, wasGuessed: false});
+                    if (isGuessCorrect(guessNumber, categoryIndex, wordsPerCategory)) {
+                        startingDisplayedCategories.push({categoryIndex, wasGuessed: true});
+                        wasCorrect = true;
+                        words = moveCategoryWordsToGridRow(words, categoryIndex, startingDisplayedCategories.length - 1, wordsPerCategory);
+                        break;
                     }
                 }
-            }
-            setDisplayedCategories(startingDisplayedCategories);
 
-            words = shuffleWordsFromGridRow(words, startingDisplayedCategories.length, wordsPerCategory)
-            setGridWords(words);
-        };
-        loadGameState();
-    }, [currentPuzzle, userId]);
+                if (!wasCorrect) {
+                    startingMistakes++;
+                }
+            });
+        }
+
+        setGuesses(startingGuesses);
+        const startingMistakesRemaining = Math.max(0, wordsPerCategory - startingMistakes);
+        setMistakesRemaining(startingMistakesRemaining);
+        setIsRevealing(false);
+        setMessageText(null);
+        setSelectedWords([]);
+
+        if (startingMistakesRemaining === 0) {
+            for (let categoryIndex = 0; categoryIndex < numCategories; categoryIndex++) {
+                if (startingDisplayedCategories.every(cat => cat.categoryIndex !== categoryIndex)) {
+                    startingDisplayedCategories.push({categoryIndex, wasGuessed: false});
+                }
+            }
+        }
+        setDisplayedCategories(startingDisplayedCategories);
+
+        words = shuffleWordsFromGridRow(words, startingDisplayedCategories.length, wordsPerCategory)
+        setGridWords(words);
+    }, [currentPuzzle, gameStateWithPuzzle]);
 
     // Trigger reveal animation when game is lost
     useEffect(() => {
@@ -376,9 +368,11 @@ const Play = () => {
     }
 
     // At this point, currentPuzzle is guaranteed to exist
-    const numCategories = getNumCategories(currentPuzzle);
-    const wordsPerCategory = getWordsPerCategory(currentPuzzle);
-    const availableMistakes = getAvailableMistakes(currentPuzzle);
+    // Create a non-null constant for use in closures where TypeScript loses track of the type guard
+    const puzzle: Puzzle = currentPuzzle;
+    const numCategories = getNumCategories(puzzle);
+    const wordsPerCategory = getWordsPerCategory(puzzle);
+    const availableMistakes = getAvailableMistakes(puzzle);
 
     const handleWordClick = (word: Word) => {
         setSelectedWords(prev => toggleWordSelection(word, prev, wordsPerCategory));
@@ -401,15 +395,15 @@ const Play = () => {
     };
 
     const categoryWords = (categoryIndex: number): string[] => {
-        return currentPuzzle.words.slice(categoryIndex * wordsPerCategory, (categoryIndex + 1) * wordsPerCategory);
+        return puzzle.words.slice(categoryIndex * wordsPerCategory, (categoryIndex + 1) * wordsPerCategory);
     }
 
     const processGuessIfCorrect = async (guess: Word[], updatedGuesses: number[]) => {
 
         for (let i = 0; i < numCategories; i++) {
-            const categoryWords = currentPuzzle.words.slice(i * wordsPerCategory, (i + 1) * wordsPerCategory);
-            const isMatch = categoryWords.every(word => selectedWords.some((obj) => obj.word === word)) &&
-                guess.every(word => categoryWords.includes(word.word));
+            const categoryWords = puzzle.words.slice(i * wordsPerCategory, (i + 1) * wordsPerCategory);
+            const isMatch = categoryWords.every((word: string) => selectedWords.some((obj) => obj.word === word)) &&
+                guess.every((word: Word) => categoryWords.includes(word.word));
             if (isMatch) {
                 await processCorrectGuess(i, updatedGuesses);
                 return true
@@ -434,17 +428,21 @@ const Play = () => {
         setSelectedWords([]);
     };
 
-    // Saves the current game state to Firestore
+    // Save the current game state to Firestore and update Redux
     const saveCurrentGameState = async (updatedGuesses: number[]) => {
-        if (!userId || !currentPuzzle?.id) return;
-        const gameState: GameState = {
-            id: gameStateWithPuzzle.gameState?.id || undefined,
+        if (!userId || !puzzle.id) return;
+        const gameState = {
+            ...gameStateWithPuzzle.gameState,
             userId,
-            puzzleId: currentPuzzle.id,
-            guesses: updatedGuesses
+            puzzleId: puzzle.id,
+            guesses: updatedGuesses,
+            // Denormalize puzzle metadata for efficient list display
+            creatorName: puzzle.creatorName,
+            createdAt: puzzle.createdAt,
+            numGroups: puzzle.numGroups,
+            wordsPerGroup: puzzle.wordsPerGroup,
         };
-        await saveGameState(gameState);
-        dispatch(updateGameStateLocally(gameState));
+        await dispatch(saveAndUpdateGameState({ gameState }));
     };
 
     // Handles a correct guess: updates solved categories, removes words, and saves state
@@ -506,9 +504,9 @@ const Play = () => {
 
 
     // Format creator name and date
-    const creatorName = currentPuzzle.creatorName || 'Unknown creator';
-    const createdDate = currentPuzzle.createdAt
-        ? new Date(currentPuzzle.createdAt).toLocaleDateString('en-US', {
+    const creatorName = puzzle.creatorName || 'Unknown creator';
+    const createdDate = puzzle.createdAt
+        ? new Date(puzzle.createdAt).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
             day: 'numeric'
@@ -569,7 +567,7 @@ const Play = () => {
                             }}
                         >
                             <div
-                                className={styles.categoryName}>{currentPuzzle.categories[category.categoryIndex]}</div>
+                                className={styles.categoryName}>{puzzle.categories[category.categoryIndex]}</div>
                             <div className={styles.categoryWords}>
                                 {categoryWords(category.categoryIndex).join(', ')}
                             </div>

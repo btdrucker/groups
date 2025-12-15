@@ -1,11 +1,5 @@
 @import '../../common/style.module.css';
 
-.playListContainer {
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
 .emptyMessage {
     text-align: center;
     padding: 4rem 2rem;
@@ -35,20 +29,6 @@
     border-color: #888888;
 }
 
-.puzzleDetails {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
-    color: #666;
-}
-
-.categories {
-    margin: 0;
-    font-weight: 500;
-}
-
 .createdDate {
     margin: 0.5rem 0;
     font-size: 0.9rem;
@@ -57,12 +37,6 @@
 
 .progressInfo {
     margin: 0.5rem 0;
-}
-
-.guessCount {
-    margin: 0;
-    font-size: 0.9rem;
-    color: #666;
 }
 
 .puzzleCard .actionButton {
@@ -83,28 +57,10 @@
     margin: 1rem 0;
 }
 
-.gameStateList {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
 .puzzleMeta {
     display: flex;
     align-items: center;
     margin-bottom: 0.5em;
-}
-
-.categoriesList {
-    margin: 0.5em 0 0 0;
-    padding-left: 1.2em;
-    list-style-type: disc;
-}
-
-.categoryItem {
-    margin-bottom: 0.2em;
-    font-size: 1em;
-    color: #333;
 }
 
 .statusWin {
@@ -120,20 +76,4 @@
 .statusInProgress {
     color: black;
     font-weight: 500;
-}
-
-.screenTitle {
-    font-size: 1.5rem;
-    color: #333;
-    font-weight: 600;
-    margin: 0;
-    text-align: left;
-    flex: unset;
-    min-width: 0;
-}
-
-.buttonGroup {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
 }

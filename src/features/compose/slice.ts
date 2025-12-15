@@ -3,10 +3,9 @@ import {
     Puzzle,
     createPuzzle as createPuzzleFirestore,
     updatePuzzle as updatePuzzleFirestore,
-    deletePuzzle as deletePuzzleFirestore
+    deletePuzzle as deletePuzzleFirestore,
+    getPuzzle
 } from '../../firebase/firestore';
-import {AppDispatch} from "../../common/store";
-import {navigateToCompose, navigateToPlay} from "../app/slice";
 
 interface PuzzlesState {
     puzzle?: Puzzle;
@@ -19,6 +18,19 @@ const initialState: PuzzlesState = {
     loading: false,
     error: null,
 };
+
+export const loadPuzzleById = createAsyncThunk(
+    'compose/loadPuzzleById',
+    async (puzzleId: string, { rejectWithValue, getState }) => {
+        const state: any = getState();
+        const fromList = state.composeList?.puzzles?.find((p: Puzzle) => p.id === puzzleId);
+        if (fromList) return fromList;
+        // Fetch only the single puzzle from Firestore
+        const { puzzle, error } = await getPuzzle(puzzleId);
+        if (error || !puzzle) return rejectWithValue(error || 'Puzzle not found');
+        return puzzle;
+    }
+);
 
 export const createPuzzleThunk = createAsyncThunk(
     'compose/createPuzzle',
@@ -63,67 +75,67 @@ const composeSlice = createSlice({
         clearPuzzle: (state) => {
             state.puzzle = undefined;
         },
-
         clearError: (state) => {
             state.error = null;
         },
     },
     extraReducers: (builder) => {
+        builder.addCase(loadPuzzleById.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(loadPuzzleById.fulfilled, (state, action: PayloadAction<Puzzle>) => {
+            state.loading = false;
+            state.puzzle = action.payload;
+        });
+        builder.addCase(loadPuzzleById.rejected, (state, action: PayloadAction<unknown>) => {
+            state.loading = false;
+            state.error = typeof action.payload === 'string' ? action.payload : null;
+        });
         // Create puzzle
         builder.addCase(createPuzzleThunk.pending, (state) => {
             state.loading = true;
             state.error = null;
         });
-        builder.addCase(createPuzzleThunk.fulfilled, (state, action) => {
+        builder.addCase(createPuzzleThunk.fulfilled, (state, action: PayloadAction<Puzzle>) => {
             state.loading = false;
+            state.puzzle = action.payload;
         });
-        builder.addCase(createPuzzleThunk.rejected, (state, action) => {
+        builder.addCase(createPuzzleThunk.rejected, (state, action: PayloadAction<unknown>) => {
             state.loading = false;
-            state.error = action.payload as string;
+            state.error = typeof action.payload === 'string' ? action.payload : null;
         });
-
         // Update puzzle
         builder.addCase(updatePuzzleThunk.pending, (state) => {
             state.loading = true;
             state.error = null;
         });
-        builder.addCase(updatePuzzleThunk.fulfilled, (state, action) => {
+        builder.addCase(updatePuzzleThunk.fulfilled, (state, action: PayloadAction<Puzzle>) => {
             state.loading = false;
+            state.puzzle = action.payload;
         });
-        builder.addCase(updatePuzzleThunk.rejected, (state, action) => {
+        builder.addCase(updatePuzzleThunk.rejected, (state, action: PayloadAction<unknown>) => {
             state.loading = false;
-            state.error = action.payload as string;
+            state.error = typeof action.payload === 'string' ? action.payload : null;
         });
-
         // Delete puzzle
         builder.addCase(deletePuzzleThunk.pending, (state) => {
             state.loading = true;
             state.error = null;
         });
-        builder.addCase(deletePuzzleThunk.fulfilled, (state, action) => {
+        builder.addCase(deletePuzzleThunk.fulfilled, (state) => {
             state.loading = false;
+            state.puzzle = undefined;
         });
-        builder.addCase(deletePuzzleThunk.rejected, (state, action) => {
+        builder.addCase(deletePuzzleThunk.rejected, (state, action: PayloadAction<unknown>) => {
             state.loading = false;
-            state.error = action.payload as string;
+            state.error = typeof action.payload === 'string' ? action.payload : null;
         });
     },
 });
 
-const { setPuzzle, clearPuzzle, clearError } = composeSlice.actions;
+export const { setPuzzle, clearPuzzle, clearError } = composeSlice.actions;
 
-// Thunk action that sets puzzle and navigates to Compose mode
-export const composeNewPuzzle = () => (dispatch: AppDispatch) => {
-    dispatch(clearPuzzle());
-    dispatch(navigateToCompose());
-};
-
-// Thunk action that sets puzzle and navigates to Compose mode
-export const composePuzzle = (puzzle: Puzzle) => (dispatch: AppDispatch) => {
-    dispatch(setPuzzle(puzzle));
-    dispatch(navigateToCompose());
-};
-
-export const selectPuzzle = (state: any): Puzzle => state.compose.puzzle!;
+export const selectPuzzle = (state: any): Puzzle | undefined => state.compose.puzzle;
 
 export default composeSlice.reducer;

@@ -20,6 +20,8 @@ export interface Puzzle {
     creatorId: string;
     creatorName: string;       // Display name of the creator
     words: string[];           // 4 arrays of 4 words each as a flat 16 element array
+    numGroups: number;         // Number of groups/categories (required after migration)
+    wordsPerGroup: number;     // Number of words per group (required after migration)
 }
 
 // Game State Interface
@@ -28,6 +30,11 @@ export interface GameState {
     guesses: number[];         // Array of guesses represented by 16-bit numbers (one bit for each word)
     puzzleId: string;
     userId: string;
+    // Denormalized puzzle metadata for efficient list display (required after migration)
+    creatorName: string;
+    createdAt: number;
+    numGroups: number;
+    wordsPerGroup: number;
 }
 
 // Create a new puzzle

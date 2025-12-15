@@ -11,18 +11,16 @@ const PlayListItem = ({ gameStateWithPuzzle }: Props) => {
     const navigate = useNavigate();
     const { puzzle, correctGuesses, mistakes } = gameStateWithPuzzle;
 
-    const handleCardClick = (e: React.MouseEvent) => {
-        if (puzzle?.id) {
-            navigate(`/play/${puzzle.id}`);
+    const handleCardClick = () => {
+        const puzzleId = gameStateWithPuzzle.gameState.puzzleId;
+        if (puzzleId) {
+            navigate(`/play/${puzzleId}`);
         }
     };
 
-    if (!puzzle) {
-        return null;
-    }
-
-    const creatorName = puzzle.creatorName ? puzzle.creatorName : 'Unknown creator';
-    const createdDate = puzzle.createdAt ? new Date(puzzle.createdAt).toLocaleDateString() : '';
+    // All game states have denormalized metadata after migration
+    const creatorName = gameStateWithPuzzle.gameState.creatorName;
+    const createdDate = new Date(gameStateWithPuzzle.gameState.createdAt).toLocaleDateString();
 
     return (
         <div

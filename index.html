@@ -9,6 +9,30 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- One-time migration: Clear old Redux persist cache with Firebase User objects (if any exist) -->
+    <script>
+      (function() {
+        try {
+          var persistedState = localStorage.getItem('persist:root');
+          if (!persistedState) return;
+
+          var parsed = JSON.parse(persistedState);
+          if (!parsed.auth) return;
+
+          var authState = JSON.parse(parsed.auth);
+          if (!authState.user || typeof authState.user !== 'object') return;
+
+          // Check for Firebase User indicators
+          if (authState.user.stsTokenManager || authState.user.reloadUserInfo || authState.user.proactiveRefresh) {
+            console.log('Clearing old Firebase User from cache...');
+            localStorage.removeItem('persist:root');
+            window.location.reload();
+          }
+        } catch (error) {
+          console.error('Migration error:', error);
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

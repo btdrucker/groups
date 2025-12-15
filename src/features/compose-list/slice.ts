@@ -1,6 +1,5 @@
-import {createSlice, createAsyncThunk, createSelector} from '@reduxjs/toolkit';
-import {Puzzle, getUserPuzzles, updatePuzzle, deletePuzzle} from '../../firebase/firestore';
-import {RootState} from '../../common/store';
+import {createSlice, createAsyncThunk, createSelector, PayloadAction} from '@reduxjs/toolkit';
+import {Puzzle, getUserPuzzles} from '../../firebase/firestore';
 
 interface ComposeListState {
     puzzles: Puzzle[];
@@ -37,27 +36,24 @@ const composeListSlice = createSlice({
     name: 'compose-list',
     initialState,
     reducers: {
-        updatePuzzleLocally: (state, action) => {
-            const updated = action.payload;
-            const idx = state.puzzles.findIndex(p => p.id === updated.id);
-            if (idx !== -1) {
-                state.puzzles[idx] = updated;
+        upsertPuzzle: (state, action: PayloadAction<Puzzle>) => {
+            const puzzle = action.payload;
+            const index = state.puzzles.findIndex(p => p.id === puzzle.id);
+            if (index !== -1) {
+                state.puzzles[index] = puzzle;
+            } else {
+                state.puzzles.push(puzzle);
             }
         },
-        deletePuzzleLocally: (state, action) => {
-            const id = action.payload;
-            state.puzzles = state.puzzles.filter(p => p.id !== id);
+        removePuzzle: (state, action: PayloadAction<string>) => {
+            state.puzzles = state.puzzles.filter(p => p.id !== action.payload);
         },
-        createPuzzleLocally: (state, action) => {
-            const newPuzzle = action.payload;
-            // Avoid duplicates
-            if (!state.puzzles.some(p => p.id === newPuzzle.id)) {
-                state.puzzles.push(newPuzzle);
-            }
+        clearPuzzlesCache: (state) => {
+            // Clear puzzles to force a fresh load from Firestore
+            state.puzzles = [];
         },
     },
     extraReducers: (builder) => {
-        // Fetch user compose-list
         builder.addCase(fetchUserPuzzles.pending, (state) => {
             state.loading = true;
             state.error = null;
@@ -73,39 +69,11 @@ const composeListSlice = createSlice({
     },
 });
 
-export const { updatePuzzleLocally, deletePuzzleLocally, createPuzzleLocally } = composeListSlice.actions;
-
-// Thunk for updating a puzzle remotely and locally
-export const updatePuzzleThunkLocal = createAsyncThunk(
-    'compose-list/updatePuzzleThunkLocal',
-    async (puzzle: Puzzle, {dispatch, rejectWithValue}) => {
-        try {
-            await updatePuzzle(puzzle);
-            dispatch(updatePuzzleLocally(puzzle));
-            return puzzle;
-        } catch (err) {
-            return rejectWithValue('Failed to update puzzle');
-        }
-    }
-);
-
-// Thunk for deleting a puzzle remotely and locally
-export const deletePuzzleThunkLocal = createAsyncThunk(
-    'compose-list/deletePuzzleThunkLocal',
-    async (id: string, {dispatch, rejectWithValue}) => {
-        try {
-            await deletePuzzle(id);
-            dispatch(deletePuzzleLocally(id));
-            return id;
-        } catch (err) {
-            return rejectWithValue('Failed to delete puzzle');
-        }
-    }
-);
+export const { upsertPuzzle, removePuzzle, clearPuzzlesCache } = composeListSlice.actions;
 
 // Stable sort: incomplete puzzles first, preserve order otherwise
 export const selectPuzzles = createSelector(
-    [(state: RootState) => state.composeList.puzzles],
+    [(state: any) => (state as any).composeList.puzzles],
     (puzzles) => {
         return [...puzzles].sort((a, b) => {
             const aComplete = isPuzzleComplete(a);
@@ -115,7 +83,7 @@ export const selectPuzzles = createSelector(
         });
     }
 );
-export const selectPuzzlesLoading = (state: RootState) => state.composeList.loading;
-export const selectPuzzlesError = (state: RootState) => state.composeList.error;
+export const selectPuzzlesLoading = (state: any) => (state as any).composeList.loading;
+export const selectPuzzlesError = (state: any) => (state as any).composeList.error;
 
 export default composeListSlice.reducer;

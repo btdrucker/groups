@@ -28,7 +28,7 @@ const PlayList = () => {
     return (
         <>
             <PlayListHeader />
-            <div className={styles.playListContainer}>
+            <div className={styles.screenContainer}>
                 {loading && (<p>Loading puzzles...</p>)}
                 {error && (<p className={styles.error}>Error loading puzzles: {error}</p>)}
                 {showList && (

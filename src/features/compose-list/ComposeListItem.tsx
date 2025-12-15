@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import {Puzzle} from '../../firebase/firestore';
 import styles from './style.module.css';
-import {useAppDispatch} from "../../common/hooks";
-import {composePuzzle} from "../compose/slice";
 import { useNavigate } from 'react-router-dom';
 import { isPuzzleComplete } from './slice';
 
@@ -11,7 +9,6 @@ interface Props {
 }
 
 const ComposeListItem = ({puzzle}: Props) => {
-    const dispatch = useAppDispatch();
     const navigate = useNavigate();
     const isComplete = isPuzzleComplete(puzzle);
     const [showCopyMessage, setShowCopyMessage] = useState(false);
@@ -22,8 +19,7 @@ const ComposeListItem = ({puzzle}: Props) => {
             return;
         }
         if (puzzle.id) {
-            dispatch(composePuzzle(puzzle));
-            navigate('/compose');
+            navigate(`/compose/${puzzle.id}`);
         }
     };
 

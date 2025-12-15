@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction, createSelector } from '@reduxjs/toolkit';
-import { GameState, getUserGameStates, getPuzzle, Puzzle } from '../../firebase/firestore';
+import { GameState, getUserGameStates, getPuzzle, Puzzle, getGameState, saveGameState } from '../../firebase/firestore';
 import { RootState } from '../../common/store';
 
 // Helper function to check if a guess matches a category
@@ -10,15 +10,15 @@ const isGuessCorrect = (guessNumber: number, categoryIndex: number): boolean => 
 };
 
 // Helper function to count correct guesses and mistakes for a game state
-const countGuessStats = (gameState: GameState, puzzle: Puzzle | null): { correctGuesses: number; mistakes: number } => {
-    if (!puzzle) return { correctGuesses: 0, mistakes: 0 };
+const countGuessStats = (gameState: GameState): { correctGuesses: number; mistakes: number } => {
+    const numGroups = gameState.numGroups;
 
     let correctCount = 0;
     let incorrectCount = 0;
 
     gameState.guesses.forEach(guessNumber => {
         let wasCorrect = false;
-        for (let categoryIndex = 0; categoryIndex < puzzle.categories.length; categoryIndex++) {
+        for (let categoryIndex = 0; categoryIndex < numGroups; categoryIndex++) {
             if (isGuessCorrect(guessNumber, categoryIndex)) {
                 correctCount++;
                 wasCorrect = true;
@@ -33,6 +33,13 @@ const countGuessStats = (gameState: GameState, puzzle: Puzzle | null): { correct
     return { correctGuesses: correctCount, mistakes: incorrectCount };
 };
 
+// Internal storage interface (what's actually stored in state)
+interface RawGameStateWithPuzzle {
+    gameState: GameState;
+    puzzle: Puzzle | null; // null for list display, loaded Puzzle for Play component
+}
+
+// Public interface with computed fields (what selectors return)
 export interface GameStateWithPuzzle {
     gameState: GameState;
     puzzle: Puzzle | null;
@@ -40,14 +47,8 @@ export interface GameStateWithPuzzle {
     mistakes: number;
 }
 
-// Internal interface for state storage (without computed fields)
-interface RawGameStateWithPuzzle {
-    gameState: GameState;
-    puzzle: Puzzle | null;
-}
-
 interface PlayListState {
-    gameStatesWithPuzzles: RawGameStateWithPuzzle[];
+    gameStatesWithPuzzles: RawGameStateWithPuzzle[]; // Single source of truth
     loading: boolean;
     error: string | null;
 }
@@ -71,17 +72,121 @@ export const fetchUserGameStates = createAsyncThunk(
             return rejectWithValue(error);
         }
 
-        // Fetch the puzzle for each game state
-        const gameStatesWithPuzzles: RawGameStateWithPuzzle[] = [];
-        for (const gameState of gameStates) {
-            const { puzzle, error: puzzleError } = await getPuzzle(gameState.puzzleId);
-            gameStatesWithPuzzles.push({
-                gameState,
-                puzzle: puzzle || null,
-            });
+        // Map to GameStateWithPuzzleStorage with null puzzles (loaded on demand)
+        return gameStates.map(gameState => ({ gameState, puzzle: null }));
+    }
+);
+
+// Helper: Get puzzle from cache or Firestore
+async function getPuzzleFromCacheOrFirestore(
+    puzzleId: string,
+    cachedPuzzle: Puzzle | null
+): Promise<{ puzzle: Puzzle | null; error: string | null }> {
+    // Return cached puzzle if available
+    if (cachedPuzzle) {
+        return { puzzle: cachedPuzzle, error: null };
+    }
+
+    // Fetch from Firestore
+    const { puzzle, error } = await getPuzzle(puzzleId);
+    if (error || !puzzle) {
+        return { puzzle: null, error: error || 'Puzzle not found' };
+    }
+
+    return { puzzle, error: null };
+}
+
+// Helper: Get game state from cache or Firestore (or create new)
+async function getGameStateFromCacheOrFirestore(
+    userId: string,
+    puzzleId: string,
+    cachedGameState: GameState | undefined,
+    puzzle: Puzzle
+): Promise<{ gameState: GameState; error: string | null }> {
+    // Return cached game state if available
+    if (cachedGameState) {
+        return { gameState: cachedGameState, error: null };
+    }
+
+    // Try to fetch from Firestore
+    const { gameState, error } = await getGameState(userId, puzzleId);
+    if (error) {
+        return { gameState: null as any, error };
+    }
+
+    // If not found in Firestore, create a new game state with denormalized metadata
+    if (!gameState) {
+        const newGameState: GameState = {
+            userId,
+            puzzleId,
+            guesses: [],
+            creatorName: puzzle.creatorName,
+            createdAt: puzzle.createdAt ?? Date.now(),
+            numGroups: puzzle.numGroups,
+            wordsPerGroup: puzzle.wordsPerGroup,
+        };
+        return { gameState: newGameState, error: null };
+    }
+
+    return { gameState, error: null };
+}
+
+// Thunk to load a single game state (and its puzzle) by puzzleId for the current user
+export const loadGameStateWithPuzzle = createAsyncThunk<
+    { gameState: GameState; puzzle: Puzzle | null },
+    { userId: string; puzzleId: string },
+    { state: RootState }
+>(
+    'playList/loadGameStateWithPuzzle',
+    async ({ userId, puzzleId }, { getState, rejectWithValue }) => {
+        const state = getState();
+        const existing = state.playList.gameStatesWithPuzzles.find(
+            gsp => gsp.gameState.puzzleId === puzzleId && gsp.gameState.userId === userId
+        );
+
+        // If we already have both, return immediately
+        if (existing?.gameState && existing?.puzzle) {
+            return { gameState: existing.gameState, puzzle: existing.puzzle };
         }
 
-        return gameStatesWithPuzzles;
+        // Get puzzle (from cache or Firestore)
+        const { puzzle, error: puzzleError } = await getPuzzleFromCacheOrFirestore(
+            puzzleId,
+            existing?.puzzle || null
+        );
+        if (puzzleError || !puzzle) {
+            return rejectWithValue(puzzleError || 'Puzzle not found');
+        }
+
+        // Get game state (from cache, Firestore, or create new)
+        const { gameState, error: gameStateError } = await getGameStateFromCacheOrFirestore(
+            userId,
+            puzzleId,
+            existing?.gameState,
+            puzzle
+        );
+        if (gameStateError) {
+            return rejectWithValue(gameStateError);
+        }
+
+        return { gameState, puzzle };
+    }
+);
+
+// Thunk to save/update a game state and update the slice locally
+export const saveAndUpdateGameState = createAsyncThunk<
+    GameState,
+    { gameState: GameState },
+    { state: RootState }
+>(
+    'playList/saveAndUpdateGameState',
+    async ({ gameState }, { dispatch, rejectWithValue }) => {
+        const { id, error } = await saveGameState(gameState);
+        if (error) return rejectWithValue(error);
+        // Only include id if it is a string
+        const updatedGameState = id ? { ...gameState, id } : { ...gameState };
+        dispatch(updateGameStateLocally(updatedGameState));
+        return updatedGameState;
     }
 );
 
@@ -91,19 +196,16 @@ const playListSlice = createSlice({
     reducers: {
         updateGameStateLocally: (state, action: PayloadAction<GameState>) => {
             const gameState = action.payload;
-            const idx = state.gameStatesWithPuzzles.findIndex(gs => gs.gameState.puzzleId === gameState.puzzleId);
+            const idx = state.gameStatesWithPuzzles.findIndex(gsp => gsp.gameState.puzzleId === gameState.puzzleId);
             if (idx !== -1) {
-                state.gameStatesWithPuzzles[idx] = {
-                    ...state.gameStatesWithPuzzles[idx],
-                    gameState,
-                };
+                state.gameStatesWithPuzzles[idx].gameState = gameState;
             } else {
                 console.error("Can't find game state to update locally:", gameState.id);
             }
         },
-        addGameStateWithPuzzle: (state, action: PayloadAction<{ gameState: GameState; puzzle: Puzzle }>) => {
-            const { gameState, puzzle } = action.payload;
-            state.gameStatesWithPuzzles.push({ gameState, puzzle });
+        clearGameStatesCache: (state) => {
+            // Clear game states to force a fresh load from Firestore
+            state.gameStatesWithPuzzles = [];
         },
     },
     extraReducers: (builder) => {
@@ -119,58 +221,104 @@ const playListSlice = createSlice({
             state.loading = false;
             state.error = action.payload as string;
         });
+        builder.addCase(loadGameStateWithPuzzle.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(loadGameStateWithPuzzle.fulfilled, (state, action) => {
+            state.loading = false;
+            const { gameState, puzzle } = action.payload;
+
+            // Update or add to gameStatesWithPuzzles
+            const idx = state.gameStatesWithPuzzles.findIndex(gsp => gsp.gameState.puzzleId === gameState.puzzleId);
+            if (idx !== -1) {
+                state.gameStatesWithPuzzles[idx] = { gameState, puzzle };
+            } else {
+                state.gameStatesWithPuzzles.push({ gameState, puzzle });
+            }
+        });
+        builder.addCase(loadGameStateWithPuzzle.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.payload as string;
+        });
+        builder.addCase(saveAndUpdateGameState.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(saveAndUpdateGameState.fulfilled, (state, action) => {
+            state.loading = false;
+            const updatedGameState = action.payload;
+            const idx = state.gameStatesWithPuzzles.findIndex(gsp => gsp.gameState.puzzleId === updatedGameState.puzzleId);
+            if (idx !== -1) {
+                // Update existing
+                state.gameStatesWithPuzzles[idx].gameState = updatedGameState;
+            } else {
+                // Add new (without puzzle since we're just saving game state)
+                state.gameStatesWithPuzzles.push({ gameState: updatedGameState, puzzle: null });
+            }
+        });
+        builder.addCase(saveAndUpdateGameState.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.payload as string;
+        });
     },
 });
 
-export const { updateGameStateLocally, addGameStateWithPuzzle } = playListSlice.actions;
-
-// Base selector for raw game states with puzzles from state
-const selectRawGameStatesWithPuzzles = (state: RootState) => state.playList.gameStatesWithPuzzles;
+export const { updateGameStateLocally, clearGameStatesCache } = playListSlice.actions;
 
 // Memoized selector that adds computed values (correctGuesses and mistakes)
 export const selectGameStatesWithPuzzles = createSelector(
-    [selectRawGameStatesWithPuzzles],
+    [(state: RootState) => state.playList.gameStatesWithPuzzles],
     (gameStatesWithPuzzles): GameStateWithPuzzle[] => {
+        // Guard against undefined/null during redux-persist rehydration
+        if (!gameStatesWithPuzzles) {
+            return [];
+        }
+
+        // Ensure it's an array
+        if (!Array.isArray(gameStatesWithPuzzles)) {
+            console.error('gameStatesWithPuzzles is not an array:', gameStatesWithPuzzles);
+            return [];
+        }
+
         // Sort: in-progress first, then won/lost, stable
         return [...gameStatesWithPuzzles]
-            .map(({ gameState, puzzle }) => {
-                const stats = countGuessStats(gameState, puzzle);
+            .filter(gsp => gsp && gsp.gameState) // Filter out any invalid entries
+            .map(({ gameState }) => {
+                const stats = countGuessStats(gameState);
                 return {
                     gameState,
-                    puzzle,
+                    puzzle: null, // Puzzle is null for list display
                     ...stats,
                 };
             })
             .sort((a, b) => {
                 // Use isInProgress util for sorting
-                const aInProgress = isInProgress({
-                    ...a,
-                    puzzle: a.puzzle as any,
-                });
-                const bInProgress = isInProgress({
-                    ...b,
-                    puzzle: b.puzzle as any,
-                });
+                const aInProgress = isInProgress(a);
+                const bInProgress = isInProgress(b);
                 if (aInProgress === bInProgress) return 0;
                 return aInProgress ? -1 : 1;
             });
     }
 );
 
+export const selectPlayListLoading = (state: RootState) => state.playList.loading;
+export const selectPlayListError = (state: RootState) => state.playList.error;
+
 export const selectGameStatesLoading = (state: RootState) => state.playList.loading;
 export const selectGameStatesError = (state: RootState) => state.playList.error;
 
 // Utility functions for derived puzzle/game state flags
-export function totalCategories(puzzle: Puzzle | null): number {
-    return puzzle ? puzzle.categories.length : 0;
+export function totalCategories(gameStateWithPuzzle: GameStateWithPuzzle): number {
+    return gameStateWithPuzzle.gameState.numGroups;
 }
 
 export function isWon(gameStateWithPuzzle: GameStateWithPuzzle): boolean {
-    return gameStateWithPuzzle.correctGuesses === totalCategories(gameStateWithPuzzle.puzzle);
+    return gameStateWithPuzzle.correctGuesses === totalCategories(gameStateWithPuzzle);
 }
 
 export function isLost(gameStateWithPuzzle: GameStateWithPuzzle): boolean {
-    return !isWon(gameStateWithPuzzle) && gameStateWithPuzzle.mistakes === totalCategories(gameStateWithPuzzle.puzzle);
+    return !isWon(gameStateWithPuzzle) && gameStateWithPuzzle.mistakes === totalCategories(gameStateWithPuzzle);
 }
 
 export function isInProgress(gameStateWithPuzzle: GameStateWithPuzzle): boolean {

@@ -5,18 +5,10 @@ import logger from 'redux-logger'
 import composeReducer from '../features/compose/slice'
 import authReducer from '../features/auth/slice'
 import composeListReducer from '../features/compose-list/slice'
-import appReducer from '../features/app/slice'
 import playListReducer from '../features/play-list/slice'
 import playReducer from '../features/play/slice'
 
-const persistConfig = {
-    key: 'root',
-    storage,
-    whitelist: ['compose'], // Only persist compose state
-}
-
 const rootReducer = combineReducers({
-    app: appReducer,
     auth: authReducer,
     composeList: composeListReducer,
     compose: composeReducer,
@@ -24,14 +16,42 @@ const rootReducer = combineReducers({
     playList: playListReducer,
 })
 
+// Persist configuration - cache lists to avoid redundant Firestore reads
+const persistConfig = {
+    key: 'root',
+    storage,
+    version: 2,
+    // Persist lists to reduce Firestore reads and improve load times
+    // Persist compose to prevent loss of work-in-progress on accidental refresh
+    whitelist: ['composeList', 'playList', 'compose'],
+    migrate: (state: any) => {
+        // Migration for version 2: Convert old gameStates array to gameStatesWithPuzzles
+        if (state && state.playList) {
+            // If old structure exists (gameStates array), convert to new structure
+            if (state.playList.gameStates && !state.playList.gameStatesWithPuzzles) {
+                state.playList.gameStatesWithPuzzles = state.playList.gameStates.map((gameState: any) => ({
+                    gameState,
+                    puzzle: null
+                }));
+                delete state.playList.gameStates;
+            }
+        }
+        return Promise.resolve(state);
+    }
+}
+
 const persistedReducer = persistReducer(persistConfig, rootReducer)
 
 const store = configureStore({
     reducer: persistedReducer,
     middleware: (getDefaultMiddleware) => getDefaultMiddleware({
         serializableCheck: {
-            ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
-            ignoredPaths: ['auth.user'], // Firebase User objects are not serializable
+            // Ignore these actions because they contain non-serializable values that are converted in reducers
+            ignoredActions: [
+                'persist/PERSIST',
+                'persist/REHYDRATE',
+                'auth/setUser', // Firebase User is converted to SerializableUser in the reducer
+            ],
         }
     }).concat(logger)
 })

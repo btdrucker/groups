@@ -15,8 +15,27 @@ export enum AuthMode {
     RESET,
 }
 
+// Define a serializable user type (only the properties we need)
+export interface SerializableUser {
+    uid: string;
+    email: string | null;
+    displayName: string | null;
+    photoURL: string | null;
+}
+
+// Helper function to convert Firebase User to serializable format
+const toSerializableUser = (user: User | null): SerializableUser | null => {
+    if (!user) return null;
+    return {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+    };
+};
+
 interface AuthState {
-    user: User | null;
+    user: SerializableUser | null;
     loading: boolean;
     error: string | null;
     authMode: AuthMode;
@@ -92,7 +111,7 @@ const authSlice = createSlice({
     initialState,
     reducers: {
         setUser: (state, action: PayloadAction<User | null>) => {
-            state.user = action.payload;
+            state.user = toSerializableUser(action.payload);
             state.initialized = true;
         },
         setAuthMode: (state, action: PayloadAction<AuthMode>) => {
@@ -111,7 +130,7 @@ const authSlice = createSlice({
         });
         builder.addCase(signInWithGoogleThunk.fulfilled, (state, action) => {
             state.loading = false;
-            state.user = action.payload;
+            state.user = toSerializableUser(action.payload);
         });
         builder.addCase(signInWithGoogleThunk.rejected, (state, action) => {
             state.loading = false;
@@ -125,7 +144,7 @@ const authSlice = createSlice({
         });
         builder.addCase(signInWithEmailThunk.fulfilled, (state, action) => {
             state.loading = false;
-            state.user = action.payload;
+            state.user = toSerializableUser(action.payload);
         });
         builder.addCase(signInWithEmailThunk.rejected, (state, action) => {
             state.loading = false;
@@ -139,7 +158,7 @@ const authSlice = createSlice({
         });
         builder.addCase(signUpWithEmailThunk.fulfilled, (state, action) => {
             state.loading = false;
-            state.user = action.payload;
+            state.user = toSerializableUser(action.payload);
         });
         builder.addCase(signUpWithEmailThunk.rejected, (state, action) => {
             state.loading = false;

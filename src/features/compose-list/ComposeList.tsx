@@ -11,7 +11,6 @@ import {
 } from './slice';
 import { selectUser } from '../auth/slice';
 import ComposeListHeader from './ComposeListHeader';
-import {composeNewPuzzle} from "../compose/slice";
 
 const ComposeList = () => {
     const dispatch = useAppDispatch();
@@ -29,7 +28,6 @@ const ComposeList = () => {
     }, [user?.uid, dispatch, puzzles.length]);
 
     const handleCreateNew = () => {
-        dispatch(composeNewPuzzle());
         navigate('/compose');
     };
 

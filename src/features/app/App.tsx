@@ -7,13 +7,12 @@ import {onAuthStateChange} from "../../firebase/auth";
 import styles from "./style.module.css";
 import {useAppDispatch, useAppSelector} from "../../common/hooks";
 import {selectAuthInitialized, selectUser, setUser} from "../auth/slice";
-import {AppMode, selectAppMode} from "./slice";
 import AuthScreen from "../auth/AuthScreen";
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 const App = () => {
     const dispatch = useAppDispatch();
     const user = useAppSelector(selectUser);
-    const appMode = useAppSelector(selectAppMode);
     const initialized = useAppSelector(selectAuthInitialized);
 
     React.useEffect(() => {
@@ -32,15 +31,17 @@ const App = () => {
     return (
         <div className={styles.appContainer}>
             {user ? (
-                appMode === AppMode.ComposeList ? (
-                    <ComposeList/>
-                ) : appMode === AppMode.Compose ? (
-                    <Compose/>
-                ) : appMode === AppMode.Play ? (
-                    <Play/>
-                ) : (
-                    <PlayList/>
-                )
+                <>
+                    <Routes>
+                        <Route path="/" element={<Navigate to="/compose-list" replace />} />
+                        <Route path="/compose-list" element={<ComposeList />} />
+                        <Route path="/compose" element={<Compose />} />
+                        <Route path="/compose/:puzzleId" element={<Compose />} />
+                        <Route path="/play-list" element={<PlayList />} />
+                        <Route path="/play/:puzzleId" element={<Play />} />
+                        <Route path="*" element={<Navigate to="/play-list" replace />} />
+                    </Routes>
+                </>
             ) : (
                 <AuthScreen/>
             )}

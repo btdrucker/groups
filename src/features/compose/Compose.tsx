@@ -3,12 +3,18 @@ import styles from "./style.module.css";
 import {Puzzle} from '../../firebase/firestore';
 import {useAppDispatch, useAppSelector} from '../../common/hooks';
 import {selectUser} from '../auth/slice';
-import {createPuzzleThunk, selectPuzzle} from './slice';
+import {
+    createPuzzleThunk,
+    updatePuzzleThunk,
+    deletePuzzleThunk,
+    loadPuzzleById,
+    selectPuzzle,
+    clearPuzzle
+} from './slice';
 import {useAutosizeTextarea} from "./useAutosizeTextarea";
 import ComposeHeader from './ComposeHeader';
 import {classes} from "../../common/classUtils";
-import {useNavigate} from "react-router-dom";
-import { updatePuzzleThunkLocal, deletePuzzleThunkLocal, createPuzzleLocally } from '../compose-list/slice';
+import {useNavigate, useParams} from "react-router-dom";
 
 function isPuzzleStarted(puzzle: Puzzle) {
     return puzzle.categories.some(cat => cat.trim() !== "") ||
@@ -29,6 +35,7 @@ function isPuzzleChanged(puzzle: Puzzle, initial?: Puzzle) {
 const Compose = () => {
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
+    const { puzzleId } = useParams<{ puzzleId?: string }>();
     const user = useAppSelector(selectUser);
     const initialPuzzle = useAppSelector(selectPuzzle);
     const composeError = useAppSelector(state => state.compose.error);
@@ -37,12 +44,24 @@ const Compose = () => {
     const emptyPuzzle: Puzzle = {
         categories: Array(4).fill("") as string[],
         words: Array(16).fill("") as string[],
-        creatorId: '',
+        creatorId: user?.uid || '',
         createdAt: undefined,
         id: undefined,
-        creatorName: '',
+        creatorName: user?.displayName || '',
     }
 
+    // Load puzzle if editing
+    useEffect(() => {
+        if (puzzleId) {
+            dispatch(loadPuzzleById(puzzleId));
+        } else {
+            dispatch(clearPuzzle());
+        }
+        // Clear puzzle state on unmount
+        return () => { dispatch(clearPuzzle()); };
+    }, [dispatch, puzzleId]);
+
+    // Use loaded puzzle or empty for new
     const initialState = initialPuzzle || emptyPuzzle;
     const [puzzle, setPuzzle] = useState<Puzzle>(initialState);
     const [showSaveSuccess, setShowSaveSuccess] = useState(false);
@@ -52,7 +71,7 @@ const Compose = () => {
     const [deleting, setDeleting] = useState(false);
 
     // Update puzzle state when initialPuzzle changes
-    React.useEffect(() => {
+    useEffect(() => {
         setPuzzle(initialPuzzle || emptyPuzzle);
         setSavedPuzzle(initialPuzzle);
     }, [initialPuzzle]);
@@ -91,15 +110,11 @@ const Compose = () => {
                 creatorId: user.uid || '<none>',
             };
             if (puzzle.id) {
-                await dispatch(updatePuzzleThunkLocal(puzzleToSave));
+                await dispatch(updatePuzzleThunk(puzzleToSave));
             } else {
                 // Remove id before creating
                 const {id, ...puzzleWithoutId} = puzzleToSave;
-                const result = await dispatch(createPuzzleThunk(puzzleWithoutId));
-                // If successful, add to compose-list
-                if (result.meta && result.meta.requestStatus === 'fulfilled' && result.payload) {
-                    dispatch(createPuzzleLocally(result.payload));
-                }
+                await dispatch(createPuzzleThunk(puzzleWithoutId));
             }
         }
     }
@@ -135,19 +150,19 @@ const Compose = () => {
                     setShowSaveError(false);
                 }, 3000);
             } else {
-                navigate("/")
+                navigate("/compose-list");
             }
         } else {
-            navigate("/")
+            navigate("/compose-list");
         }
     };
 
     const handleDelete = async () => {
         if (!puzzle.id) return; // Only delete if puzzle has an id
         setDeleting(true);
-        await dispatch(deletePuzzleThunkLocal(puzzle.id));
+        await dispatch(deletePuzzleThunk(puzzle.id));
         setDeleting(false);
-        navigate("/");
+        navigate("/compose-list");
     };
 
     // Refs for word textareas: 4 rows x 4 cols
