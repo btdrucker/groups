@@ -19,7 +19,7 @@ const PlayListHeader: React.FC = () => {
     const handleRefresh = () => {
         if (user?.uid) {
             dispatch(clearGameStatesCache());
-            dispatch(fetchUserGameStates(user.uid));
+            dispatch(fetchUserGameStates({ userId: user.uid, force: true }));
         }
     };
 

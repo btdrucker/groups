@@ -480,15 +480,7 @@ const Play = () => {
         const isDuplicate = isDuplicateGuess(guessNumber, guesses);
         const isOneAwayGuess = isOneAway(guessNumber, numCategories, wordsPerCategory);
 
-        // Save game state immediately (for all guesses)
-        const updatedGuesses = [...guesses, guessNumber];
-        setGuesses(updatedGuesses);
-
-        // Check for correct guess
-        if (await processGuessIfCorrect(selectedWordsArray, updatedGuesses)) {
-            return;
-        }
-
+        // Check for duplicate BEFORE adding to guesses array
         if (isDuplicate) {
             await triggerShakeAnimation();
             if (isOneAwayGuess) {
@@ -496,6 +488,15 @@ const Play = () => {
             } else {
                 showMessageWithTimeout('Already guessed!');
             }
+            return;
+        }
+
+        // Add to guesses array (after duplicate check)
+        const updatedGuesses = [...guesses, guessNumber];
+        setGuesses(updatedGuesses);
+
+        // Check for correct guess
+        if (await processGuessIfCorrect(selectedWordsArray, updatedGuesses)) {
             return;
         }
 

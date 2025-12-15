@@ -21,7 +21,7 @@ const PlayList = () => {
 
     useEffect(() => {
         if (user?.uid && gameStatesWithPuzzles.length === 0) {
-            dispatch(fetchUserGameStates(user.uid));
+            dispatch(fetchUserGameStates({ userId: user.uid }));
         }
     }, [user?.uid, dispatch, gameStatesWithPuzzles.length]);
 

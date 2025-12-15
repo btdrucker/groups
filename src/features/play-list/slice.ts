@@ -4,9 +4,12 @@ import { RootState } from '../../common/store';
 
 // Helper function to check if a guess matches a category
 const isGuessCorrect = (guessNumber: number, categoryIndex: number): boolean => {
-    const categoryMask = 0b1111 << (categoryIndex * 4);
+    // A guess is correct if all words in the category are selected
+    const wordsPerCategory = 4;  // TODO: Make this dynamic based on game state
+    const categoryMask = ((1 << wordsPerCategory) - 1) << (categoryIndex * wordsPerCategory);
     const guessMasked = guessNumber & categoryMask;
-    return guessMasked === categoryMask && (guessNumber & ~categoryMask) === 0;
+    // Check if all bits in the category are set
+    return guessMasked === categoryMask;
 };
 
 // Helper function to count correct guesses and mistakes for a game state
@@ -61,10 +64,10 @@ const initialState: PlayListState = {
 
 export const fetchUserGameStates = createAsyncThunk(
     'playList/fetchUserGameStates',
-    async (userId: string, { getState, rejectWithValue }) => {
+    async ({ userId, force = false }: { userId: string; force?: boolean }, { getState, rejectWithValue }) => {
         const state = getState() as RootState;
-        if (state.playList.gameStatesWithPuzzles.length > 0) {
-            // Already loaded, skip fetching
+        if (!force && state.playList.gameStatesWithPuzzles.length > 0) {
+            // Already loaded, skip fetching (unless force is true)
             return state.playList.gameStatesWithPuzzles;
         }
         const { gameStates, error } = await getUserGameStates(userId);
