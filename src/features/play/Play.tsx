@@ -14,8 +14,8 @@ import {
 } from '../play-list/slice';
 import PlayHeader from './PlayHeader';
 
-interface DisplayedCategory {
-    categoryIndex: number;
+interface DisplayedGroup {
+    groupIndex: number;
     wasGuessed?: boolean;
 }
 
@@ -25,17 +25,17 @@ interface Word {
     indexInGrid: number;
 }
 
-// Calculate the number of categories in a puzzle
-const getNumCategories = (puzzle: Puzzle): number => {
+// Calculate the number of groups in a puzzle
+const getNumGroups = (puzzle: Puzzle): number => {
     return puzzle.categories.length;
 };
 
-// Calculate the number of words per category in a puzzle
-const getWordsPerCategory = (puzzle: Puzzle): number => {
+// Calculate the number of words per group in a puzzle
+const getWordsPerGroup = (puzzle: Puzzle): number => {
     return puzzle.words.length / puzzle.categories.length;
 };
 
-// Calculate the number of available mistakes (same as number of categories)
+// Calculate the number of available mistakes (same as number of groups)
 const getAvailableMistakes = (puzzle: Puzzle): number => {
     return puzzle.categories.length;
 };
@@ -58,22 +58,22 @@ const countSetBits = (n: number): number => {
     return count;
 }
 
-// Returns the number of correct words in a specified category for a given guess.
-const numCorrectWordsForCategory = (guessNumber: number, categoryIndex: number, wordsInCategory: number): number => {
-    const categoryMask = ((1 << wordsInCategory) - 1) << (categoryIndex * wordsInCategory);
-    const guessMasked = guessNumber & categoryMask;
+// Returns the number of correct words in a specified group for a given guess.
+const numCorrectWordsForGroup = (guessNumber: number, groupIndex: number, wordsInGroup: number): number => {
+    const groupMask = ((1 << wordsInGroup) - 1) << (groupIndex * wordsInGroup);
+    const guessMasked = guessNumber & groupMask;
     return countSetBits(guessMasked);
 }
 
-// Checks if a guess matches a specified category.
-const isGuessCorrect = (guessNumber: number, categoryIndex: number, wordsPerCategory: number): boolean => {
-    return numCorrectWordsForCategory(guessNumber, categoryIndex, wordsPerCategory) === wordsPerCategory;
+// Checks if a guess matches a specified group.
+const isGuessCorrect = (guessNumber: number, groupIndex: number, wordsPerGroup: number): boolean => {
+    return numCorrectWordsForGroup(guessNumber, groupIndex, wordsPerGroup) === wordsPerGroup;
 };
 
-// Checks if a guess has all but one correct words in any category.
-function isOneAway(guessNumber: number, numCategories: number, wordsPerCategory: number): boolean {
-    for (let categoryIndex = 0; categoryIndex < numCategories; categoryIndex++) {
-        if (numCorrectWordsForCategory(guessNumber, categoryIndex, wordsPerCategory) === (wordsPerCategory - 1)) {
+// Checks if a guess has all but one correct words in any group.
+function isOneAway(guessNumber: number, numGroups: number, wordsPerGroup: number): boolean {
+    for (let groupIndex = 0; groupIndex < numGroups; groupIndex++) {
+        if (numCorrectWordsForGroup(guessNumber, groupIndex, wordsPerGroup) === (wordsPerGroup - 1)) {
             return true;
         }
     }
@@ -89,22 +89,22 @@ const deepCopyWords = (words: Word[]): Word[] => {
     return words.map(word => ({...word}));
 }
 
-const moveCategoryWordsToGridRow = (words: Word[], categoryIndex: number, targetRow: number, wordsPerCategory: number): Word[] => {
+const moveGroupWordsToGridRow = (words: Word[], groupIndex: number, targetRow: number, wordsPerGroup: number): Word[] => {
     const updatedWords = deepCopyWords(words);
 
-    // Swap indexInGrid of category words to target row words.
-    for (let x = 0; x < wordsPerCategory; x++) {
+    // Swap indexInGrid of group words to target row words.
+    for (let x = 0; x < wordsPerGroup; x++) {
         // Find the word currently at targetGridIndex
-        const targetGridIndex = targetRow * wordsPerCategory + x;
+        const targetGridIndex = targetRow * wordsPerGroup + x;
         const wordIndex = updatedWords.findIndex(word => word.indexInGrid === targetGridIndex);
         if (wordIndex < 0) {
             console.warn('Word at target grid index not found:', targetGridIndex, updatedWords);
             continue; // Skip this swap
         }
         // Swap the indexInGrid values
-        const categoryWordIndex = categoryIndex * wordsPerCategory + x;
-        const tempIndex = updatedWords[categoryWordIndex].indexInGrid;
-        updatedWords[categoryWordIndex].indexInGrid = updatedWords[wordIndex].indexInGrid;
+        const groupWordIndex = groupIndex * wordsPerGroup + x;
+        const tempIndex = updatedWords[groupWordIndex].indexInGrid;
+        updatedWords[groupWordIndex].indexInGrid = updatedWords[wordIndex].indexInGrid;
         updatedWords[wordIndex].indexInGrid = tempIndex;
     }
 
@@ -164,7 +164,7 @@ const Play = () => {
 
     const [selectedWords, setSelectedWords] = useState<Word[]>([]);
     const [gridWords, setGridWords] = useState<Word[]>([]);
-    const [displayedCategories, setDisplayedCategories] = useState<DisplayedCategory[]>([]);
+    const [displayedGroups, setDisplayedGroups] = useState<DisplayedGroup[]>([]);
     const [isShaking, setIsShaking] = useState(false);
     const [messageText, setMessageText] = useState<string | null>(null);
     const [isRevealing, setIsRevealing] = useState(false);
@@ -174,13 +174,13 @@ const Play = () => {
     // Derive guesses and mistakes from Redux state
     const guesses = gameStateWithPuzzle?.gameState.guesses || [];
     const mistakesRemaining = currentPuzzle && gameStateWithPuzzle ? (() => {
-        const numCategories = getNumCategories(currentPuzzle);
-        const wordsPerCategory = getWordsPerCategory(currentPuzzle);
+        const numGroups = getNumGroups(currentPuzzle);
+        const wordsPerGroup = getWordsPerGroup(currentPuzzle);
         const availableMistakes = getAvailableMistakes(currentPuzzle);
         const mistakeCount = guesses.filter((guessNumber: number) => {
-            // Count incorrect guesses (guesses that don't match any category)
-            for (let categoryIndex = 0; categoryIndex < numCategories; categoryIndex++) {
-                if (isGuessCorrect(guessNumber, categoryIndex, wordsPerCategory)) {
+            // Count incorrect guesses (guesses that don't match any group)
+            for (let groupIndex = 0; groupIndex < numGroups; groupIndex++) {
+                if (isGuessCorrect(guessNumber, groupIndex, wordsPerGroup)) {
                     return false; // This was a correct guess
                 }
             }
@@ -262,7 +262,7 @@ const Play = () => {
         // Type assertion: currentPuzzle is guaranteed to be Puzzle at this point
         const puzzle: Puzzle = currentPuzzle;
 
-        const startingDisplayedCategories: DisplayedCategory[] = [];
+        const startingDisplayedGroups: DisplayedGroup[] = [];
         let startingMistakes = 0;
 
         let words: Word[] = puzzle.words.map((word: string, indexInPuzzle: number) => ({
@@ -271,19 +271,19 @@ const Play = () => {
             indexInGrid: indexInPuzzle
         }));
 
-        const numCategories = getNumCategories(puzzle);
-        const wordsPerCategory = getWordsPerCategory(puzzle);
+        const numGroups = getNumGroups(puzzle);
+        const wordsPerGroup = getWordsPerGroup(puzzle);
 
         // Reconstruct the game state from the saved guesses.
         if (gameStateWithPuzzle.gameState.guesses.length > 0) {
             gameStateWithPuzzle.gameState.guesses.forEach((guessNumber: number) => {
                 // Check if this guess was correct
                 let wasCorrect = false;
-                for (let categoryIndex = 0; categoryIndex < numCategories; categoryIndex++) {
-                    if (isGuessCorrect(guessNumber, categoryIndex, wordsPerCategory)) {
-                        startingDisplayedCategories.push({categoryIndex, wasGuessed: true});
+                for (let groupIndex = 0; groupIndex < numGroups; groupIndex++) {
+                    if (isGuessCorrect(guessNumber, groupIndex, wordsPerGroup)) {
+                        startingDisplayedGroups.push({groupIndex, wasGuessed: true});
                         wasCorrect = true;
-                        words = moveCategoryWordsToGridRow(words, categoryIndex, startingDisplayedCategories.length - 1, wordsPerCategory);
+                        words = moveGroupWordsToGridRow(words, groupIndex, startingDisplayedGroups.length - 1, wordsPerGroup);
                         break;
                     }
                 }
@@ -294,21 +294,21 @@ const Play = () => {
             });
         }
 
-        const startingMistakesRemaining = Math.max(0, wordsPerCategory - startingMistakes);
+        const startingMistakesRemaining = Math.max(0, wordsPerGroup - startingMistakes);
         setIsRevealing(false);
         setMessageText(null);
         setSelectedWords([]);
 
         if (startingMistakesRemaining === 0) {
-            for (let categoryIndex = 0; categoryIndex < numCategories; categoryIndex++) {
-                if (startingDisplayedCategories.every(cat => cat.categoryIndex !== categoryIndex)) {
-                    startingDisplayedCategories.push({categoryIndex, wasGuessed: false});
+            for (let groupIndex = 0; groupIndex < numGroups; groupIndex++) {
+                if (startingDisplayedGroups.every(group => group.groupIndex !== groupIndex)) {
+                    startingDisplayedGroups.push({groupIndex, wasGuessed: false});
                 }
             }
         }
-        setDisplayedCategories(startingDisplayedCategories);
+        setDisplayedGroups(startingDisplayedGroups);
 
-        words = shuffleWordsFromGridRow(words, startingDisplayedCategories.length, wordsPerCategory)
+        words = shuffleWordsFromGridRow(words, startingDisplayedGroups.length, wordsPerGroup)
         setGridWords(words);
     }, [currentPuzzleId, currentPuzzle]);
 
@@ -318,47 +318,47 @@ const Play = () => {
         if (mistakesRemaining === 0 && !isRevealing) {
             setIsRevealing(true);
 
-            const numCategories = getNumCategories(currentPuzzle);
-            const wordsPerCategory = getWordsPerCategory(currentPuzzle);
+            const numGroups = getNumGroups(currentPuzzle);
+            const wordsPerGroup = getWordsPerGroup(currentPuzzle);
 
-            // Start revealing unsolved categories one by one
-            const revealNextCategory = (gridWords: Word[], categoryIndex: number, row: number) => {
-                if (categoryIndex >= numCategories) {
+            // Start revealing unsolved groups one by one
+            const revealNextGroup = (gridWords: Word[], groupIndex: number, row: number) => {
+                if (groupIndex >= numGroups) {
                     return;
                 }
 
-                // Check if this category is already solved
-                const isSolved = displayedCategories.some(cat => cat.categoryIndex === categoryIndex);
+                // Check if this group is already solved
+                const isSolved = displayedGroups.some(group => group.groupIndex === groupIndex);
                 if (isSolved) {
-                    revealNextCategory(gridWords, categoryIndex + 1, row + 1);
+                    revealNextGroup(gridWords, groupIndex + 1, row + 1);
                     return;
                 }
 
-                // Rearrange shuffledWords to put category words at the top
+                // Rearrange shuffledWords to put group words at the top
                 prevPositions.current = measureCellPositions();
                 shouldAnimate.current = true;
 
-                const newGridWords = moveCategoryWordsToGridRow(gridWords, categoryIndex, row, wordsPerCategory);
+                const newGridWords = moveGroupWordsToGridRow(gridWords, groupIndex, row, wordsPerGroup);
                 setGridWords(newGridWords);
 
-                // After animation completes, add to solved categories with fade
+                // After animation completes, add to solved groups with fade
                 setTimeout(() => {
-                    setDisplayedCategories(prevSolved => [...prevSolved, {
-                        categoryIndex: categoryIndex,
+                    setDisplayedGroups(prevSolved => [...prevSolved, {
+                        groupIndex: groupIndex,
                         wasGuessed: false
                     }]);
 
-                    // Reveal next category
-                    if (categoryIndex + 1 < numCategories) {
-                        setTimeout(() => revealNextCategory(newGridWords, categoryIndex + 1, row + 1), 800);
+                    // Reveal next group
+                    if (groupIndex + 1 < numGroups) {
+                        setTimeout(() => revealNextGroup(newGridWords, groupIndex + 1, row + 1), 800);
                     }
                 }, 800);
             };
 
             // Start the reveal sequence after a short delay
-            setTimeout(() => revealNextCategory(gridWords, 0, 0), 500);
+            setTimeout(() => revealNextGroup(gridWords, 0, 0), 500);
         }
-    }, [mistakesRemaining, currentPuzzle, displayedCategories, isRevealing, gridWords]);
+    }, [mistakesRemaining, currentPuzzle, displayedGroups, isRevealing, gridWords]);
 
     let statusMessage: string | null = null;
     if (loading) {
@@ -388,12 +388,12 @@ const Play = () => {
     // At this point, currentPuzzle is guaranteed to exist
     // Create a non-null constant for use in closures where TypeScript loses track of the type guard
     const puzzle: Puzzle = currentPuzzle;
-    const numCategories = getNumCategories(puzzle);
-    const wordsPerCategory = getWordsPerCategory(puzzle);
+    const numGroups = getNumGroups(puzzle);
+    const wordsPerGroup = getWordsPerGroup(puzzle);
     const availableMistakes = getAvailableMistakes(puzzle);
 
     const handleWordClick = (word: Word) => {
-        setSelectedWords(prev => toggleWordSelection(word, prev, wordsPerCategory));
+        setSelectedWords(prev => toggleWordSelection(word, prev, wordsPerGroup));
     };
 
     const handleShuffle = async () => {
@@ -402,7 +402,7 @@ const Play = () => {
         shouldAnimate.current = true;
         setIsShuffling(true);
         // Step 2: Shuffle words in grid
-        setGridWords(prev => shuffleWordsFromGridRow(prev, displayedCategories.length, wordsPerCategory));
+        setGridWords(prev => shuffleWordsFromGridRow(prev, displayedGroups.length, wordsPerGroup));
         // Step 3: Wait for animation duration (600ms)
         await new Promise(resolve => setTimeout(resolve, 600));
         setIsShuffling(false);
@@ -412,16 +412,16 @@ const Play = () => {
         setSelectedWords([]);
     };
 
-    const categoryWords = (categoryIndex: number): string[] => {
-        return puzzle.words.slice(categoryIndex * wordsPerCategory, (categoryIndex + 1) * wordsPerCategory);
+    const groupWords = (groupIndex: number): string[] => {
+        return puzzle.words.slice(groupIndex * wordsPerGroup, (groupIndex + 1) * wordsPerGroup);
     }
 
     const processGuessIfCorrect = async (guess: Word[], updatedGuesses: number[]) => {
 
-        for (let i = 0; i < numCategories; i++) {
-            const categoryWords = puzzle.words.slice(i * wordsPerCategory, (i + 1) * wordsPerCategory);
-            const isMatch = categoryWords.every((word: string) => selectedWords.some((obj) => obj.word === word)) &&
-                guess.every((word: Word) => categoryWords.includes(word.word));
+        for (let i = 0; i < numGroups; i++) {
+            const groupWordsArray = puzzle.words.slice(i * wordsPerGroup, (i + 1) * wordsPerGroup);
+            const isMatch = groupWordsArray.every((word: string) => selectedWords.some((obj) => obj.word === word)) &&
+                guess.every((word: Word) => groupWordsArray.includes(word.word));
             if (isMatch) {
                 await processCorrectGuess(i, updatedGuesses);
                 return true
@@ -463,19 +463,19 @@ const Play = () => {
         await dispatch(saveAndUpdateGameState({ gameState }));
     };
 
-    // Handles a correct guess: updates solved categories, removes words, and saves state
-    const processCorrectGuess = async (categoryIndex: number, updatedGuesses: number[]) => {
+    // Handles a correct guess: updates solved groups, removes words, and saves state
+    const processCorrectGuess = async (groupIndex: number, updatedGuesses: number[]) => {
         // Step 1: Measure cell positions before gridWords update
         prevPositions.current = measureCellPositions();
         shouldAnimate.current = true;
         // Step 2: Move words to target row (triggers FLIP animation)
-        setGridWords(moveCategoryWordsToGridRow(gridWords, categoryIndex, displayedCategories.length, wordsPerCategory));
+        setGridWords(moveGroupWordsToGridRow(gridWords, groupIndex, displayedGroups.length, wordsPerGroup));
         // Step 3: Wait for animation duration (600ms)
         await new Promise(resolve => setTimeout(resolve, 600));
         // Step 4: Wait for pause before reveal (600ms)
         await new Promise(resolve => setTimeout(resolve, 600));
-        // Step 5: Reveal category
-        setDisplayedCategories(prev => [...prev, {categoryIndex, wasGuessed: true}]);
+        // Step 5: Reveal group
+        setDisplayedGroups(prev => [...prev, {groupIndex, wasGuessed: true}]);
         setSelectedWords([]); // Clear selection after reveal
         await saveCurrentGameState(updatedGuesses);
     };
@@ -490,12 +490,12 @@ const Play = () => {
     };
 
     const handleSubmit = async () => {
-        if (selectedWords.length !== wordsPerCategory || !userId) return;
+        if (selectedWords.length !== wordsPerGroup || !userId) return;
 
         const selectedWordsArray = Array.from(selectedWords);
         const guessNumber = guessToNumber(selectedWordsArray);
         const isDuplicate = isDuplicateGuess(guessNumber, guesses);
-        const isOneAwayGuess = isOneAway(guessNumber, numCategories, wordsPerCategory);
+        const isOneAwayGuess = isOneAway(guessNumber, numGroups, wordsPerGroup);
 
         // Check for duplicate BEFORE adding to guesses array
         if (isDuplicate) {
@@ -531,12 +531,12 @@ const Play = () => {
         : 'Unknown date';
 
     const isGameLost = mistakesRemaining === 0;
-    const isComplete = displayedCategories.length === numCategories && !isGameLost;
+    const isComplete = displayedGroups.length === numGroups && !isGameLost;
 
     // Calculate cell width (4 columns, 3 gaps of 0.75rem)
     const gapPx = 0.5 * 32; // Assuming 1rem = 16px
-    const totalGap = (wordsPerCategory - 1) * gapPx;
-    const cellSize = (gridWidth - totalGap) / wordsPerCategory;
+    const totalGap = (wordsPerGroup - 1) * gapPx;
+    const cellSize = (gridWidth - totalGap) / wordsPerGroup;
 
     if (loading || !currentPuzzle || !gridWords.length) {
         return (
@@ -560,7 +560,7 @@ const Play = () => {
                 <div
                     className={styles.wordGrid}
                     style={{
-                        gridTemplateColumns: `repeat(${wordsPerCategory}, 1fr)`
+                        gridTemplateColumns: `repeat(${wordsPerGroup}, 1fr)`
                     }}
                 >
                     {/* Overlay message if active */}
@@ -572,30 +572,30 @@ const Play = () => {
                         </div>
                     )}
 
-                    {/* Show solved categories at the top */}
-                    {displayedCategories.map((category, index) => (
+                    {/* Show solved groups at the top */}
+                    {displayedGroups.map((group, index) => (
                         <div
                             key={index}
-                            className={classes(styles.categoryRow, !category.wasGuessed && styles.missedCategory)}
-                            data-category-index={category.categoryIndex}
+                            className={classes(styles.groupRow, !group.wasGuessed && styles.missedGroup)}
+                            data-group-index={group.groupIndex}
                             style={{
                                 gridColumn: 0,
                                 gridRow: index + 1
                             }}
                         >
                             <div
-                                className={styles.categoryName}>{puzzle.categories[category.categoryIndex]}</div>
-                            <div className={styles.categoryWords}>
-                                {categoryWords(category.categoryIndex).join(', ')}
+                                className={styles.groupName}>{puzzle.categories[group.groupIndex]}</div>
+                            <div className={styles.groupWords}>
+                                {groupWords(group.groupIndex).join(', ')}
                             </div>
                         </div>
                     ))}
 
                     {/* Show remaining words in grid */}
                     {gridWords.filter(word => {
-                        // Exclude words in guessed categories
-                        const categoryIdx = Math.floor(word.indexInPuzzle / wordsPerCategory);
-                        return !displayedCategories.some(cat => cat.categoryIndex === categoryIdx);
+                        // Exclude words in guessed groups
+                        const groupIdx = Math.floor(word.indexInPuzzle / wordsPerGroup);
+                        return !displayedGroups.some(group => group.groupIndex === groupIdx);
                     }).map(word => (
                         <button
                             key={word.indexInPuzzle}
@@ -608,8 +608,8 @@ const Play = () => {
                                 isShaking && selectedWords.some(sel => sel.indexInPuzzle === word.indexInPuzzle) && styles.shakeWord
                             )}
                             style={{
-                                gridColumn: (word.indexInGrid % wordsPerCategory) + 1,
-                                gridRow: Math.floor(word.indexInGrid / wordsPerCategory) + 1,
+                                gridColumn: (word.indexInGrid % wordsPerGroup) + 1,
+                                gridRow: Math.floor(word.indexInGrid / wordsPerGroup) + 1,
                                 width: cellSize,
                                 minWidth: cellSize,
                                 maxWidth: cellSize,
@@ -658,7 +658,7 @@ const Play = () => {
                         <button
                             className={styles.actionButton}
                             onClick={handleSubmit}
-                            disabled={selectedWords.length !== wordsPerCategory}
+                            disabled={selectedWords.length !== wordsPerGroup}
                         >
                             Submit
                         </button>

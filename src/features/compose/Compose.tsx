@@ -17,7 +17,7 @@ import {classes} from "../../common/classUtils";
 import {useNavigate, useParams} from "react-router-dom";
 
 function isPuzzleStarted(puzzle: Puzzle) {
-    return puzzle.categories.some(cat => cat.trim() !== "") ||
+    return puzzle.categories.some(group => group.trim() !== "") ||
         puzzle.words.some(word => word.trim() !== "");
 }
 
@@ -48,6 +48,8 @@ const Compose = () => {
         createdAt: undefined,
         id: undefined,
         creatorName: user?.displayName || '',
+        numGroups: 4,
+        wordsPerGroup: 4,
     }
 
     // Load puzzle if editing
@@ -82,24 +84,24 @@ const Compose = () => {
         return !(savedPuzzle && !isPuzzleChanged(puzzle, savedPuzzle));
     }, [puzzle, savedPuzzle]);
 
-    const handleCategoryNameChange = (catIdx: number, value: string) => {
+    const handleGroupNameChange = (grpIdx: number, value: string) => {
         setPuzzle(prev => {
-            const categories = prev.categories.map((cat, i) =>
-                i === catIdx ? value : cat
+            const categories = prev.categories.map((group, i) =>
+                i === grpIdx ? value : group
             );
             return {...prev, categories};
         });
     };
 
-    const handleWordChange = (catIdx: number, wordIdx: number, value: string) => {
+    const handleWordChange = (grpIdx: number, wordIdx: number, value: string) => {
         setPuzzle(prev => {
             const words = prev.words.map((w, idx) => {
-                const targetIdx = catIdx * 4 + wordIdx;
+                const targetIdx = grpIdx * 4 + wordIdx;
                 return idx === targetIdx ? value : w;
             });
             return {...prev, words};
         });
-        setTimeout(() => syncRowHeights(catIdx), 0);
+        setTimeout(() => syncRowHeights(grpIdx), 0);
     };
 
     const saveOrCreate = async () => {
@@ -172,22 +174,22 @@ const Compose = () => {
 
     // Create a 2D array of autosize refs for word textareas (hooks must be called at top level)
     const wordAutosizeRefs: React.MutableRefObject<HTMLTextAreaElement | null>[][] = [];
-    for (let catIdx = 0; catIdx < 4; catIdx++) {
-        wordAutosizeRefs[catIdx] = [];
+    for (let grpIdx = 0; grpIdx < 4; grpIdx++) {
+        wordAutosizeRefs[grpIdx] = [];
         for (let wordIdx = 0; wordIdx < 4; wordIdx++) {
-            wordAutosizeRefs[catIdx][wordIdx] = useAutosizeTextarea(puzzle.words[catIdx * 4 + wordIdx]);
+            wordAutosizeRefs[grpIdx][wordIdx] = useAutosizeTextarea(puzzle.words[grpIdx * 4 + wordIdx]);
         }
     }
 
     // Helper to assign both the autosize ref and the tracking ref
-    const getWordTextareaRef = (catIdx: number, wordIdx: number) => (el: HTMLTextAreaElement | null) => {
-        wordRefs.current[catIdx][wordIdx] = el;
-        wordAutosizeRefs[catIdx][wordIdx].current = el;
+    const getWordTextareaRef = (grpIdx: number, wordIdx: number) => (el: HTMLTextAreaElement | null) => {
+        wordRefs.current[grpIdx][wordIdx] = el;
+        wordAutosizeRefs[grpIdx][wordIdx].current = el;
     };
 
     // Helper to sync heights for a row
-    const syncRowHeights = (catIdx: number) => {
-        const rowRefs = wordRefs.current[catIdx];
+    const syncRowHeights = (grpIdx: number) => {
+        const rowRefs = wordRefs.current[grpIdx];
         // First, reset all heights so scrollHeight is accurate for shrinking
         rowRefs.forEach(ref => {
             if (ref) {
@@ -206,8 +208,8 @@ const Compose = () => {
 
     // On every puzzle.words change, sync all rows
     useEffect(() => {
-        for (let catIdx = 0; catIdx < 4; catIdx++) {
-            syncRowHeights(catIdx);
+        for (let grpIdx = 0; grpIdx < 4; grpIdx++) {
+            syncRowHeights(grpIdx);
         }
     }, [puzzle.words]);
 
@@ -215,16 +217,16 @@ const Compose = () => {
         <>
             <ComposeHeader handleBack={handleBack}/>
             <div className={styles.composeContainer}>
-                {puzzle.categories.map((cat, catIdx) => (
-                    <div className={styles.categoryBlock} key={catIdx}>
+                {puzzle.categories.map((group, groupIndex) => (
+                    <div className={styles.groupBlock} key={groupIndex}>
                         <textarea
-                            ref={useAutosizeTextarea(cat)}
-                            value={cat}
-                            placeholder={`Category ${catIdx + 1}`}
-                            onChange={e => handleCategoryNameChange(catIdx, e.target.value)}
+                            ref={useAutosizeTextarea(group)}
+                            value={group}
+                            placeholder={`Group ${groupIndex + 1}`}
+                            onChange={e => handleGroupNameChange(groupIndex, e.target.value)}
                             className={classes(
-                                styles.categoryTextarea,
-                                styles[`categoryInput${catIdx + 1}`]
+                                styles.groupTextarea,
+                                styles[`groupInput${groupIndex + 1}`]
                             )}
                             rows={1}
                             style={{resize: "none"}}
@@ -233,13 +235,13 @@ const Compose = () => {
                             {[0, 1, 2, 3].map(wordIdx => (
                                 <textarea
                                     key={wordIdx}
-                                    ref={getWordTextareaRef(catIdx, wordIdx)}
-                                    value={puzzle.words[catIdx * 4 + wordIdx]}
+                                    ref={getWordTextareaRef(groupIndex, wordIdx)}
+                                    value={puzzle.words[groupIndex * 4 + wordIdx]}
                                     placeholder={`Word ${wordIdx + 1}`}
-                                    onChange={e => handleWordChange(catIdx, wordIdx, e.target.value)}
+                                    onChange={e => handleWordChange(groupIndex, wordIdx, e.target.value)}
                                     className={classes(
                                         styles.wordTextarea,
-                                        styles[`wordInput${catIdx + 1}`]
+                                        styles[`wordInput${groupIndex + 1}`]
                                     )}
                                     rows={1}
                                     style={{resize: "none"}}

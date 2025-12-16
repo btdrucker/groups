@@ -60,13 +60,13 @@
     margin: 2rem auto 2rem auto;
 }
 
-.categoryBlock {
+.groupBlock {
     width: 100%;
     display: flex;
     flex-direction: column;
 }
 
-.categoryTextarea {
+.groupTextarea {
     width: 100%;
     min-height: 2.5rem;
     font-weight: bold;
@@ -85,25 +85,25 @@
     border-top-right-radius: 8px;
 }
 
-.categoryTextarea::placeholder {
+.groupTextarea::placeholder {
     color: #333;
     opacity: 0.4;
 }
 
-.categoryInput1 {
-    background: rgb(var(--category0Color-rgb));
+.groupInput1 {
+    background: rgb(var(--group0Color-rgb));
 }
 
-.categoryInput2 {
-    background: rgb(var(--category1Color-rgb));
+.groupInput2 {
+    background: rgb(var(--group1Color-rgb));
 }
 
-.categoryInput3 {
-    background: rgb(var(--category2Color-rgb));
+.groupInput3 {
+    background: rgb(var(--group2Color-rgb));
 }
 
-.categoryInput4 {
-    background: rgb(var(--category3Color-rgb));
+.groupInput4 {
+    background: rgb(var(--group3Color-rgb));
 }
 
 .wordInputsRow {
@@ -147,19 +147,19 @@
 }
 
 .wordInput1 {
-    background: rgba(var(--category0Color-rgb), 0.5);
+    background: rgba(var(--group0Color-rgb), 0.5);
 }
 
 .wordInput2 {
-    background: rgba(var(--category1Color-rgb), 0.5);
+    background: rgba(var(--group1Color-rgb), 0.5);
 }
 
 .wordInput3 {
-    background: rgba(var(--category2Color-rgb), 0.5);
+    background: rgba(var(--group2Color-rgb), 0.5);
 }
 
 .wordInput4 {
-    background: rgba(var(--category3Color-rgb), 0.5);
+    background: rgba(var(--group3Color-rgb), 0.5);
 }
 
 .centeredTitle {

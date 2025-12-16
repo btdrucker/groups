@@ -2,14 +2,14 @@ import { createSlice, createAsyncThunk, PayloadAction, createSelector } from '@r
 import { GameState, getUserGameStates, getPuzzle, Puzzle, getGameState, saveGameState } from '../../firebase/firestore';
 import { RootState } from '../../common/store';
 
-// Helper function to check if a guess matches a category
-const isGuessCorrect = (guessNumber: number, categoryIndex: number): boolean => {
-    // A guess is correct if all words in the category are selected
-    const wordsPerCategory = 4;  // TODO: Make this dynamic based on game state
-    const categoryMask = ((1 << wordsPerCategory) - 1) << (categoryIndex * wordsPerCategory);
-    const guessMasked = guessNumber & categoryMask;
-    // Check if all bits in the category are set
-    return guessMasked === categoryMask;
+// Helper function to check if a guess matches a group
+const isGuessCorrect = (guessNumber: number, groupIndex: number): boolean => {
+    // A guess is correct if all words in the group are selected
+    const wordsPerGroup = 4;  // TODO: Make this dynamic based on game state
+    const groupMask = ((1 << wordsPerGroup) - 1) << (groupIndex * wordsPerGroup);
+    const guessMasked = guessNumber & groupMask;
+    // Check if all bits in the group are set
+    return guessMasked === groupMask;
 };
 
 // Helper function to count correct guesses and mistakes for a game state
@@ -21,8 +21,8 @@ const countGuessStats = (gameState: GameState): { correctGuesses: number; mistak
 
     gameState.guesses.forEach(guessNumber => {
         let wasCorrect = false;
-        for (let categoryIndex = 0; categoryIndex < numGroups; categoryIndex++) {
-            if (isGuessCorrect(guessNumber, categoryIndex)) {
+        for (let groupIndex = 0; groupIndex < numGroups; groupIndex++) {
+            if (isGuessCorrect(guessNumber, groupIndex)) {
                 correctCount++;
                 wasCorrect = true;
                 break;

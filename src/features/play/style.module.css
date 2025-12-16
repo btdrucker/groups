@@ -78,7 +78,7 @@
     padding: 1rem 0;
 }
 
-.categoryRow {
+.groupRow {
     grid-column: 1 / -1;
     border-radius: 8px;
     padding: 1rem;
@@ -91,50 +91,50 @@
     height: 80px;
 }
 
-.categoryRow[data-category-index="0"] {
-    background-color: rgb(var(--category0Color-rgb));
+.groupRow[data-group-index="0"] {
+    background-color: rgb(var(--group0Color-rgb));
 }
 
-.categoryRow[data-category-index="1"] {
-    background-color: rgb(var(--category1Color-rgb));
+.groupRow[data-group-index="1"] {
+    background-color: rgb(var(--group1Color-rgb));
 }
 
-.categoryRow[data-category-index="2"] {
-    background-color: rgb(var(--category2Color-rgb));
+.groupRow[data-group-index="2"] {
+    background-color: rgb(var(--group2Color-rgb));
 }
 
-.categoryRow[data-category-index="3"] {
-    background-color: rgb(var(--category3Color-rgb));
+.groupRow[data-group-index="3"] {
+    background-color: rgb(var(--group3Color-rgb));
 }
 
-.missedCategory {
+.missedGroup {
     color: #888888 !important;
 }
 
-.missedCategory[data-category-index="0"] {
-    background-color: rgba(var(--category0Color-rgb), 0.5) !important;
+.missedGroup[data-group-index="0"] {
+    background-color: rgba(var(--group0Color-rgb), 0.5) !important;
 }
 
-.missedCategory[data-category-index="1"] {
-    background-color: rgba(var(--category1Color-rgb), 0.5) !important;
+.missedGroup[data-group-index="1"] {
+    background-color: rgba(var(--group1Color-rgb), 0.5) !important;
 }
 
-.missedCategory[data-category-index="2"] {
-    background-color: rgba(var(--category2Color-rgb), 0.5) !important;
+.missedGroup[data-group-index="2"] {
+    background-color: rgba(var(--group2Color-rgb), 0.5) !important;
 }
 
-.missedCategory[data-category-index="3"] {
-    background-color: rgba(var(--category3Color-rgb), 0.5) !important;
+.missedGroup[data-group-index="3"] {
+    background-color: rgba(var(--group3Color-rgb), 0.5) !important;
 }
 
-.categoryName {
+.groupName {
     font-size: 1rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-.categoryWords {
+.groupWords {
     font-size: 0.9rem;
     font-weight: 500;
     opacity: 0.9;

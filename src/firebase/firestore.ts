@@ -15,12 +15,12 @@ import {db} from './config';
 // Puzzle Interface
 export interface Puzzle {
     id?: string;
-    categories: string[];      // Array of 4 category names
+    categories: string[];      // Array of 4 category names (stored as 'categories' in Firestore)
     createdAt?: number;        // Timestamp milliseconds
     creatorId: string;
     creatorName: string;       // Display name of the creator
     words: string[];           // 4 arrays of 4 words each as a flat 16 element array
-    numGroups: number;         // Number of groups/categories (required after migration)
+    numGroups: number;         // Number of groups (required after migration)
     wordsPerGroup: number;     // Number of words per group (required after migration)
 }
 
