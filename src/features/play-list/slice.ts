@@ -53,12 +53,14 @@ export interface GameStateWithPuzzle {
 interface PlayListState {
     gameStatesWithPuzzles: RawGameStateWithPuzzle[]; // Single source of truth
     loading: boolean;
+    saving: boolean; // Track saving separately from loading
     error: string | null;
 }
 
 const initialState: PlayListState = {
     gameStatesWithPuzzles: [],
     loading: false,
+    saving: false,
     error: null,
 };
 
@@ -245,11 +247,11 @@ const playListSlice = createSlice({
             state.error = action.payload as string;
         });
         builder.addCase(saveAndUpdateGameState.pending, (state) => {
-            state.loading = true;
+            state.saving = true;
             state.error = null;
         });
         builder.addCase(saveAndUpdateGameState.fulfilled, (state, action) => {
-            state.loading = false;
+            state.saving = false;
             const updatedGameState = action.payload;
             const idx = state.gameStatesWithPuzzles.findIndex(gsp => gsp.gameState.puzzleId === updatedGameState.puzzleId);
             if (idx !== -1) {
@@ -261,7 +263,7 @@ const playListSlice = createSlice({
             }
         });
         builder.addCase(saveAndUpdateGameState.rejected, (state, action) => {
-            state.loading = false;
+            state.saving = false;
             state.error = action.payload as string;
         });
     },

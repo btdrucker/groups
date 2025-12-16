@@ -162,16 +162,32 @@ const Play = () => {
     const loading = useAppSelector(selectPlayListLoading);
     const error = useAppSelector(selectPlayListError);
 
-    const [guesses, setGuesses] = useState<number[]>([]); // Track guesses as 16-bit numbers from gameState
     const [selectedWords, setSelectedWords] = useState<Word[]>([]);
     const [gridWords, setGridWords] = useState<Word[]>([]);
     const [displayedCategories, setDisplayedCategories] = useState<DisplayedCategory[]>([]);
-    const [mistakesRemaining, setMistakesRemaining] = useState(0);
     const [isShaking, setIsShaking] = useState(false);
     const [messageText, setMessageText] = useState<string | null>(null);
     const [isRevealing, setIsRevealing] = useState(false);
     const [isShuffling, setIsShuffling] = useState(false);
     const [gridWidth, setGridWidth] = useState<number>(() => calculateGridWidth(window));
+
+    // Derive guesses and mistakes from Redux state
+    const guesses = gameStateWithPuzzle?.gameState.guesses || [];
+    const mistakesRemaining = currentPuzzle && gameStateWithPuzzle ? (() => {
+        const numCategories = getNumCategories(currentPuzzle);
+        const wordsPerCategory = getWordsPerCategory(currentPuzzle);
+        const availableMistakes = getAvailableMistakes(currentPuzzle);
+        const mistakeCount = guesses.filter((guessNumber: number) => {
+            // Count incorrect guesses (guesses that don't match any category)
+            for (let categoryIndex = 0; categoryIndex < numCategories; categoryIndex++) {
+                if (isGuessCorrect(guessNumber, categoryIndex, wordsPerCategory)) {
+                    return false; // This was a correct guess
+                }
+            }
+            return true; // This was an incorrect guess
+        }).length;
+        return Math.max(0, availableMistakes - mistakeCount);
+    })() : 0;
 
     useEffect(() => {
         const handleResize = () => setGridWidth(calculateGridWidth(window));
@@ -183,6 +199,7 @@ const Play = () => {
     const cellRefs = useRef<(HTMLButtonElement | null)[]>([]);
     const prevPositions = useRef<Map<number, DOMRect>>(new Map());
     const shouldAnimate = useRef(false);
+    const initializedPuzzleId = useRef<string | null>(null);
 
     const measureCellPositions = () => {
         const positions = new Map<number, DOMRect>();
@@ -237,12 +254,16 @@ const Play = () => {
     useEffect(() => {
         if (!currentPuzzle || !gameStateWithPuzzle) return;
 
+        // Only initialize if this is a new puzzle (not just a guess update)
+        const puzzleId = currentPuzzle.id || null;
+        if (initializedPuzzleId.current === puzzleId) return;
+        initializedPuzzleId.current = puzzleId;
+
         // Type assertion: currentPuzzle is guaranteed to be Puzzle at this point
         const puzzle: Puzzle = currentPuzzle;
 
         const startingDisplayedCategories: DisplayedCategory[] = [];
         let startingMistakes = 0;
-        const startingGuesses: number[] = [];
 
         let words: Word[] = puzzle.words.map((word: string, indexInPuzzle: number) => ({
             word,
@@ -255,7 +276,6 @@ const Play = () => {
 
         // Reconstruct the game state from the saved guesses.
         if (gameStateWithPuzzle.gameState.guesses.length > 0) {
-            startingGuesses.push(...gameStateWithPuzzle.gameState.guesses);
             gameStateWithPuzzle.gameState.guesses.forEach((guessNumber: number) => {
                 // Check if this guess was correct
                 let wasCorrect = false;
@@ -274,9 +294,7 @@ const Play = () => {
             });
         }
 
-        setGuesses(startingGuesses);
         const startingMistakesRemaining = Math.max(0, wordsPerCategory - startingMistakes);
-        setMistakesRemaining(startingMistakesRemaining);
         setIsRevealing(false);
         setMessageText(null);
         setSelectedWords([]);
@@ -292,7 +310,7 @@ const Play = () => {
 
         words = shuffleWordsFromGridRow(words, startingDisplayedCategories.length, wordsPerCategory)
         setGridWords(words);
-    }, [currentPuzzle, gameStateWithPuzzle]);
+    }, [currentPuzzleId, currentPuzzle]);
 
     // Trigger reveal animation when game is lost
     useEffect(() => {
@@ -462,9 +480,8 @@ const Play = () => {
         await saveCurrentGameState(updatedGuesses);
     };
 
-    // Handles an incorrect guess: triggers shake, updates mistakes, and saves state
+    // Handles an incorrect guess: triggers shake and saves state
     const processIncorrectGuess = async (updatedGuesses: number[], isOneAwayGuess: boolean) => {
-        setMistakesRemaining(prev => prev - 1);
         await triggerShakeAnimation();
         if (isOneAwayGuess) {
             showMessageWithTimeout('One away!');
@@ -493,7 +510,6 @@ const Play = () => {
 
         // Add to guesses array (after duplicate check)
         const updatedGuesses = [...guesses, guessNumber];
-        setGuesses(updatedGuesses);
 
         // Check for correct guess
         if (await processGuessIfCorrect(selectedWordsArray, updatedGuesses)) {
