@@ -1,11 +1,18 @@
 import React, {useEffect, useState, useRef, useLayoutEffect} from 'react';
 import {useParams} from 'react-router-dom';
 import styles from './style.module.css';
-import {GameState, Puzzle, PUZZLE_NOT_FOUND} from '../../firebase/firestore';
+import {
+    GameState,
+    Puzzle,
+    PUZZLE_NOT_FOUND,
+    StatsStatus,
+    createPuzzlePlayerStats,
+    updatePuzzlePlayerStats
+} from '../../firebase/firestore';
 import {useAppDispatch, useAppSelector} from '../../common/hooks';
 import {classes} from "../../common/utils";
 import {sleep} from '../../common/utils';
-import {selectUserId} from '../auth/slice';
+import {selectUser} from '../auth/slice';
 import {
     selectPlayListLoading,
     selectPlayListError,
@@ -134,9 +141,25 @@ const calculateGridWidth = (window: Window | undefined): number => {
     return Math.max(400, Math.min((window?.innerWidth || 675) - 32, 675));
 }
 
+// Helper function to calculate which groups were solved from guesses
+const calculateGroupsSolved = (guesses: number[], numGroups: number, wordsPerGroup: number): number[] => {
+    const groupsSolved: number[] = [];
+
+    for (let groupIndex = 0; groupIndex < numGroups; groupIndex++) {
+        const isGroupSolved = guesses.some(guessNumber =>
+            isGuessCorrect(guessNumber, groupIndex, wordsPerGroup)
+        );
+        if (isGroupSolved) {
+            groupsSolved.push(groupIndex);
+        }
+    }
+
+    return groupsSolved;
+};
+
 const Play = () => {
     const dispatch = useAppDispatch();
-    const userId = useAppSelector(selectUserId);
+    const user = useAppSelector(selectUser);
     const {puzzleId} = useParams();
     const gameState: GameState | null = useAppSelector(state => selectGameStateByPuzzleId(state, puzzleId));
     const puzzle: Puzzle | null = useAppSelector(state => selectPuzzleById(state, puzzleId));
@@ -223,13 +246,22 @@ const Play = () => {
     }, [gridWords]);
 
     useEffect(() => {
-        if (!userId || !puzzleId) return;
+        if (!user?.uid || !puzzleId) return;
 
         // Dispatch if we don't have gameState OR if we have it but puzzle is null (from cache)
         if (!gameState || !puzzle) {
-            dispatch(loadGameStateWithPuzzle({ userId, puzzleId }));
+            dispatch(loadGameStateWithPuzzle({ userId: user.uid, puzzleId }));
         }
-    }, [puzzleId, userId, gameState, puzzle, dispatch]);
+    }, [puzzleId, user?.uid, gameState, puzzle, dispatch]);
+
+    // Create stats document when user first loads the puzzle
+    useEffect(() => {
+        if (!puzzle || !user?.uid || !user?.displayName || !puzzle.id) return;
+
+        createPuzzlePlayerStats(puzzle.id, user.uid, user.displayName).catch(err => {
+            console.error('Failed to create puzzle stats:', err);
+        });
+    }, [puzzle?.id, user?.uid, user?.displayName]);
 
     // Load game state from Redux when component mounts or puzzle changes.
     useEffect(() => {
@@ -292,9 +324,17 @@ const Play = () => {
 
     // Trigger reveal animation when game is lost
     useEffect(() => {
-        if (!puzzle || !gridWords.length) return; // Guard: only run reveal when puzzle and grid are ready
+        if (!puzzle || !gridWords.length || !user?.uid) return; // Guard: only run reveal when puzzle and grid are ready
         if (mistakesRemaining === 0 && !isRevealing) {
             setIsRevealing(true);
+
+            // Update stats for game loss
+            if (puzzle.id && user.uid) {
+                const groupsSolved = calculateGroupsSolved(guesses, puzzle.numGroups, puzzle.wordsPerGroup);
+                updatePuzzlePlayerStats(puzzle.id, user.uid, StatsStatus.LOST, groupsSolved).catch(err => {
+                    console.error('Failed to update puzzle stats:', err);
+                });
+            }
 
             const numGroups = puzzle.numGroups;
             const wordsPerGroup = puzzle.wordsPerGroup;
@@ -336,7 +376,7 @@ const Play = () => {
             // Start the reveal sequence after a short delay
             setTimeout(() => revealNextGroup(gridWords, 0, 0), 500);
         }
-    }, [mistakesRemaining, puzzle, displayedGroups, isRevealing, gridWords]);
+    }, [mistakesRemaining, puzzle, displayedGroups, isRevealing, gridWords, guesses, user?.uid]);
 
     let statusMessage: string | null = null;
     if (loading) {
@@ -425,10 +465,10 @@ const Play = () => {
 
     // Save the current game state to Firestore and update Redux
     const saveCurrentGameState = async (updatedGuesses: number[]) => {
-        if (!userId || !puzzle.id) return;
+        if (!user?.uid || !puzzle.id) return;
         const updatedGameState: GameState = {
             ...gameState,
-            userId,
+            userId: user.uid,
             puzzleId: puzzle.id,
             guesses: updatedGuesses,
             // Denormalize puzzle metadata for efficient list display
@@ -455,6 +495,15 @@ const Play = () => {
         setDisplayedGroups(prev => [...prev, {groupIndex, wasGuessed: true}]);
         setSelectedWords([]); // Clear selection after reveal
         await saveCurrentGameState(updatedGuesses);
+
+        // Check if game is won (all groups solved)
+        const newDisplayedGroupsLength = displayedGroups.length + 1;
+        if (newDisplayedGroupsLength === numGroups && puzzle.id && user?.uid) {
+            const groupsSolved = calculateGroupsSolved(updatedGuesses, numGroups, wordsPerGroup);
+            updatePuzzlePlayerStats(puzzle.id, user.uid, StatsStatus.WON, groupsSolved).catch(err => {
+                console.error('Failed to update puzzle stats:', err);
+            });
+        }
     };
 
     // Handles an incorrect guess: triggers shake and saves state
@@ -467,7 +516,7 @@ const Play = () => {
     };
 
     const handleSubmit = async () => {
-        if (selectedWords.length !== wordsPerGroup || !userId) return;
+        if (selectedWords.length !== wordsPerGroup || !user?.uid) return;
 
         const selectedWordsArray = Array.from(selectedWords);
         const guessNumber = guessToNumber(selectedWordsArray);

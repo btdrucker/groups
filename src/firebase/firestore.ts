@@ -8,7 +8,8 @@ import {
     where,
     serverTimestamp,
     updateDoc,
-    deleteDoc
+    deleteDoc,
+    orderBy
 } from 'firebase/firestore';
 import {db} from './config';
 
@@ -35,6 +36,24 @@ export interface GameState {
     createdAt: number;
     numGroups: number;
     wordsPerGroup: number;
+}
+
+// Stats Status Enum
+export enum StatsStatus {
+    WIP = 'wip',
+    WON = 'won',
+    LOST = 'lost',
+}
+
+// Puzzle Player Stats Interface (for tracking player progress on puzzles)
+export interface PuzzlePlayerStats {
+    id?: string;
+    puzzleId: string;
+    userId: string;
+    userName: string;          // Denormalized from user profile for display
+    status: StatsStatus;
+    groupsSolved: number[];    // Array of group indices (0-based) that were solved
+    lastUpdated: number;       // Timestamp milliseconds
 }
 
 // Create a new puzzle
@@ -223,3 +242,102 @@ export const deletePuzzle = async (puzzleId: string) => {
         return { error: error.message };
     }
 }
+
+// ===== Puzzle Player Stats Functions =====
+
+// Create initial stats document when user starts playing a puzzle
+export const createPuzzlePlayerStats = async (
+    puzzleId: string,
+    userId: string,
+    userName: string
+): Promise<{ error: string | null }> => {
+    try {
+        const statsCollection = collection(db, 'puzzlePlayerStats');
+
+        // Check if stats already exist for this user/puzzle combo
+        const existingQuery = query(
+            statsCollection,
+            where('puzzleId', '==', puzzleId),
+            where('userId', '==', userId)
+        );
+        const existingSnapshot = await getDocs(existingQuery);
+
+        if (!existingSnapshot.empty) {
+            return { error: null }; // Stats already exist, don't create duplicate
+        }
+
+        const statsData: PuzzlePlayerStats = {
+            puzzleId,
+            userId,
+            userName,
+            status: StatsStatus.WIP,
+            groupsSolved: [],
+            lastUpdated: Date.now(),
+        };
+
+        await addDoc(statsCollection, statsData);
+        return { error: null };
+    } catch (error: any) {
+        console.error('Error creating puzzle stats:', error);
+        return { error: error.message };
+    }
+};
+
+// Update stats when game ends
+export const updatePuzzlePlayerStats = async (
+    puzzleId: string,
+    userId: string,
+    status: StatsStatus.WON | StatsStatus.LOST,
+    groupsSolved: number[]
+): Promise<{ error: string | null }> => {
+    try {
+        const statsCollection = collection(db, 'puzzlePlayerStats');
+
+        // Find existing stats document
+        const statsQuery = query(
+            statsCollection,
+            where('puzzleId', '==', puzzleId),
+            where('userId', '==', userId)
+        );
+        const snapshot = await getDocs(statsQuery);
+
+        if (snapshot.empty) {
+            console.warn('No stats document found to update');
+            return { error: 'Stats document not found' };
+        }
+
+        const docRef = doc(db, 'puzzlePlayerStats', snapshot.docs[0].id);
+        await updateDoc(docRef, {
+            status,
+            groupsSolved,
+            lastUpdated: Date.now(),
+        });
+        return { error: null };
+    } catch (error: any) {
+        console.error('Error updating puzzle stats:', error);
+        return { error: error.message };
+    }
+};
+
+// Query stats for a puzzle (author only - enforced by Firestore rules)
+export const getPuzzlePlayerStats = async (puzzleId: string): Promise<{ stats: PuzzlePlayerStats[], error: string | null }> => {
+    try {
+        const statsCollection = collection(db, 'puzzlePlayerStats');
+        const statsQuery = query(
+            statsCollection,
+            where('puzzleId', '==', puzzleId),
+            orderBy('lastUpdated', 'desc')
+        );
+
+        const snapshot = await getDocs(statsQuery);
+        const stats = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        } as PuzzlePlayerStats));
+
+        return { stats, error: null };
+    } catch (error: any) {
+        console.error('Error getting puzzle stats:', error);
+        return { stats: [], error: error.message };
+    }
+};

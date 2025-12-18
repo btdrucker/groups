@@ -3,6 +3,7 @@ import Compose from "../compose/Compose";
 import ComposeList from "../compose-list/ComposeList";
 import Play from "../play/Play";
 import PlayList from "../play-list/PlayList";
+import Stats from "../stats/Stats";
 import {onAuthStateChange} from "../../firebase/auth";
 import styles from "./style.module.css";
 import {useAppDispatch, useAppSelector} from "../../common/hooks";
@@ -37,6 +38,7 @@ const App = () => {
                         <Route path="/compose-list" element={<ComposeList />} />
                         <Route path="/compose" element={<Compose />} />
                         <Route path="/compose/:puzzleId" element={<Compose />} />
+                        <Route path="/stats/:puzzleId" element={<Stats />} />
                         <Route path="/play-list" element={<PlayList />} />
                         <Route path="/play/:puzzleId" element={<Play />} />
                         <Route path="*" element={<Navigate to="/play-list" replace />} />

@@ -26,10 +26,22 @@ const PlayListHeader: React.FC = () => {
     return (
         <div className={styles.headerSticky}>
             <div className={styles.headerContent}>
-                <IconButton onClick={handleMakePuzzles} icon="fa-pen-to-square">Make puzzles</IconButton>
+                <IconButton
+                    onClick={handleMakePuzzles}
+                    icon="fa-pen-to-square"
+                    hideIconOnMobile={true}
+                >
+                    Make puzzles
+                </IconButton>
                 <h2 className={styles.screenTitle}>Play Puzzles!</h2>
                 <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
-                    <IconButton onClick={handleRefresh} icon="fa-refresh">Refresh</IconButton>
+                    <IconButton
+                        onClick={handleRefresh}
+                        icon="fa-refresh"
+                        hideIconOnMobile={true}
+                    >
+                        Refresh
+                    </IconButton>
                     <LogoutButton/>
                 </div>
             </div>

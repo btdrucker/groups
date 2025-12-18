@@ -27,10 +27,10 @@ const ComposeListHeader: React.FC = () => {
     return (
         <div className={styles.headerSticky}>
             <div className={styles.headerContent}>
-                <IconButton onClick={handlePlayPuzzles} icon="fa-puzzle-piece">Play puzzles</IconButton>
+                <IconButton onClick={handlePlayPuzzles} icon="fa-puzzle-piece" hideIconOnMobile={true}>Play puzzles</IconButton>
                 <h2 className={styles.screenTitle}>Make Puzzles!</h2>
                 <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
-                    <IconButton onClick={handleRefresh} icon="fa-refresh">Refresh</IconButton>
+                    <IconButton onClick={handleRefresh} icon="fa-refresh" hideIconOnMobile={true}>Refresh</IconButton>
                     <LogoutButton/>
                 </div>
             </div>

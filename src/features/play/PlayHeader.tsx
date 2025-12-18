@@ -14,7 +14,7 @@ const PlayHeader: React.FC = () => {
     return (
         <div className={styles.headerSticky}>
             <div className={styles.headerContent}>
-                <IconButton onClick={handleBack} icon="fa-arrow-left">Back</IconButton>
+                <IconButton onClick={handleBack} icon="fa-arrow-left" hideIconOnMobile={true}>Back</IconButton>
                 <h2 className={styles.centeredTitle}>Playing puzzle</h2>
                 <LogoutButton />
             </div>

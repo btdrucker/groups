@@ -1,0 +1,147 @@
+.statsTable {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.statsHeader {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 1rem;
+    padding: 0.75rem;
+    font-weight: 600;
+    border-bottom: 2px solid #ddd;
+    background-color: #f5f5f5;
+}
+
+.headerCell {
+    text-align: left;
+}
+
+.headerCell:last-child {
+    text-align: right;
+}
+
+.statsRow {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 1rem;
+    padding: 0.75rem;
+    border-bottom: 1px solid #eee;
+    align-items: center;
+}
+
+.statsRow:hover {
+    background-color: #f9f9f9;
+}
+
+.playerName {
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.status {
+    text-align: center;
+    min-width: 100px;
+}
+
+.statusWon {
+    color: #2ecc40;
+    font-weight: 600;
+}
+
+.statusLost {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.statusWip {
+    color: #888;
+    font-weight: 600;
+}
+
+.groupsSolved {
+    min-width: 120px;
+    text-align: right;
+}
+
+.noGroups {
+    color: #999;
+    font-style: italic;
+}
+
+.groupBadges {
+    display: flex;
+    gap: 0.25rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.groupBadge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    min-width: 28px;
+    text-align: center;
+}
+
+/* Group colors matching Play.tsx */
+.groupBadge[data-group-index="0"] {
+    background-color: rgb(var(--group0Color-rgb));
+    color: #1a1a1a;
+}
+
+.groupBadge[data-group-index="1"] {
+    background-color: rgb(var(--group1Color-rgb));
+    color: #1a1a1a;
+}
+
+.groupBadge[data-group-index="2"] {
+    background-color: rgb(var(--group2Color-rgb));
+    color: white;
+}
+
+.groupBadge[data-group-index="3"] {
+    background-color: rgb(var(--group3Color-rgb));
+    color: white;
+}
+
+.error {
+    color: #dc3545;
+    font-weight: 600;
+    text-align: center;
+    padding: 2rem;
+}
+
+@media (max-width: 600px) {
+    .statsHeader,
+    .statsRow {
+        grid-template-columns: 1fr auto auto;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .playerName {
+        font-size: 0.875rem;
+    }
+
+    .status {
+        min-width: 60px;
+        font-size: 0.75rem;
+    }
+
+    .groupsSolved {
+        min-width: 80px;
+    }
+
+    .groupBadge {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.4rem;
+        min-width: 24px;
+    }
+}

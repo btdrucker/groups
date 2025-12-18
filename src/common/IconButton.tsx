@@ -5,12 +5,13 @@ import {classes} from "./utils";
 interface Props {
     onClick: () => void;
     icon: string;
+    hideIconOnMobile?: boolean;
     disabled?: boolean;
     style?: React.CSSProperties;
     children: React.ReactNode;
 }
 
-const IconButton = ({onClick, icon, disabled, style, children}: Props) => {
+const IconButton = ({onClick, icon, hideIconOnMobile, disabled, style, children}: Props) => {
     return (
         <button
             className={classes(styles.actionButton)}
@@ -18,7 +19,7 @@ const IconButton = ({onClick, icon, disabled, style, children}: Props) => {
             disabled={disabled ?? false}
             style={style ?? {}}
         >
-            <i className={`fa-solid ${icon}`}></i> <span className={styles.hideOnMobile}>{children}</span>
+            <i className={`fa-solid ${icon}`}></i> {hideIconOnMobile ? <span className={styles.hideOnMobile}>{children}</span> : children}
         </button>
     );
 };

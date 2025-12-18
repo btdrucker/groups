@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {Puzzle} from '../../firebase/firestore';
 import styles from './style.module.css';
 import commonStyles from '../../common/style.module.css';
-import { useNavigate } from 'react-router-dom';
-import { isPuzzleComplete } from './slice';
+import {useNavigate} from 'react-router-dom';
+import {isPuzzleComplete} from './slice';
 import IconButton from '../../common/IconButton';
 import {supportsShare} from "../../common/utils";
 
@@ -79,16 +79,23 @@ const ComposeListItem = ({puzzle}: Props) => {
                     ))}
                 </ul>
             </div>
-            {isComplete && (
-                <div onClick={(e) => e.stopPropagation()}>
+            <div onClick={(e) => e.stopPropagation()} style={{display: 'flex', gap: '0.5rem', marginTop: '1rem'}}>
+                {isComplete && (
                     <IconButton
                         onClick={handleShareClick}
                         icon={supportsShare ? "fa-share-from-square" : "fa-copy"}
                     >
                         {supportsShare ? 'Share' : 'Copy share link'}
                     </IconButton>
-                </div>
-            )}
+                )}
+                <IconButton
+                    onClick={() => navigate(`/stats/${puzzle.id}`)}
+                    icon="fa-chart-simple"
+                    style={{marginLeft: 'auto'}}
+                >
+                    Stats
+                </IconButton>
+            </div>
         </div>
     );
 };
