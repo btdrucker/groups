@@ -25,7 +25,20 @@
     text-align: left;
 }
 
+/* Status column - shrink to fit content */
+.headerCell:nth-child(2) {
+    width: 1%;
+    text-align: left;
+}
+
+/* Date column - shrink to fit content */
+.headerCell:nth-child(3) {
+    width: 1%;
+}
+
+/* Solved column - shrink to fit content, right-aligned */
 .headerCell:nth-child(4) {
+    width: 1%;
     text-align: right;
 }
 
@@ -47,29 +60,28 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    width: 100%; /* Take all remaining space */
+    max-width: 0; /* Enable ellipsis */
 }
 
 .status {
     text-align: left;
-    min-width: 100px;
+    white-space: nowrap;
 }
 
 .statusWon {
     color: #2ecc40;
     font-weight: 600;
-    display: block;
 }
 
 .statusLost {
     color: #dc3545;
     font-weight: 600;
-    display: block;
 }
 
 .statusWip {
     color: #888;
     font-weight: 600;
-    display: block;
 }
 
 .date {
@@ -80,8 +92,8 @@
 }
 
 .groupsSolved {
-    min-width: 120px;
     text-align: right;
+    white-space: nowrap;
 }
 
 .noGroups {
@@ -93,7 +105,7 @@
     display: flex;
     gap: 0.25rem;
     justify-content: flex-end;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 
 .groupBadge {
@@ -138,21 +150,24 @@
     .statsHeader th,
     .statsRow td {
         padding: 0.5rem;
-        font-size: 0.875rem;
+        font-size: 0.75rem;
     }
 
     .playerName {
-        font-size: 0.875rem;
-    }
-
-    .status {
         font-size: 0.75rem;
     }
 
+    .date {
+        font-size: 0.75rem;
+    }
 
     .groupBadge {
-        font-size: 0.75rem;
-        padding: 0.2rem 0.4rem;
-        min-width: 24px;
+        font-size: 0.7rem;
+        padding: 0.2rem 0.35rem;
+        min-width: 20px;
+    }
+
+    .groupBadges {
+        gap: 0.2rem;
     }
 }

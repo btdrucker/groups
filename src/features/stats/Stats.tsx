@@ -13,6 +13,7 @@ import {
 import StatsHeader from './StatsHeader';
 import styles from './style.module.css';
 import commonStyles from '../../common/style.module.css';
+import {classes} from "../../common/utils";
 
 const Stats = () => {
     const {puzzleId} = useParams<{puzzleId: string}>();
@@ -78,11 +79,8 @@ const Stats = () => {
     }
 
     const formatDate = (timestamp: number) => {
-        return new Date(timestamp).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
-        });
+        const date = new Date(timestamp);
+        return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
     };
 
     const formatDateTime = (timestamp: number) => {
@@ -108,9 +106,9 @@ const Stats = () => {
                     <thead>
                         <tr className={styles.statsHeader}>
                             <th className={styles.headerCell}>Player</th>
-                            <th className={styles.headerCell}>Status</th>
+                            <th className={styles.headerCell}><i className={classes("fa", "fa-question")}></i></th>
                             <th className={styles.headerCell}>Date</th>
-                            <th className={styles.headerCell}>Groups Solved</th>
+                            <th className={styles.headerCell}>Solved</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -118,9 +116,9 @@ const Stats = () => {
                             <tr key={stat.id} className={styles.statsRow}>
                                 <td className={styles.playerName}>{stat.userName}</td>
                                 <td className={styles.status}>
-                                    {stat.status === StatsStatus.WON && <span className={styles.statusWon}>Won</span>}
-                                    {stat.status === StatsStatus.LOST && <span className={styles.statusLost}>Lost</span>}
-                                    {stat.status === StatsStatus.WIP && <span className={styles.statusWip}>WIP</span>}
+                                    {stat.status === StatsStatus.WON && <i className={classes(styles.statusWon, "fa", "fa-check")}></i>}
+                                    {stat.status === StatsStatus.LOST && <i className={classes(styles.statusLost, "fa", "fa-x")}></i>}
+                                    {stat.status === StatsStatus.WIP && <i className={classes(styles.statusWip,  "fa", "fa-question")}></i>}
                                 </td>
                                 <td className={styles.date}>{formatDate(stat.lastUpdated)}</td>
                                 <td className={styles.groupsSolved}>
