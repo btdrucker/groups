@@ -15,6 +15,7 @@ import {useAutosizeTextarea} from "./useAutosizeTextarea";
 import ComposeHeader from './ComposeHeader';
 import {classes} from "../../common/classUtils";
 import {useNavigate, useParams} from "react-router-dom";
+import IconButton from "../../common/IconButton";
 
 function isPuzzleStarted(puzzle: Puzzle) {
     return puzzle.categories.some(group => group.trim() !== "") ||
@@ -56,11 +57,11 @@ const Compose = () => {
 
     const initialState = puzzleFromRedux || emptyPuzzle;
     const [puzzle, setPuzzle] = useState<Puzzle>(initialState);
-    const [showSaveSuccess, setShowSaveSuccess] = useState(false);
-    const [showSaveError, setShowSaveError] = useState(false);
+    const [messageText, setMessageText] = useState<string | null>(null);
     const [savedPuzzle, setSavedPuzzle] = useState<Puzzle | undefined>(puzzleFromRedux);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [saving, setSaving] = useState(false);
 
     // Load puzzle if editing
     useEffect(() => {
@@ -123,35 +124,27 @@ const Compose = () => {
     }
 
     const handleSave = async () => {
-        if (canSave) {
-            setShowSaveSuccess(false);
-            setShowSaveError(false);
-            await saveOrCreate();
-            if (!composeError) {
-                setSavedPuzzle({...puzzle});
-                setShowSaveSuccess(true);
-                setTimeout(() => {
-                    setShowSaveSuccess(false);
-                }, 3000);
-            } else {
-                setShowSaveError(true);
-                setTimeout(() => {
-                    setShowSaveError(false);
-                }, 3000);
+        if (canSave && !saving) {
+            setSaving(true);
+            try {
+                await saveOrCreate();
+                if (!composeError) {
+                    setSavedPuzzle({...puzzle});
+                    showMessageWithTimeout('Saved successfully!', 3000);
+                } else {
+                    showMessageWithTimeout(composeError, 3000);
+                }
+            } finally {
+                setSaving(false);
             }
         }
     };
 
     const handleBack = async () => {
         if (canSave) {
-            setShowSaveSuccess(false);
-            setShowSaveError(false);
             await saveOrCreate();
             if (composeError) {
-                setShowSaveError(true);
-                setTimeout(() => {
-                    setShowSaveError(false);
-                }, 3000);
+                showMessageWithTimeout(composeError, 3000);
             } else {
                 navigate("/compose-list");
             }
@@ -166,6 +159,50 @@ const Compose = () => {
         await dispatch(deletePuzzleThunk(puzzle.id));
         setDeleting(false);
         navigate("/compose-list");
+    };
+
+    // Shows a message for a set duration
+    const showMessageWithTimeout = (text: string, duration: number = 2000) => {
+        setMessageText(text);
+        setTimeout(() => {
+            setMessageText(null);
+        }, duration);
+    };
+
+    const supportsShare = typeof navigator !== 'undefined' && !!navigator.share;
+
+    const isPuzzleComplete = useMemo(() => {
+        return puzzle.categories.every(cat => cat && cat.trim() !== '') &&
+            puzzle.words.every(word => word && word.trim() !== '');
+    }, [puzzle.categories, puzzle.words]);
+
+    const canShare = useMemo(() => {
+        return !canSave && isPuzzleComplete && !!puzzle.id;
+    }, [canSave, isPuzzleComplete, puzzle.id]);
+
+    const handleShare = async () => {
+        if (!puzzle.id) return;
+
+        const shareUrl = `${window.location.origin}/play/${puzzle.id}`;
+
+        if (supportsShare) {
+            try {
+                await navigator.share({
+                    title: 'Play my puzzle!',
+                    url: shareUrl
+                });
+            } catch (err) {
+                // User cancelled share or error occurred
+                console.error('Share failed:', err);
+            }
+        } else {
+            try {
+                await navigator.clipboard.writeText(shareUrl);
+                showMessageWithTimeout('Link copied!', 2000);
+            } catch (err) {
+                console.error('Copy failed:', err);
+            }
+        }
     };
 
     // Refs for word textareas: numGroups rows x wordsPerGroup cols
@@ -257,35 +294,42 @@ const Compose = () => {
                         </div>
                     </div>
                 ))}
-                {/* Button row: Save left, Delete right */}
+                {/* Overlay message if active */}
+                {messageText && (
+                    <div className={styles.messageOverlay}>
+                        <div className={styles.message}>
+                            {messageText}
+                        </div>
+                    </div>
+                )}
+
+                {/* Button row: Save left, Share middle, Delete right */}
                 <div className={styles.buttonRow}>
-                    <button
-                        className={styles.actionButton}
+                    <IconButton
                         onClick={handleSave}
-                        disabled={!canSave}
+                        icon="fa-floppy-disk"
+                        disabled={!canSave || saving}
                         style={{float: 'left'}}
                     >
-                        Save
-                    </button>
+                        {saving ? 'Saving...' : 'Save'}
+                    </IconButton>
+                    <IconButton
+                        onClick={handleShare}
+                        icon={supportsShare ? "fa-share-from-square" : "fa-copy"}
+                        disabled={!canShare}
+                        style={{margin: '0 auto', display: 'block'}}
+                    >
+                        {supportsShare ? 'Share' : 'Copy share link'}
+                    </IconButton>
                     <button
                         className={classes(styles.actionButton, styles.logout)}
                         onClick={() => setShowDeleteConfirm(true)}
                         style={{float: 'right'}}
                         disabled={deleting}
                     >
-                        Delete
+                        <span className={styles.hideOnMobile}>Delete</span> <i className="fa-solid fa-trash-can"></i>
                     </button>
                 </div>
-                {composeError && showSaveError && (
-                    <span className={styles.saveErrorMessage}>
-                        {composeError}
-                    </span>
-                )}
-                {showSaveSuccess && !composeError && (
-                    <span className={styles.saveSuccessMessage}>
-                        Saved successfully!
-                    </span>
-                )}
                 {showDeleteConfirm && (
                     <div className={styles.overlay}>
                         <div className={styles.confirmDialog}>

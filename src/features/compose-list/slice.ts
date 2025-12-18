@@ -1,5 +1,6 @@
 import {createSlice, createAsyncThunk, createSelector, PayloadAction} from '@reduxjs/toolkit';
 import {Puzzle, getUserPuzzles} from '../../firebase/firestore';
+import {createPuzzleThunk, updatePuzzleThunk, deletePuzzleThunk} from '../compose/slice';
 
 interface ComposeListState {
     puzzles: Puzzle[];
@@ -65,6 +66,22 @@ const composeListSlice = createSlice({
         builder.addCase(fetchUserPuzzles.rejected, (state, action) => {
             state.loading = false;
             state.error = action.payload as string;
+        });
+        // Listen to compose actions to keep list in sync
+        builder.addCase(createPuzzleThunk.fulfilled, (state, action) => {
+            // Add newly created puzzle to the list
+            state.puzzles.push(action.payload);
+        });
+        builder.addCase(updatePuzzleThunk.fulfilled, (state, action) => {
+            // Update existing puzzle in the list
+            const index = state.puzzles.findIndex(p => p.id === action.payload.id);
+            if (index !== -1) {
+                state.puzzles[index] = action.payload;
+            }
+        });
+        builder.addCase(deletePuzzleThunk.fulfilled, (state, action) => {
+            // Remove deleted puzzle from the list
+            state.puzzles = state.puzzles.filter(p => p.id !== action.payload);
         });
     },
 });

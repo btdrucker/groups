@@ -97,3 +97,31 @@
     position: relative;
     padding: 1rem;
 }
+
+.messageOverlay {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    pointer-events: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: auto;
+    height: auto;
+}
+
+.message {
+    text-align: center;
+    padding: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #FF9800;
+    background-color: #FFF3E0;
+    border: 2px solid #FFB74D;
+    border-radius: 8px;
+    margin: 0 0;
+    animation: fadeIn 0.3s ease-in-out;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.12);
+}
