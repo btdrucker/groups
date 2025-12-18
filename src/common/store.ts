@@ -23,7 +23,8 @@ const persistConfig = {
     version: 2,
     // Persist lists to reduce Firestore reads and improve load times
     // Persist compose to prevent loss of work-in-progress on accidental refresh
-    whitelist: ['composeList', 'playList', 'compose'],
+    // Persist stats to cache puzzle player stats across sessions
+    whitelist: ['composeList', 'playList', 'compose', 'stats'],
     migrate: (state: any) => {
         // Migration for version 2: Convert old gameStates array to gameStatesWithPuzzles
         if (state && state.playList) {

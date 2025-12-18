@@ -8,7 +8,7 @@ import {
     selectStatsLoading,
     selectStatsError,
     selectStatsLastUpdated,
-    clearStats
+    clearCurrentStats
 } from './slice';
 import StatsHeader from './StatsHeader';
 import styles from './style.module.css';
@@ -24,15 +24,15 @@ const Stats = () => {
     const error = useAppSelector(selectStatsError);
     const lastUpdated = useAppSelector(selectStatsLastUpdated);
 
-    const loadStats = () => {
+    const loadStats = (force = false) => {
         if (!puzzleId) return;
-        dispatch(loadStatsThunk(puzzleId));
+        dispatch(loadStatsThunk({ puzzleId, force }));
     };
 
     useEffect(() => {
-        loadStats();
+        loadStats(); // Loads from cache if available
         return () => {
-            dispatch(clearStats());
+            dispatch(clearCurrentStats());
         };
     }, [puzzleId]);
 
@@ -41,7 +41,7 @@ const Stats = () => {
     };
 
     const handleRefresh = () => {
-        loadStats();
+        loadStats(true); // Force refresh from server
     };
 
     if (loading) {
