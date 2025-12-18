@@ -1,4 +1,4 @@
-import React, {useState, useMemo, useRef, useEffect} from "react";
+import React, {useState, useMemo, useRef, useEffect, RefObject} from "react";
 import styles from "./style.module.css";
 import {Puzzle} from '../../firebase/firestore';
 import {useAppDispatch, useAppSelector} from '../../common/hooks';
@@ -188,6 +188,7 @@ const Compose = () => {
             try {
                 await navigator.share({
                     title: 'Play my puzzle!',
+                    text: 'Check out this puzzle I created:',
                     url: shareUrl
                 });
             } catch (err) {
@@ -210,13 +211,13 @@ const Compose = () => {
     );
 
     // Create autosize refs for group name textareas (dynamically based on numGroups)
-    const groupAutosizeRefs: React.MutableRefObject<HTMLTextAreaElement | null>[] = [];
+    const groupAutosizeRefs: RefObject<HTMLTextAreaElement | null>[] = [];
     for (let i = 0; i < puzzle.numGroups; i++) {
         groupAutosizeRefs.push(useAutosizeTextarea(puzzle.categories[i] || ''));
     }
 
     // Create a 2D array of autosize refs for word textareas (hooks must be called at top level)
-    const wordAutosizeRefs: React.MutableRefObject<HTMLTextAreaElement | null>[][] = [];
+    const wordAutosizeRefs: RefObject<HTMLTextAreaElement | null>[][] = [];
     for (let groupIndex = 0; groupIndex < puzzle.numGroups; groupIndex++) {
         wordAutosizeRefs[groupIndex] = [];
         for (let wordIndex = 0; wordIndex < puzzle.wordsPerGroup; wordIndex++) {
