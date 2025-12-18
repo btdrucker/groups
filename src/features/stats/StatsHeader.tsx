@@ -15,7 +15,7 @@ const StatsHeader = ({onBack, onRefresh}: StatsHeaderProps) => {
                     Back
                 </IconButton>
                 <IconButton onClick={onRefresh} icon="fa-arrows-rotate">
-                    <span className={commonStyles.hideOnMobile}>Refresh</span>
+                    Refresh
                 </IconButton>
             </div>
         </div>

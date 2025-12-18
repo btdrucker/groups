@@ -83,40 +83,44 @@ const Stats = () => {
         <>
             <StatsHeader onBack={handleBack} onRefresh={handleRefresh} />
             <div className={commonStyles.screenContainer}>
-                <div className={styles.statsTable}>
-                    <div className={styles.statsHeader}>
-                        <div className={styles.headerCell}>Player</div>
-                        <div className={styles.headerCell}>Status</div>
-                        <div className={styles.headerCell}>Groups Solved</div>
-                    </div>
-                    {stats.map((stat) => (
-                        <div key={stat.id} className={styles.statsRow}>
-                            <div className={styles.playerName}>{stat.userName}</div>
-                            <div className={styles.status}>
-                                {stat.status === StatsStatus.WON && <span className={styles.statusWon}>Won</span>}
-                                {stat.status === StatsStatus.LOST && <span className={styles.statusLost}>Lost</span>}
-                                {stat.status === StatsStatus.WIP && <span className={styles.statusWip}>In Progress</span>}
-                            </div>
-                            <div className={styles.groupsSolved}>
-                                {stat.groupsSolved.length === 0 ? (
-                                    <span className={styles.noGroups}>None</span>
-                                ) : (
-                                    <div className={styles.groupBadges}>
-                                        {stat.groupsSolved.map(groupIndex => (
-                                            <span
-                                                key={groupIndex}
-                                                className={styles.groupBadge}
-                                                data-group-index={groupIndex}
-                                            >
-                                                {groupIndex + 1}
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                <table className={styles.statsTable}>
+                    <thead>
+                        <tr className={styles.statsHeader}>
+                            <th className={styles.headerCell}>Player</th>
+                            <th className={styles.headerCell}>Status</th>
+                            <th className={styles.headerCell}>Groups Solved</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {stats.map((stat) => (
+                            <tr key={stat.id} className={styles.statsRow}>
+                                <td className={styles.playerName}>{stat.userName}</td>
+                                <td className={styles.status}>
+                                    {stat.status === StatsStatus.WON && <span className={styles.statusWon}>Won</span>}
+                                    {stat.status === StatsStatus.LOST && <span className={styles.statusLost}>Lost</span>}
+                                    {stat.status === StatsStatus.WIP && <span className={styles.statusWip}>WIP</span>}
+                                </td>
+                                <td className={styles.groupsSolved}>
+                                    {stat.groupsSolved.length === 0 ? (
+                                        <span className={styles.noGroups}>None</span>
+                                    ) : (
+                                        <div className={styles.groupBadges}>
+                                            {stat.groupsSolved.map(groupIndex => (
+                                                <span
+                                                    key={groupIndex}
+                                                    className={styles.groupBadge}
+                                                    data-group-index={groupIndex}
+                                                >
+                                                    {groupIndex + 1}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
         </>
     );
