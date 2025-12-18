@@ -1,6 +1,6 @@
 import React, {useState} from "react";
 import styles from "./style.module.css";
-import {classes} from "../../common/classUtils";
+import {classes} from "../../common/utils";
 import {isValidEmail} from "../../common/utils";
 import {useAppDispatch, useAppSelector} from "../../common/hooks";
 import {
@@ -96,4 +96,3 @@ const LoginForm = () => {
 };
 
 export default LoginForm;
-

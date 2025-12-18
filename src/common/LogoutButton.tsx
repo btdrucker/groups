@@ -2,7 +2,7 @@ import React from "react";
 import { useAppDispatch } from "./hooks";
 import { signOutThunk } from "../features/auth/slice";
 import styles from "./style.module.css";
-import {classes} from "./classUtils";
+import {classes} from "./utils";
 
 const LogoutButton: React.FC = () => {
     const dispatch = useAppDispatch();
@@ -17,4 +17,3 @@ const LogoutButton: React.FC = () => {
 };
 
 export default LogoutButton;
-

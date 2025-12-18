@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import {Puzzle} from '../../firebase/firestore';
 import styles from './style.module.css';
+import commonStyles from '../../common/style.module.css';
 import { useNavigate } from 'react-router-dom';
 import { isPuzzleComplete } from './slice';
+import IconButton from '../../common/IconButton';
+import {supportsShare} from "../../common/utils";
 
 interface Props {
     puzzle: Puzzle;
@@ -11,7 +14,7 @@ interface Props {
 const ComposeListItem = ({puzzle}: Props) => {
     const navigate = useNavigate();
     const isComplete = isPuzzleComplete(puzzle);
-    const [showCopyMessage, setShowCopyMessage] = useState(false);
+    const [messageText, setMessageText] = useState<string | null>(null);
 
     const handleCardClick = (e: React.MouseEvent) => {
         // Don't trigger card click if clicking a button
@@ -23,16 +26,28 @@ const ComposeListItem = ({puzzle}: Props) => {
         }
     };
 
-    const handleShareClick = async (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (puzzle.id) {
-            const shareUrl = `${window.location.origin}/play/${puzzle.id}`;
+    const handleShareClick = async () => {
+        if (!puzzle.id) return;
+
+        const shareUrl = `${window.location.origin}/play/${puzzle.id}`;
+
+        if (supportsShare) {
+            try {
+                await navigator.share({
+                    title: 'Play my puzzle!',
+                    url: shareUrl
+                });
+            } catch (err) {
+                // User cancelled share or error occurred
+                console.error('Share failed:', err);
+            }
+        } else {
             try {
                 await navigator.clipboard.writeText(shareUrl);
-                setShowCopyMessage(true);
-                setTimeout(() => setShowCopyMessage(false), 2000);
+                setMessageText('Link copied!');
+                setTimeout(() => setMessageText(null), 2000);
             } catch (err) {
-                // Optionally handle error
+                console.error('Copy failed:', err);
             }
         }
     };
@@ -42,6 +57,15 @@ const ComposeListItem = ({puzzle}: Props) => {
             className={styles.puzzleCard}
             onClick={handleCardClick}
         >
+            {/* Overlay message if active */}
+            {messageText && (
+                <div className={commonStyles.messageOverlay}>
+                    <div className={commonStyles.message}>
+                        {messageText}
+                    </div>
+                </div>
+            )}
+
             {puzzle.createdAt && (
                 <p className={styles.createdDate}>
                     {new Date(puzzle.createdAt).toLocaleDateString()}
@@ -55,12 +79,14 @@ const ComposeListItem = ({puzzle}: Props) => {
                 </ul>
             </div>
             {isComplete && (
-                <button
-                    className={styles.actionButton}
-                    onClick={handleShareClick}
-                >
-                    {showCopyMessage ? 'Link copied!' : 'Get share link'}
-                </button>
+                <div onClick={(e) => e.stopPropagation()}>
+                    <IconButton
+                        onClick={handleShareClick}
+                        icon={supportsShare ? "fa-share-from-square" : "fa-copy"}
+                    >
+                        {supportsShare ? 'Share' : 'Copy share link'}
+                    </IconButton>
+                </div>
             )}
         </div>
     );

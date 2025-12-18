@@ -1,14 +1,8 @@
-import React, { useState } from "react";
+import React, {useState} from "react";
 import styles from "./style.module.css";
-import { classes } from "../../common/classUtils";
-import { isValidEmail } from "../../common/utils";
-import { useAppDispatch, useAppSelector } from "../../common/hooks";
-import {
-    resetPasswordThunk,
-    setAuthMode,
-    selectAuthLoading,
-    selectAuthError
-} from "./slice";
+import {classes, isValidEmail} from "../../common/utils";
+import {useAppDispatch, useAppSelector} from "../../common/hooks";
+import {AuthMode, resetPasswordThunk, selectAuthError, selectAuthLoading, setAuthMode} from "./slice";
 
 const ResetPasswordForm: React.FC = () => {
     const dispatch = useAppDispatch();
@@ -51,7 +45,7 @@ const ResetPasswordForm: React.FC = () => {
             <div className={styles.authLinks}>
                 <button
                     className={styles.linkButton}
-                    onClick={() => dispatch(setAuthMode('login'))}
+                    onClick={() => dispatch(setAuthMode(AuthMode.LOGIN))}
                     disabled={loading}
                 >
                     Back to sign in
@@ -62,4 +56,3 @@ const ResetPasswordForm: React.FC = () => {
 };
 
 export default ResetPasswordForm;
-

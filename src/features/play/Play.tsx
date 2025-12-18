@@ -3,7 +3,7 @@ import {useParams} from 'react-router-dom';
 import styles from './style.module.css';
 import {GameState, Puzzle, PUZZLE_NOT_FOUND} from '../../firebase/firestore';
 import {useAppDispatch, useAppSelector} from '../../common/hooks';
-import {classes} from "../../common/classUtils";
+import {classes} from "../../common/utils";
 import {sleep} from '../../common/utils';
 import {selectUserId} from '../auth/slice';
 import {

@@ -13,9 +13,10 @@ import {
 } from './slice';
 import {useAutosizeTextarea} from "./useAutosizeTextarea";
 import ComposeHeader from './ComposeHeader';
-import {classes} from "../../common/classUtils";
+import {classes} from "../../common/utils";
 import {useNavigate, useParams} from "react-router-dom";
 import IconButton from "../../common/IconButton";
+import {supportsShare} from "../../common/utils";
 
 function isPuzzleStarted(puzzle: Puzzle) {
     return puzzle.categories.some(group => group.trim() !== "") ||
@@ -168,8 +169,6 @@ const Compose = () => {
             setMessageText(null);
         }, duration);
     };
-
-    const supportsShare = typeof navigator !== 'undefined' && !!navigator.share;
 
     const isPuzzleComplete = useMemo(() => {
         return puzzle.categories.every(cat => cat && cat.trim() !== '') &&

@@ -1,6 +1,6 @@
 import React from "react";
 import styles from "./style.module.css";
-import {classes} from "./classUtils";
+import {classes} from "./utils";
 
 interface Props {
     onClick: () => void;
