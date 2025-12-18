@@ -6,12 +6,14 @@ import composeReducer from '../features/compose/slice'
 import authReducer from '../features/auth/slice'
 import composeListReducer from '../features/compose-list/slice'
 import playListReducer from '../features/play-list/slice'
+import statsReducer from '../features/stats/slice'
 
 const rootReducer = combineReducers({
     auth: authReducer,
     composeList: composeListReducer,
     compose: composeReducer,
     playList: playListReducer,
+    stats: statsReducer,
 })
 
 // Persist configuration - cache lists to avoid redundant Firestore reads

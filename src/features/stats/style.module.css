@@ -1,3 +1,10 @@
+.lastUpdated {
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    color: #666;
+    font-size: 0.875rem;
+}
+
 .statsTable {
     width: 100%;
     border-collapse: collapse;
@@ -18,7 +25,7 @@
     text-align: left;
 }
 
-.headerCell:nth-child(3) {
+.headerCell:nth-child(4) {
     text-align: right;
 }
 
@@ -63,6 +70,13 @@
     color: #888;
     font-weight: 600;
     display: block;
+}
+
+.date {
+    text-align: left;
+    white-space: nowrap;
+    color: #666;
+    font-size: 0.9rem;
 }
 
 .groupsSolved {

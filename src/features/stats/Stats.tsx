@@ -1,6 +1,15 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect} from 'react';
 import {useParams, useNavigate} from 'react-router-dom';
-import {PuzzlePlayerStats, StatsStatus, getPuzzlePlayerStats} from '../../firebase/firestore';
+import {StatsStatus} from '../../firebase/firestore';
+import {useAppDispatch, useAppSelector} from '../../common/hooks';
+import {
+    loadStatsThunk,
+    selectStats,
+    selectStatsLoading,
+    selectStatsError,
+    selectStatsLastUpdated,
+    clearStats
+} from './slice';
 import StatsHeader from './StatsHeader';
 import styles from './style.module.css';
 import commonStyles from '../../common/style.module.css';
@@ -8,34 +17,23 @@ import commonStyles from '../../common/style.module.css';
 const Stats = () => {
     const {puzzleId} = useParams<{puzzleId: string}>();
     const navigate = useNavigate();
+    const dispatch = useAppDispatch();
 
-    const [stats, setStats] = useState<PuzzlePlayerStats[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const stats = useAppSelector(selectStats);
+    const loading = useAppSelector(selectStatsLoading);
+    const error = useAppSelector(selectStatsError);
+    const lastUpdated = useAppSelector(selectStatsLastUpdated);
 
-    const loadStats = async () => {
+    const loadStats = () => {
         if (!puzzleId) return;
-
-        setLoading(true);
-        setError(null);
-
-        try {
-            const {stats: playerStats, error: statsError} = await getPuzzlePlayerStats(puzzleId);
-            if (statsError) {
-                setError('Failed to load stats. Please try again.');
-            } else {
-                setStats(playerStats);
-            }
-        } catch (err: any) {
-            console.error('Failed to load stats:', err);
-            setError('Failed to load stats. Please try again.');
-        } finally {
-            setLoading(false);
-        }
+        dispatch(loadStatsThunk(puzzleId));
     };
 
     useEffect(() => {
         loadStats();
+        return () => {
+            dispatch(clearStats());
+        };
     }, [puzzleId]);
 
     const handleBack = () => {
@@ -79,15 +77,39 @@ const Stats = () => {
         );
     }
 
+    const formatDate = (timestamp: number) => {
+        return new Date(timestamp).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
+    };
+
+    const formatDateTime = (timestamp: number) => {
+        return new Date(timestamp).toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+        });
+    };
+
     return (
         <>
             <StatsHeader onBack={handleBack} onRefresh={handleRefresh} />
             <div className={commonStyles.screenContainer}>
+                {lastUpdated && (
+                    <div className={styles.lastUpdated}>
+                        Last updated: {formatDateTime(lastUpdated)}
+                    </div>
+                )}
                 <table className={styles.statsTable}>
                     <thead>
                         <tr className={styles.statsHeader}>
                             <th className={styles.headerCell}>Player</th>
                             <th className={styles.headerCell}>Status</th>
+                            <th className={styles.headerCell}>Date</th>
                             <th className={styles.headerCell}>Groups Solved</th>
                         </tr>
                     </thead>
@@ -100,6 +122,7 @@ const Stats = () => {
                                     {stat.status === StatsStatus.LOST && <span className={styles.statusLost}>Lost</span>}
                                     {stat.status === StatsStatus.WIP && <span className={styles.statusWip}>WIP</span>}
                                 </td>
+                                <td className={styles.date}>{formatDate(stat.lastUpdated)}</td>
                                 <td className={styles.groupsSolved}>
                                     {stat.groupsSolved.length === 0 ? (
                                         <span className={styles.noGroups}>None</span>
