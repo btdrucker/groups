@@ -49,8 +49,8 @@ const ComposeListItem = ({puzzle}: Props) => {
             )}
             <div className={styles.puzzleDetails}>
                 <ul className={styles.categoriesList}>
-                    {puzzle.categories.map((cat, idx) => (
-                        <li key={idx} className={styles.categoryItem}>{cat}</li>
+                    {puzzle.categories.map((cat, index) => (
+                        <li key={index} className={styles.categoryItem}>{cat}</li>
                     ))}
                 </ul>
             </div>

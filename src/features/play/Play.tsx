@@ -1,7 +1,7 @@
 import React, {useEffect, useState, useRef, useLayoutEffect} from 'react';
 import {useParams} from 'react-router-dom';
 import styles from './style.module.css';
-import {Puzzle, PUZZLE_NOT_FOUND} from '../../firebase/firestore';
+import {GameState, Puzzle, PUZZLE_NOT_FOUND} from '../../firebase/firestore';
 import {useAppDispatch, useAppSelector} from '../../common/hooks';
 import {classes} from "../../common/classUtils";
 import {sleep} from '../../common/utils';
@@ -9,6 +9,8 @@ import {selectUserId} from '../auth/slice';
 import {
     selectPlayListLoading,
     selectPlayListError,
+    selectGameStateByPuzzleId,
+    selectPuzzleById,
     saveAndUpdateGameState,
     loadGameStateWithPuzzle,
 } from '../play-list/slice';
@@ -24,21 +26,6 @@ interface Word {
     indexInPuzzle: number;
     indexInGrid: number;
 }
-
-// Calculate the number of groups in a puzzle
-const getNumGroups = (puzzle: Puzzle): number => {
-    return puzzle.categories.length;
-};
-
-// Calculate the number of words per group in a puzzle
-const getWordsPerGroup = (puzzle: Puzzle): number => {
-    return puzzle.words.length / puzzle.categories.length;
-};
-
-// Calculate the number of available mistakes (same as number of groups)
-const getAvailableMistakes = (puzzle: Puzzle): number => {
-    return puzzle.categories.length;
-};
 
 // Converts a guess (set of words) to a number where each bit represents whether a word was selected.
 // The bit position is determined by the word's position in the puzzle's words array.
@@ -111,13 +98,13 @@ const moveGroupWordsToGridRow = (words: Word[], groupIndex: number, targetRow: n
     return updatedWords;
 }
 
-const shuffleWordsFromGridRow = (words: Word[], startRow: number, wordsPerCategory: number): Word[] => {
+const shuffleWordsFromGridRow = (words: Word[], startRow: number, wordsPerGroup: number): Word[] => {
     const updatedWords = deepCopyWords(words);
 
     const indicesOfWordsToShuffle: number[] = [];
     const gridIndicesOfWordsToShuffle: number[] = [];
     for (let i = 0; i < words.length; i++) {
-        if (updatedWords[i].indexInGrid >= startRow * wordsPerCategory) {
+        if (updatedWords[i].indexInGrid >= startRow * wordsPerGroup) {
             indicesOfWordsToShuffle.push(i);
             gridIndicesOfWordsToShuffle.push(updatedWords[i].indexInGrid);
         }
@@ -132,11 +119,11 @@ const shuffleWordsFromGridRow = (words: Word[], startRow: number, wordsPerCatego
     return updatedWords;
 }
 
-const toggleWordSelection = (word: Word, prev: Word[], wordsPerCategory: number): Word[] => {
+const toggleWordSelection = (word: Word, prev: Word[], wordsPerGroup: number): Word[] => {
     const exists = prev.some(w => w.indexInPuzzle === word.indexInPuzzle);
     if (exists) {
         return prev.filter(w => w.indexInPuzzle !== word.indexInPuzzle);
-    } else if (prev.length < wordsPerCategory) {
+    } else if (prev.length < wordsPerGroup) {
         return [...prev, word];
     }
     return prev;
@@ -147,18 +134,12 @@ const calculateGridWidth = (window: Window | undefined): number => {
     return Math.max(400, Math.min((window?.innerWidth || 675) - 32, 675));
 }
 
-const selectGameStateWithPuzzleById = (state: any, puzzleId: string) => {
-    const gameStatesWithPuzzles = state.playList?.gameStatesWithPuzzles || [];
-    return gameStatesWithPuzzles.find((gsp: any) => gsp.gameState.puzzleId === puzzleId);
-};
-
 const Play = () => {
     const dispatch = useAppDispatch();
     const userId = useAppSelector(selectUserId);
     const {puzzleId} = useParams();
-    const currentPuzzleId = puzzleId;
-    const gameStateWithPuzzle = useAppSelector(state => currentPuzzleId ? selectGameStateWithPuzzleById(state, currentPuzzleId) : undefined);
-    const currentPuzzle: Puzzle | null = gameStateWithPuzzle?.puzzle ?? null;
+    const gameState: GameState | null = useAppSelector(state => selectGameStateByPuzzleId(state, puzzleId));
+    const puzzle: Puzzle | null = useAppSelector(state => selectPuzzleById(state, puzzleId));
     const loading = useAppSelector(selectPlayListLoading);
     const error = useAppSelector(selectPlayListError);
 
@@ -172,11 +153,11 @@ const Play = () => {
     const [gridWidth, setGridWidth] = useState<number>(() => calculateGridWidth(window));
 
     // Derive guesses and mistakes from Redux state
-    const guesses = gameStateWithPuzzle?.gameState.guesses || [];
-    const mistakesRemaining = currentPuzzle && gameStateWithPuzzle ? (() => {
-        const numGroups = getNumGroups(currentPuzzle);
-        const wordsPerGroup = getWordsPerGroup(currentPuzzle);
-        const availableMistakes = getAvailableMistakes(currentPuzzle);
+    const guesses = gameState?.guesses || [];
+    const mistakesRemaining = puzzle && gameState ? (() => {
+        const numGroups = puzzle.numGroups;
+        const wordsPerGroup = puzzle.wordsPerGroup;
+        const availableMistakes = puzzle.numGroups;
         const mistakeCount = guesses.filter((guessNumber: number) => {
             // Count incorrect guesses (guesses that don't match any group)
             for (let groupIndex = 0; groupIndex < numGroups; groupIndex++) {
@@ -242,25 +223,22 @@ const Play = () => {
     }, [gridWords]);
 
     useEffect(() => {
-        if (!userId || !currentPuzzleId) return;
+        if (!userId || !puzzleId) return;
 
-        // Dispatch if we don't have gameStateWithPuzzle OR if we have it but puzzle is null (from cache)
-        if (!gameStateWithPuzzle || !currentPuzzle) {
-            dispatch(loadGameStateWithPuzzle({ userId, puzzleId: currentPuzzleId }));
+        // Dispatch if we don't have gameState OR if we have it but puzzle is null (from cache)
+        if (!gameState || !puzzle) {
+            dispatch(loadGameStateWithPuzzle({ userId, puzzleId }));
         }
-    }, [currentPuzzleId, userId, gameStateWithPuzzle, currentPuzzle, dispatch]);
+    }, [puzzleId, userId, gameState, puzzle, dispatch]);
 
     // Load game state from Redux when component mounts or puzzle changes.
     useEffect(() => {
-        if (!currentPuzzle || !gameStateWithPuzzle) return;
+        if (!puzzle || !gameState) return;
 
         // Only initialize if this is a new puzzle (not just a guess update)
-        const puzzleId = currentPuzzle.id || null;
+        const puzzleId = puzzle.id || null;
         if (initializedPuzzleId.current === puzzleId) return;
         initializedPuzzleId.current = puzzleId;
-
-        // Type assertion: currentPuzzle is guaranteed to be Puzzle at this point
-        const puzzle: Puzzle = currentPuzzle;
 
         const startingDisplayedGroups: DisplayedGroup[] = [];
         let startingMistakes = 0;
@@ -271,12 +249,12 @@ const Play = () => {
             indexInGrid: indexInPuzzle
         }));
 
-        const numGroups = getNumGroups(puzzle);
-        const wordsPerGroup = getWordsPerGroup(puzzle);
+        const numGroups = puzzle.numGroups;
+        const wordsPerGroup = puzzle.wordsPerGroup;
 
         // Reconstruct the game state from the saved guesses.
-        if (gameStateWithPuzzle.gameState.guesses.length > 0) {
-            gameStateWithPuzzle.gameState.guesses.forEach((guessNumber: number) => {
+        if (gameState.guesses.length > 0) {
+            gameState.guesses.forEach((guessNumber: number) => {
                 // Check if this guess was correct
                 let wasCorrect = false;
                 for (let groupIndex = 0; groupIndex < numGroups; groupIndex++) {
@@ -310,16 +288,16 @@ const Play = () => {
 
         words = shuffleWordsFromGridRow(words, startingDisplayedGroups.length, wordsPerGroup)
         setGridWords(words);
-    }, [currentPuzzleId, currentPuzzle]);
+    }, [puzzleId, puzzle]);
 
     // Trigger reveal animation when game is lost
     useEffect(() => {
-        if (!currentPuzzle || !gridWords.length) return; // Guard: only run reveal when puzzle and grid are ready
+        if (!puzzle || !gridWords.length) return; // Guard: only run reveal when puzzle and grid are ready
         if (mistakesRemaining === 0 && !isRevealing) {
             setIsRevealing(true);
 
-            const numGroups = getNumGroups(currentPuzzle);
-            const wordsPerGroup = getWordsPerGroup(currentPuzzle);
+            const numGroups = puzzle.numGroups;
+            const wordsPerGroup = puzzle.wordsPerGroup;
 
             // Start revealing unsolved groups one by one
             const revealNextGroup = (gridWords: Word[], groupIndex: number, row: number) => {
@@ -358,12 +336,12 @@ const Play = () => {
             // Start the reveal sequence after a short delay
             setTimeout(() => revealNextGroup(gridWords, 0, 0), 500);
         }
-    }, [mistakesRemaining, currentPuzzle, displayedGroups, isRevealing, gridWords]);
+    }, [mistakesRemaining, puzzle, displayedGroups, isRevealing, gridWords]);
 
     let statusMessage: string | null = null;
     if (loading) {
         statusMessage = 'Loading...';
-    } else if (error === PUZZLE_NOT_FOUND || !currentPuzzle) {
+    } else if (error === PUZZLE_NOT_FOUND || !puzzle) {
         statusMessage = "I can't find that puzzle!";
     } else if (error) {
         statusMessage = error;
@@ -380,17 +358,16 @@ const Play = () => {
         );
     }
 
-    if (!currentPuzzle) {
+    if (!puzzle) {
         // This is just for type safety, should never happen due to above
         return null;
     }
 
-    // At this point, currentPuzzle is guaranteed to exist
+    // At this point, puzzle is guaranteed to exist
     // Create a non-null constant for use in closures where TypeScript loses track of the type guard
-    const puzzle: Puzzle = currentPuzzle;
-    const numGroups = getNumGroups(puzzle);
-    const wordsPerGroup = getWordsPerGroup(puzzle);
-    const availableMistakes = getAvailableMistakes(puzzle);
+    const numGroups = puzzle.numGroups;
+    const wordsPerGroup = puzzle.wordsPerGroup;
+    const availableMistakes = puzzle.numGroups;
 
     const handleWordClick = (word: Word) => {
         setSelectedWords(prev => toggleWordSelection(word, prev, wordsPerGroup));
@@ -449,18 +426,18 @@ const Play = () => {
     // Save the current game state to Firestore and update Redux
     const saveCurrentGameState = async (updatedGuesses: number[]) => {
         if (!userId || !puzzle.id) return;
-        const gameState = {
-            ...gameStateWithPuzzle.gameState,
+        const updatedGameState: GameState = {
+            ...gameState,
             userId,
             puzzleId: puzzle.id,
             guesses: updatedGuesses,
             // Denormalize puzzle metadata for efficient list display
             creatorName: puzzle.creatorName,
-            createdAt: puzzle.createdAt,
+            createdAt: puzzle.createdAt ?? Date.now(),
             numGroups: puzzle.numGroups,
             wordsPerGroup: puzzle.wordsPerGroup,
         };
-        await dispatch(saveAndUpdateGameState({ gameState }));
+        await dispatch(saveAndUpdateGameState({ gameState: updatedGameState }));
     };
 
     // Handles a correct guess: updates solved groups, removes words, and saves state
@@ -533,12 +510,12 @@ const Play = () => {
     const isGameLost = mistakesRemaining === 0;
     const isComplete = displayedGroups.length === numGroups && !isGameLost;
 
-    // Calculate cell width (4 columns, 3 gaps of 0.75rem)
+    // Calculate cell width (`wordsPerGroup` columns, 3 gaps of 0.75rem)
     const gapPx = 0.5 * 32; // Assuming 1rem = 16px
     const totalGap = (wordsPerGroup - 1) * gapPx;
     const cellSize = (gridWidth - totalGap) / wordsPerGroup;
 
-    if (loading || !currentPuzzle || !gridWords.length) {
+    if (loading || !puzzle || !gridWords.length) {
         return (
             <>
                 <PlayHeader/>
@@ -594,8 +571,8 @@ const Play = () => {
                     {/* Show remaining words in grid */}
                     {gridWords.filter(word => {
                         // Exclude words in guessed groups
-                        const groupIdx = Math.floor(word.indexInPuzzle / wordsPerGroup);
-                        return !displayedGroups.some(group => group.groupIndex === groupIdx);
+                        const groupIndex = Math.floor(word.indexInPuzzle / wordsPerGroup);
+                        return !displayedGroups.some(group => group.groupIndex === groupIndex);
                     }).map(word => (
                         <button
                             key={word.indexInPuzzle}

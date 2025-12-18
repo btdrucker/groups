@@ -3,9 +3,8 @@ import { GameState, getUserGameStates, getPuzzle, Puzzle, getGameState, saveGame
 import { RootState } from '../../common/store';
 
 // Helper function to check if a guess matches a group
-const isGuessCorrect = (guessNumber: number, groupIndex: number): boolean => {
+const isGuessCorrect = (guessNumber: number, groupIndex: number, wordsPerGroup: number): boolean => {
     // A guess is correct if all words in the group are selected
-    const wordsPerGroup = 4;  // TODO: Make this dynamic based on game state
     const groupMask = ((1 << wordsPerGroup) - 1) << (groupIndex * wordsPerGroup);
     const guessMasked = guessNumber & groupMask;
     // Check if all bits in the group are set
@@ -15,6 +14,7 @@ const isGuessCorrect = (guessNumber: number, groupIndex: number): boolean => {
 // Helper function to count correct guesses and mistakes for a game state
 const countGuessStats = (gameState: GameState): { correctGuesses: number; mistakes: number } => {
     const numGroups = gameState.numGroups;
+    const wordsPerGroup = gameState.wordsPerGroup;
 
     let correctCount = 0;
     let incorrectCount = 0;
@@ -22,7 +22,7 @@ const countGuessStats = (gameState: GameState): { correctGuesses: number; mistak
     gameState.guesses.forEach(guessNumber => {
         let wasCorrect = false;
         for (let groupIndex = 0; groupIndex < numGroups; groupIndex++) {
-            if (isGuessCorrect(guessNumber, groupIndex)) {
+            if (isGuessCorrect(guessNumber, groupIndex, wordsPerGroup)) {
                 correctCount++;
                 wasCorrect = true;
                 break;
@@ -201,9 +201,9 @@ const playListSlice = createSlice({
     reducers: {
         updateGameStateLocally: (state, action: PayloadAction<GameState>) => {
             const gameState = action.payload;
-            const idx = state.gameStatesWithPuzzles.findIndex(gsp => gsp.gameState.puzzleId === gameState.puzzleId);
-            if (idx !== -1) {
-                state.gameStatesWithPuzzles[idx].gameState = gameState;
+            const index = state.gameStatesWithPuzzles.findIndex(gsp => gsp.gameState.puzzleId === gameState.puzzleId);
+            if (index !== -1) {
+                state.gameStatesWithPuzzles[index].gameState = gameState;
             } else {
                 console.error("Can't find game state to update locally:", gameState.id);
             }
@@ -235,9 +235,9 @@ const playListSlice = createSlice({
             const { gameState, puzzle } = action.payload;
 
             // Update or add to gameStatesWithPuzzles
-            const idx = state.gameStatesWithPuzzles.findIndex(gsp => gsp.gameState.puzzleId === gameState.puzzleId);
-            if (idx !== -1) {
-                state.gameStatesWithPuzzles[idx] = { gameState, puzzle };
+            const index = state.gameStatesWithPuzzles.findIndex(gsp => gsp.gameState.puzzleId === gameState.puzzleId);
+            if (index !== -1) {
+                state.gameStatesWithPuzzles[index] = { gameState, puzzle };
             } else {
                 state.gameStatesWithPuzzles.push({ gameState, puzzle });
             }
@@ -253,10 +253,10 @@ const playListSlice = createSlice({
         builder.addCase(saveAndUpdateGameState.fulfilled, (state, action) => {
             state.saving = false;
             const updatedGameState = action.payload;
-            const idx = state.gameStatesWithPuzzles.findIndex(gsp => gsp.gameState.puzzleId === updatedGameState.puzzleId);
-            if (idx !== -1) {
+            const index = state.gameStatesWithPuzzles.findIndex(gsp => gsp.gameState.puzzleId === updatedGameState.puzzleId);
+            if (index !== -1) {
                 // Update existing
-                state.gameStatesWithPuzzles[idx].gameState = updatedGameState;
+                state.gameStatesWithPuzzles[index].gameState = updatedGameState;
             } else {
                 // Add new (without puzzle since we're just saving game state)
                 state.gameStatesWithPuzzles.push({ gameState: updatedGameState, puzzle: null });
@@ -270,6 +270,28 @@ const playListSlice = createSlice({
 });
 
 export const { updateGameStateLocally, clearGameStatesCache } = playListSlice.actions;
+
+export const selectGameStateByPuzzleId = createSelector(
+    [
+        (state: RootState) => state.playList.gameStatesWithPuzzles,
+        (_state: RootState, puzzleId: string | undefined) => puzzleId
+    ],
+    (gameStatesWithPuzzles, puzzleId) => {
+        if (!puzzleId) return null;
+        return gameStatesWithPuzzles.find(gsp => gsp.gameState.puzzleId === puzzleId)?.gameState || null;
+    }
+);
+
+export const selectPuzzleById = createSelector(
+    [
+        (state: RootState) => state.playList.gameStatesWithPuzzles,
+        (_state: RootState, puzzleId: string | undefined) => puzzleId
+    ],
+    (gameStatesWithPuzzles, puzzleId) => {
+        if (!puzzleId) return null;
+        return gameStatesWithPuzzles.find(gsp => gsp.gameState.puzzleId === puzzleId)?.puzzle || null;
+    }
+);
 
 // Memoized selector that adds computed values (correctGuesses and mistakes)
 export const selectGameStatesWithPuzzles = createSelector(

@@ -25,9 +25,9 @@ export const fetchUserPuzzles = createAsyncThunk(
 );
 
 export const isPuzzleComplete = (puzzle: Puzzle): boolean => {
-    const hasAllGroups = puzzle.categories.length === 4 &&  // TODO: Make "4" dynamic based on puzzle config
+    const hasAllGroups = puzzle.categories.length === puzzle.numGroups &&
         puzzle.categories.every(group => group && group.trim() !== '');
-    const hasAllWords = puzzle.words.length === 16 &&
+    const hasAllWords = puzzle.words.length === (puzzle.numGroups * puzzle.wordsPerGroup) &&
         puzzle.words.every(word => word && word.trim() !== '');
     return hasAllGroups && hasAllWords;
 };

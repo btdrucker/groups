@@ -23,10 +23,10 @@ function isPuzzleStarted(puzzle: Puzzle) {
 
 function isPuzzleChanged(puzzle: Puzzle, initial?: Puzzle) {
     if (!initial) return true;
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < puzzle.numGroups; i++) {
         if (puzzle.categories[i] !== initial.categories[i]) return true;
-        for (let j = 0; j < 4; j++) {
-            if (puzzle.words[i * 4 + j] !== initial.words[i * 4 + j]) return true;
+        for (let j = 0; j < puzzle.wordsPerGroup; j++) {
+            if (puzzle.words[i * puzzle.wordsPerGroup + j] !== initial.words[i * puzzle.wordsPerGroup + j]) return true;
         }
     }
     return false;
@@ -37,20 +37,30 @@ const Compose = () => {
     const navigate = useNavigate();
     const { puzzleId } = useParams<{ puzzleId?: string }>();
     const user = useAppSelector(selectUser);
-    const initialPuzzle = useAppSelector(selectPuzzle);
+    const puzzleFromRedux = useAppSelector(selectPuzzle);
     const composeError = useAppSelector(state => state.compose.error);
 
     // Default puzzle for creation
+    const defaultNumGroups = 4;
+    const defaultWordsPerGroup = 4;
     const emptyPuzzle: Puzzle = {
-        categories: Array(4).fill("") as string[],
-        words: Array(16).fill("") as string[],
+        categories: Array(defaultNumGroups).fill("") as string[],
+        words: Array(defaultNumGroups * defaultWordsPerGroup).fill("") as string[],
         creatorId: user?.uid || '',
         createdAt: undefined,
         id: undefined,
         creatorName: user?.displayName || '',
-        numGroups: 4,
-        wordsPerGroup: 4,
-    }
+        numGroups: defaultNumGroups,
+        wordsPerGroup: defaultWordsPerGroup,
+    };
+
+    const initialState = puzzleFromRedux || emptyPuzzle;
+    const [puzzle, setPuzzle] = useState<Puzzle>(initialState);
+    const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+    const [showSaveError, setShowSaveError] = useState(false);
+    const [savedPuzzle, setSavedPuzzle] = useState<Puzzle | undefined>(puzzleFromRedux);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     // Load puzzle if editing
     useEffect(() => {
@@ -63,20 +73,11 @@ const Compose = () => {
         return () => { dispatch(clearPuzzle()); };
     }, [dispatch, puzzleId]);
 
-    // Use loaded puzzle or empty for new
-    const initialState = initialPuzzle || emptyPuzzle;
-    const [puzzle, setPuzzle] = useState<Puzzle>(initialState);
-    const [showSaveSuccess, setShowSaveSuccess] = useState(false);
-    const [showSaveError, setShowSaveError] = useState(false);
-    const [savedPuzzle, setSavedPuzzle] = useState<Puzzle | undefined>(initialPuzzle);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [deleting, setDeleting] = useState(false);
-
-    // Update puzzle state when initialPuzzle changes
+    // Update puzzle state when Redux puzzle changes
     useEffect(() => {
-        setPuzzle(initialPuzzle || emptyPuzzle);
-        setSavedPuzzle(initialPuzzle);
-    }, [initialPuzzle]);
+        setPuzzle(puzzleFromRedux || emptyPuzzle);
+        setSavedPuzzle(puzzleFromRedux);
+    }, [puzzleFromRedux]);
 
     // Memoize to avoid unnecessary recalculation
     const canSave = useMemo(() => {
@@ -84,24 +85,24 @@ const Compose = () => {
         return !(savedPuzzle && !isPuzzleChanged(puzzle, savedPuzzle));
     }, [puzzle, savedPuzzle]);
 
-    const handleGroupNameChange = (grpIdx: number, value: string) => {
+    const handleGroupNameChange = (groupIndex: number, value: string) => {
         setPuzzle(prev => {
             const categories = prev.categories.map((group, i) =>
-                i === grpIdx ? value : group
+                i === groupIndex ? value : group
             );
             return {...prev, categories};
         });
     };
 
-    const handleWordChange = (grpIdx: number, wordIdx: number, value: string) => {
+    const handleWordChange = (groupIndex: number, wordIndex: number, value: string) => {
         setPuzzle(prev => {
-            const words = prev.words.map((w, idx) => {
-                const targetIdx = grpIdx * 4 + wordIdx;
-                return idx === targetIdx ? value : w;
+            const words = prev.words.map((word, index) => {
+                const targetIndex = groupIndex * prev.wordsPerGroup + wordIndex;
+                return index === targetIndex ? value : word;
             });
             return {...prev, words};
         });
-        setTimeout(() => syncRowHeights(grpIdx), 0);
+        setTimeout(() => syncRowHeights(groupIndex), 0);
     };
 
     const saveOrCreate = async () => {
@@ -160,36 +161,42 @@ const Compose = () => {
     };
 
     const handleDelete = async () => {
-        if (!puzzle.id) return; // Only delete if puzzle has an id
+        if (!puzzle || !puzzle.id) return; // Only delete if puzzle has an id
         setDeleting(true);
         await dispatch(deletePuzzleThunk(puzzle.id));
         setDeleting(false);
         navigate("/compose-list");
     };
 
-    // Refs for word textareas: 4 rows x 4 cols
+    // Refs for word textareas: numGroups rows x wordsPerGroup cols
     const wordRefs = useRef<(HTMLTextAreaElement | null)[][]>(
-        Array.from({ length: 4 }, () => Array(4).fill(null))
+        Array.from({ length: puzzle.numGroups }, () => Array(puzzle.wordsPerGroup).fill(null))
     );
+
+    // Create autosize refs for group name textareas (dynamically based on numGroups)
+    const groupAutosizeRefs: React.MutableRefObject<HTMLTextAreaElement | null>[] = [];
+    for (let i = 0; i < puzzle.numGroups; i++) {
+        groupAutosizeRefs.push(useAutosizeTextarea(puzzle.categories[i] || ''));
+    }
 
     // Create a 2D array of autosize refs for word textareas (hooks must be called at top level)
     const wordAutosizeRefs: React.MutableRefObject<HTMLTextAreaElement | null>[][] = [];
-    for (let grpIdx = 0; grpIdx < 4; grpIdx++) {
-        wordAutosizeRefs[grpIdx] = [];
-        for (let wordIdx = 0; wordIdx < 4; wordIdx++) {
-            wordAutosizeRefs[grpIdx][wordIdx] = useAutosizeTextarea(puzzle.words[grpIdx * 4 + wordIdx]);
+    for (let groupIndex = 0; groupIndex < puzzle.numGroups; groupIndex++) {
+        wordAutosizeRefs[groupIndex] = [];
+        for (let wordIndex = 0; wordIndex < puzzle.wordsPerGroup; wordIndex++) {
+            wordAutosizeRefs[groupIndex][wordIndex] = useAutosizeTextarea(puzzle.words[groupIndex * puzzle.wordsPerGroup + wordIndex] || '');
         }
     }
 
     // Helper to assign both the autosize ref and the tracking ref
-    const getWordTextareaRef = (grpIdx: number, wordIdx: number) => (el: HTMLTextAreaElement | null) => {
-        wordRefs.current[grpIdx][wordIdx] = el;
-        wordAutosizeRefs[grpIdx][wordIdx].current = el;
+    const getWordTextareaRef = (groupIndex: number, wordIndex: number) => (el: HTMLTextAreaElement | null) => {
+        wordRefs.current[groupIndex][wordIndex] = el;
+        wordAutosizeRefs[groupIndex][wordIndex].current = el;
     };
 
     // Helper to sync heights for a row
-    const syncRowHeights = (grpIdx: number) => {
-        const rowRefs = wordRefs.current[grpIdx];
+    const syncRowHeights = (groupIndex: number) => {
+        const rowRefs = wordRefs.current[groupIndex];
         // First, reset all heights so scrollHeight is accurate for shrinking
         rowRefs.forEach(ref => {
             if (ref) {
@@ -208,8 +215,8 @@ const Compose = () => {
 
     // On every puzzle.words change, sync all rows
     useEffect(() => {
-        for (let grpIdx = 0; grpIdx < 4; grpIdx++) {
-            syncRowHeights(grpIdx);
+        for (let groupIndex = 0; groupIndex < puzzle.numGroups; groupIndex++) {
+            syncRowHeights(groupIndex);
         }
     }, [puzzle.words]);
 
@@ -220,7 +227,7 @@ const Compose = () => {
                 {puzzle.categories.map((group, groupIndex) => (
                     <div className={styles.groupBlock} key={groupIndex}>
                         <textarea
-                            ref={useAutosizeTextarea(group)}
+                            ref={groupAutosizeRefs[groupIndex]}
                             value={group}
                             placeholder={`Group ${groupIndex + 1}`}
                             onChange={e => handleGroupNameChange(groupIndex, e.target.value)}
@@ -232,13 +239,13 @@ const Compose = () => {
                             style={{resize: "none"}}
                         />
                         <div className={styles.wordInputsRow}>
-                            {[0, 1, 2, 3].map(wordIdx => (
+                            {Array.from({ length: puzzle.wordsPerGroup }, (_, wordIndex) => (
                                 <textarea
-                                    key={wordIdx}
-                                    ref={getWordTextareaRef(groupIndex, wordIdx)}
-                                    value={puzzle.words[groupIndex * 4 + wordIdx]}
-                                    placeholder={`Word ${wordIdx + 1}`}
-                                    onChange={e => handleWordChange(groupIndex, wordIdx, e.target.value)}
+                                    key={wordIndex}
+                                    ref={getWordTextareaRef(groupIndex, wordIndex)}
+                                    value={puzzle.words[groupIndex * puzzle.wordsPerGroup + wordIndex]}
+                                    placeholder={`Word ${wordIndex + 1}`}
+                                    onChange={e => handleWordChange(groupIndex, wordIndex, e.target.value)}
                                     className={classes(
                                         styles.wordTextarea,
                                         styles[`wordInput${groupIndex + 1}`]
