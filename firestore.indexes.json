@@ -1,0 +1,24 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "puzzlePlayerStats",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "puzzleId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastUpdated",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    }
+  ],
+  "fieldOverrides": []
+}
