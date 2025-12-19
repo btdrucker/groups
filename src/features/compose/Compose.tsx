@@ -211,13 +211,13 @@ const Compose = () => {
     );
 
     // Create autosize refs for group name textareas (dynamically based on numGroups)
-    const groupAutosizeRefs: RefObject<HTMLTextAreaElement | null>[] = [];
+    const groupAutosizeRefs: React.MutableRefObject<HTMLTextAreaElement | null>[] = [];
     for (let i = 0; i < puzzle.numGroups; i++) {
         groupAutosizeRefs.push(useAutosizeTextarea(puzzle.categories[i] || ''));
     }
 
     // Create a 2D array of autosize refs for word textareas (hooks must be called at top level)
-    const wordAutosizeRefs: RefObject<HTMLTextAreaElement | null>[][] = [];
+    const wordAutosizeRefs: React.MutableRefObject<HTMLTextAreaElement | null>[][] = [];
     for (let groupIndex = 0; groupIndex < puzzle.numGroups; groupIndex++) {
         wordAutosizeRefs[groupIndex] = [];
         for (let wordIndex = 0; wordIndex < puzzle.wordsPerGroup; wordIndex++) {
