@@ -188,7 +188,7 @@ const Compose = () => {
             try {
                 await navigator.share({
                     title: 'Play my puzzle!',
-                    text: 'Check out this puzzle I created:',
+                    text: 'Check out this puzzle I created',
                     url: shareUrl
                 });
             } catch (err) {
